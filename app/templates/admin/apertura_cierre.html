@@ -1,0 +1,2034 @@
+{% extends "base.html" %}
+{% block title %}Apertura y Cierre de Turnos - Administración BIMBA{% endblock %}
+{% block meta_description %}Herramientas administrativas para apertura y cierre de turnos. Gestión de jornadas, control de cajas y operaciones del sistema BIMBA.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .admin-dashboard {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 8px;
+    max-height: calc(100vh - 150px);
+        overflow-y: auto;
+    }
+    
+    .tools-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+    
+    .tool-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 6px;
+        padding: 10px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        color: inherit;
+    }
+    
+    .tool-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(102, 126, 234, 0.6);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .tool-card .icon {
+        font-size: 3.5rem;
+        margin-bottom: 15px;
+        display: block;
+    }
+    
+    .tool-card h3 {
+        color: #e8e8e8;
+        margin: 0 0 10px 0;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    
+    .tool-card p {
+        color: #aaa;
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    
+    .tool-card .badge {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 5px 12px;
+        background: rgba(102, 126, 234, 0.2);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: #667eea;
+    }
+    
+    .category-section {
+        margin-bottom: 50px;
+    }
+    
+    .category-title {
+        font-size: 0.95rem;
+        color: #e8e8e8;
+        margin-bottom: 4px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .alert-banner {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 8px;
+        background: rgba(244, 67, 54, 0.1);
+        border: 2px solid rgba(244, 67, 54, 0.3);
+        border-radius: 10px;
+        margin-bottom: 4px;
+        color: #f44336;
+    }
+    
+    .alert-banner.warning {
+        background: rgba(255, 152, 0, 0.1);
+        border-color: rgba(255, 152, 0, 0.3);
+        color: #ff9800;
+    }
+    
+    .alert-banner.error {
+        background: rgba(244, 67, 54, 0.1);
+        border-color: rgba(244, 67, 54, 0.3);
+        color: #f44336;
+    }
+    
+    .logout-section {
+        text-align: center;
+        margin-top: 40px;
+        padding: 10px;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(244, 67, 54, 0.4);
+    }
+    
+    .sos-alarm-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .sos-alarm-content {
+        background: #1a1a2e;
+        border: 3px solid #f5576c;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 1400px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        text-align: center;
+        color: white;
+    }
+    
+    .sos-alarm-icon {
+        font-size: 5rem;
+        margin-bottom: 4px;
+        animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+<div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 6px; padding: 8px; margin-bottom: 6px;">
+    <h2 style="color: #00ff00; margin-top: 0; margin-bottom: 4px; font-size: 0.95rem;">🚀 Apertura y Cierre</h2>
+    <div style="color: #aaa; margin-bottom: 4px;">
+        Gestiona la apertura y cierre del turno, y accede a todos los módulos administrativos del sistema.
+    </div>
+    
+    <!-- BOTÓN APERTURA (GRANDE Y PROMINENTE) -->
+    <div style="margin: 50px 0; text-align: center;">
+        <a href="{{ url_for('routes.apertura') }}" style="display: inline-block; padding: 10px 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 4px solid rgba(102, 126, 234, 0.8); border-radius: 20px; color: white; text-decoration: none; font-weight: bold; font-size: 2rem; text-align: center; box-shadow: 0 15px 50px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 20px 60px rgba(102, 126, 234, 0.6)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 15px 50px rgba(102, 126, 234, 0.4)';">
+            <span style="display: block; font-size: 3rem; margin-bottom: 10px;">🚀</span>
+            <span style="display: block;">APERTURA</span>
+            <span style="display: block; font-size: 1rem; opacity: 0.9; margin-top: 5px;">Accede a todos los módulos administrativos</span>
+        </a>
+    </div>
+    
+    <!-- Sistema de Entregas -->
+    <div class="category-section">
+        <h2 class="category-title">📦 Sistema de Entregas</h2>
+        <div class="tools-grid">
+            <a href="{{ url_for('routes.admin_logs') }}" class="tool-card delivery">
+                <span class="icon">📋</span>
+                <h3>Logs de Entregas</h3>
+                <p>Visualiza y gestiona todos los registros de entregas de productos</p>
+                <span class="badge">Tiempo Real</span>
+            </a>
+            
+            <a href="{{ url_for('routes.export_csv') }}" class="tool-card delivery">
+                <span class="icon">💾</span>
+                <h3>Exportar Datos</h3>
+                <p>Descarga los logs en formato CSV para análisis externo</p>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Alertas y Notificaciones -->
+    {% if not shift_status.get('is_open', False) %}
+    <div class="alert-banner warning" style="margin-bottom: 6px;">
+        <span style="font-size: 0.85rem;">⚠️</span>
+        <div style="flex: 1;">
+        </div>
+        <a href="{{ url_for('routes.open_shift') }}" style="padding: 8px 16px; background: rgba(76, 175, 80, 0.3); border: 1px solid rgba(76, 175, 80, 0.5); border-radius: 6px; color: #4caf50; text-decoration: none; font-weight: 600; white-space: nowrap;">
+            Abrir Turno
+        </a>
+    </div>
+    {% endif %}
+    
+    {% if sos_requests and sos_requests|length > 0 %}
+        <!-- Splash/Overlay de Alarma para Solicitudes Pendientes -->
+        <div id="sos-alarm-overlay" class="sos-alarm-overlay">
+            <div class="sos-alarm-content">
+                <div class="sos-alarm-icon">🚨</div>
+                <h2>Solicitud de Apertura de Cajón</h2>
+                <p>Hay {{ sos_requests|length }} solicitud(es) esperando autorización</p>
+                <div class="sos-alarm-requests" style="max-height: 400px; overflow-y: auto;">
+                    {% for req in sos_requests %}
+                    <div class="sos-request-item" style="border-left: 4px solid {% if 'Caja 1' in req.register_name %}#f5576c{% elif 'Caja 2' in req.register_name %}#4facfe{% elif 'Caja 3' in req.register_name %}#43e97b{% elif 'Caja 4' in req.register_name %}#fa709a{% else %}#667eea{% endif %};">
+                        <div class="sos-request-info">
+                            <strong style="font-size: 1.1rem; color: {% if 'Caja 1' in req.register_name %}#f5576c{% elif 'Caja 2' in req.register_name %}#4facfe{% elif 'Caja 3' in req.register_name %}#43e97b{% elif 'Caja 4' in req.register_name %}#fa709a{% else %}#667eea{% endif %};">{{ req.register_name }}</strong>
+                            <span>{{ req.employee_name }}</span>
+                            <small>{{ req.requested_at[:19] if req.requested_at else '' }}</small>
+                        </div>
+                        <div class="sos-request-actions">
+                            <button onclick="authorizeSOSRequest('{{ req.request_id }}')" class="btn-authorize">✅ Autorizar</button>
+                            <button onclick="rejectSOSRequest('{{ req.request_id }}')" class="btn-reject">❌ Rechazar</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button onclick="closeSOSAlarm()" class="btn-close-alarm">Cerrar</button>
+            </div>
+        </div>
+        
+        <div class="alert-banner error" style="background: rgba(245, 87, 108, 0.3); border: 2px solid #f5576c;">
+            <span style="font-size: 0.85rem;">🚨</span>
+            <div style="flex: 1;">
+                <strong>Solicitudes de Apertura de Cajón Pendientes:</strong> Hay {{ sos_requests|length }} solicitud(es) esperando autorización.
+                <div style="margin-top: 10px; max-height: 300px; overflow-y: auto;">
+                    {% for req in sos_requests %}
+                    <div style="margin: 5px 0; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; border-left: 4px solid {% if 'Caja 1' in req.register_name %}#f5576c{% elif 'Caja 2' in req.register_name %}#4facfe{% elif 'Caja 3' in req.register_name %}#43e97b{% elif 'Caja 4' in req.register_name %}#fa709a{% else %}#667eea{% endif %};">
+                        <strong style="color: {% if 'Caja 1' in req.register_name %}#f5576c{% elif 'Caja 2' in req.register_name %}#4facfe{% elif 'Caja 3' in req.register_name %}#43e97b{% elif 'Caja 4' in req.register_name %}#fa709a{% else %}#667eea{% endif %};">{{ req.register_name }}</strong> - {{ req.employee_name }} 
+                        <small style="color: #aaa; margin-left: 10px;">{{ req.requested_at[:19] if req.requested_at else '' }}</small>
+                        <button onclick="authorizeSOSRequest('{{ req.request_id }}')" style="margin-left: 10px; padding: 4px 12px; background: #38ef7d; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Autorizar</button>
+                        <button onclick="rejectSOSRequest('{{ req.request_id }}')" style="margin-left: 5px; padding: 4px 12px; background: #f5576c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Rechazar</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Cierres de Caja Pendientes -->
+    {% if pending_closes and pending_closes|length > 0 %}
+    <div class="alert-banner warning" style="background: rgba(255, 152, 0, 0.3); border: 2px solid rgba(255, 152, 0, 0.5); margin-bottom: 4px;">
+        <span style="font-size: 0.85rem;">💰</span>
+        <div style="flex: 1;">
+            <strong>Cierres de Caja Pendientes:</strong> Hay {{ pending_closes|length }} cierre(s) descuadrado(s) esperando revisión.
+            <div style="margin-top: 10px; max-height: 300px; overflow-y: auto;">
+                {% for close in pending_closes %}
+                <div style="margin: 5px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 4px; border-left: 4px solid {% if close.difference_total|abs > 1000 %}#f5576c{% else %}#ff9800{% endif %};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <div>
+                            <strong style="color: {% if close.difference_total|abs > 1000 %}#f5576c{% else %}#ff9800{% endif %};">{{ close.register_name }}</strong> - {{ close.employee_name }}
+                            <div style="margin-top: 5px; font-size: 0.9rem; color: #aaa;">
+                                Diferencia: <strong style="color: {% if close.difference_total|abs > 1000 %}#f5576c{% else %}#ff9800{% endif %};">${{ "{:,.0f}".format(close.difference_total|abs) }}</strong>
+                                | Ventas: {{ close.total_sales }} | Total: ${{ "{:,.0f}".format(close.total_amount) }}
+                            </div>
+                        </div>
+                        <button onclick="resolveRegisterClose({{ close.id }})" style="padding: 6px 16px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 10px;">
+                            Revisar
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Wizard de Apertura de Jornada -->
+    {% if not jornada_abierta %}
+    <div class="category-section" id="wizard-apertura-jornada" style="margin-bottom: 15px;">
+        <h2 class="category-title">🚀 Apertura de Jornada</h2>
+        
+        <!-- Indicador de pasos -->
+        <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                {% for i in range(1, 8) %}
+                <div class="wizard-step-indicator" data-step="{{ i }}" style="flex: 1; min-width: 80px; text-align: center; padding: 8px; border-radius: 6px; background: rgba(102, 126, 234, 0.2); border: 2px solid rgba(102, 126, 234, 0.3); color: #aaa; cursor: pointer; transition: all 0.3s;">
+                    <div style="font-weight: bold; font-size: 0.9rem;">Paso {{ i }}</div>
+                    <div style="font-size: 0.75rem; margin-top: 4px;" class="step-name"></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Contenedor de pasos -->
+        <div id="wizard-steps-container">
+            <!-- Los pasos se cargarán dinámicamente con JavaScript -->
+        </div>
+        
+        <!-- Botones de navegación -->
+        <div style="display: flex; justify-content: space-between; margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+            <button id="btn-wizard-anterior" onclick="wizardApertura.pasoAnterior()" style="padding: 10px 30px; background: rgba(102, 126, 234, 0.3); border: 2px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #667eea; cursor: pointer; font-weight: bold; display: none;">
+                ← Anterior
+            </button>
+            <div style="flex: 1;"></div>
+            <button id="btn-wizard-siguiente" onclick="wizardApertura.siguientePaso()" style="padding: 10px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid rgba(102, 126, 234, 0.8); border-radius: 6px; color: white; cursor: pointer; font-weight: bold;">
+                Continuar →
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Revisión de Turnos POS -->
+    {% if shift_status.get('is_open', False) and turn_review_data %}
+    <div class="category-section" style="margin-bottom: 6px;">
+        <h2 class="category-title">📊 Revisión de Turnos POS</h2>
+        
+        <!-- Resumen Ejecutivo -->
+        {% if turn_review_data.summary %}
+        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); border: 2px solid rgba(102, 126, 234, 0.5); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+            <h3 style="color: #667eea; margin-top: 0; margin-bottom: 15px; font-size: 1rem;">💰 Resumen Ejecutivo</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; text-align: center;">
+                    <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 5px;">Total Ventas</div>
+                    <div style="color: #fff; font-size: 1.2rem; font-weight: bold;">{{ "{:,.0f}".format(turn_review_data.summary.total_sales or 0) }}</div>
+                    <div style="color: #667eea; font-size: 0.85rem; margin-top: 3px;">${{ "{:,.0f}".format(turn_review_data.summary.total_sales_amount or 0) }}</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; text-align: center;">
+                    <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 5px;">Efectivo</div>
+                    <div style="color: #4caf50; font-size: 1.2rem; font-weight: bold;">${{ "{:,.0f}".format(turn_review_data.summary.total_actual_cash or 0) }}</div>
+                    <div style="color: #aaa; font-size: 0.75rem; margin-top: 3px;">Esperado: ${{ "{:,.0f}".format(turn_review_data.summary.total_expected_cash or 0) }}</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; text-align: center;">
+                    <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 5px;">Débito</div>
+                    <div style="color: #2196F3; font-size: 1.2rem; font-weight: bold;">${{ "{:,.0f}".format(turn_review_data.summary.total_actual_debit or 0) }}</div>
+                    <div style="color: #aaa; font-size: 0.75rem; margin-top: 3px;">Esperado: ${{ "{:,.0f}".format(turn_review_data.summary.total_expected_debit or 0) }}</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; text-align: center;">
+                    <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 5px;">Crédito</div>
+                    <div style="color: #FF9800; font-size: 1.2rem; font-weight: bold;">${{ "{:,.0f}".format(turn_review_data.summary.total_actual_credit or 0) }}</div>
+                    <div style="color: #aaa; font-size: 0.75rem; margin-top: 3px;">Esperado: ${{ "{:,.0f}".format(turn_review_data.summary.total_expected_credit or 0) }}</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; text-align: center;">
+                    <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 5px;">Diferencia Total</div>
+                    <div style="color: {% if (turn_review_data.summary.total_difference or 0)|abs > 1000 %}#f44336{% elif (turn_review_data.summary.total_difference or 0)|abs > 100 %}#ff9800{% else %}#4caf50{% endif %}; font-size: 1.2rem; font-weight: bold;">
+                        ${{ "{:,.0f}".format((turn_review_data.summary.total_difference or 0)|abs) }}
+                    </div>
+                    <div style="color: #aaa; font-size: 0.75rem; margin-top: 3px;">
+                        {% if turn_review_data.summary.total_difference < 0 %}Falta{% else %}Sobra{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Estado de Cierres -->
+        {% if turn_review_data.status_summary %}
+        <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px;">
+                <div style="text-align: center;">
+                    <div style="color: #4caf50; font-size: 1.5rem; font-weight: bold;">{{ turn_review_data.status_summary.balanced or 0 }}</div>
+                    <div style="color: #aaa; font-size: 0.85rem;">✅ Cuadradas</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="color: #ff9800; font-size: 1.5rem; font-weight: bold;">{{ turn_review_data.status_summary.pending or 0 }}</div>
+                    <div style="color: #aaa; font-size: 0.85rem;">⚠️ Pendientes</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="color: #f44336; font-size: 1.5rem; font-weight: bold;">{{ turn_review_data.status_summary.resolved or 0 }}</div>
+                    <div style="color: #aaa; font-size: 0.85rem;">📋 Resueltas</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="color: #667eea; font-size: 1.5rem; font-weight: bold;">{{ turn_review_data.summary.total_closes or 0 }}</div>
+                    <div style="color: #aaa; font-size: 0.85rem;">📦 Total Cierres</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Cierres por Caja -->
+        {% if turn_review_data.closes_by_register %}
+        <div style="margin-bottom: 15px;">
+            <h3 style="color: #e8e8e8; margin-bottom: 10px; font-size: 0.95rem;">🏪 Cierres por Caja</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                {% for register_id, reg_data in turn_review_data.closes_by_register.items() %}
+                <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 6px; padding: 12px;">
+                    <div style="color: #667eea; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem;">{{ reg_data.register_name }}</div>
+                    <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Ventas: <strong style="color: #fff;">{{ reg_data.total_sales or 0 }}</strong></div>
+                    <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">Total: <strong style="color: #4caf50;">${{ "{:,.0f}".format(reg_data.total_amount or 0) }}</strong></div>
+                    {% if reg_data.total_difference|abs > 0 %}
+                    <div style="color: {% if reg_data.total_difference|abs > 1000 %}#f44336{% else %}#ff9800{% endif %}; font-size: 0.85rem; margin-top: 5px;">
+                        Dif: <strong>${{ "{:,.0f}".format(reg_data.total_difference|abs) }}</strong>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Rankings (si están disponibles) -->
+        {% if turn_rankings %}
+        <div style="margin-bottom: 15px;">
+            <h3 style="color: #e8e8e8; margin-bottom: 10px; font-size: 0.95rem;">🏆 Rankings del Turno</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+                <!-- Top Vendedores -->
+                {% if turn_rankings.top_employees.by_amount and turn_rankings.top_employees.by_amount|length > 0 %}
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 6px; padding: 12px;">
+                    <h4 style="color: #667eea; margin-top: 0; margin-bottom: 10px; font-size: 0.9rem;">👥 Top Vendedores</h4>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        {% for emp in turn_rankings.top_employees.by_amount[:5] %}
+                        <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <div style="color: #fff; font-size: 0.85rem; font-weight: bold;">{{ emp.name }}</div>
+                            <div style="color: #aaa; font-size: 0.75rem;">${{ "{:,.0f}".format(emp.total_amount or 0) }} ({{ emp.sales_count }} ventas)</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Top Productos -->
+                {% if turn_rankings.top_products.by_quantity and turn_rankings.top_products.by_quantity|length > 0 %}
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 6px; padding: 12px;">
+                    <h4 style="color: #667eea; margin-top: 0; margin-bottom: 10px; font-size: 0.9rem;">🥇 Top Productos</h4>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        {% for prod in turn_rankings.top_products.by_quantity[:5] %}
+                        <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <div style="color: #fff; font-size: 0.85rem; font-weight: bold;">{{ prod.name }}</div>
+                            <div style="color: #aaa; font-size: 0.75rem;">{{ prod.quantity }} unidades - ${{ "{:,.0f}".format(prod.total_amount or 0) }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Top Cajas -->
+                {% if turn_rankings.top_registers.by_amount and turn_rankings.top_registers.by_amount|length > 0 %}
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 6px; padding: 12px;">
+                    <h4 style="color: #667eea; margin-top: 0; margin-bottom: 10px; font-size: 0.9rem;">💰 Top Cajas</h4>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        {% for reg in turn_rankings.top_registers.by_amount[:5] %}
+                        <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <div style="color: #fff; font-size: 0.85rem; font-weight: bold;">{{ reg.name }}</div>
+                            <div style="color: #aaa; font-size: 0.75rem;">${{ "{:,.0f}".format(reg.total_amount or 0) }} ({{ reg.sales_count }} ventas)</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Análisis de Stock (si está disponible) -->
+        {% if stock_analysis and stock_analysis.products and stock_analysis.products|length > 0 %}
+        <div style="margin-bottom: 15px;">
+            <h3 style="color: #e8e8e8; margin-bottom: 10px; font-size: 0.95rem;">📦 Análisis de Stock - Productos Vendidos</h3>
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 6px; padding: 12px; max-height: 300px; overflow-y: auto;">
+                <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 10px;">Total de productos únicos: <strong style="color: #fff;">{{ stock_analysis.total_products or 0 }}</strong></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+                    {% for prod in stock_analysis.products[:20] %}
+                    <div style="background: rgba(102, 126, 234, 0.1); padding: 8px; border-radius: 4px; border-left: 3px solid #667eea;">
+                        <div style="color: #fff; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px;">{{ prod.name }}</div>
+                        <div style="color: #aaa; font-size: 0.75rem;">Cantidad: <strong style="color: #4caf50;">{{ prod.quantity }}</strong></div>
+                        <div style="color: #aaa; font-size: 0.75rem;">Total: <strong style="color: #667eea;">${{ "{:,.0f}".format(prod.total_amount or 0) }}</strong></div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if stock_analysis.products|length > 20 %}
+                <div style="color: #aaa; font-size: 0.85rem; margin-top: 10px; text-align: center;">
+                    Y {{ stock_analysis.products|length - 20 }} productos más...
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Estado de Cajas -->
+    {% if register_locks and register_locks|length > 0 %}
+    <div class="category-section" style="margin-bottom: 6px;">
+        <h2 class="category-title">🏪 Estado de Cajas</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+            {% for lock in register_locks %}
+            <div class="tool-card" style="border-color: rgba(76, 175, 80, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="margin: 0; color: #4caf50;">{{ lock.register_id }}</h3>
+                        <p style="margin: 5px 0; color: #aaa; font-size: 0.9rem;">{{ lock.employee_name }}</p>
+                    </div>
+                    <button onclick="forceUnlockRegister('{{ lock.register_id }}')" style="padding: 4px 12px; background: #f5576c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                        Liberar
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    
+    {% if services_status %}
+        {% if not services_status.get('api', {}).get('online', False) %}
+        <div class="alert-banner error">
+            <span style="font-size: 0.85rem;">❌</span>
+            <div style="flex: 1;">
+                <strong>API Desconectada:</strong> La conexión con PHP POS está caída. Algunas funcionalidades pueden no estar disponibles.
+            </div>
+        </div>
+        {% endif %}
+        
+    {% endif %}
+    
+    <!-- Sistema de Turnos -->
+    <div class="category-section">
+        <h2 class="category-title">🕐 Sistema de Turnos</h2>
+        <div class="tools-grid">
+            <!-- Información adicional del turno (si está abierto, ya se muestra arriba) -->
+            {% if shift_status.get('is_open', False) %}
+                <div class="tool-card" style="border-color: rgba(102, 126, 234, 0.5);">
+                    <span class="icon">ℹ️</span>
+                    <h3>Información del Turno</h3>
+                    <p><strong>Fecha:</strong> {{ shift_status.get('shift_date', 'N/A') }}</p>
+                    <p><strong>Fiesta:</strong> {{ shift_status.get('fiesta_nombre', 'N/A') }}</p>
+                    {% if shift_status.get('djs') %}
+                    <p><strong>DJs:</strong> {{ shift_status.get('djs', 'N/A') }}</p>
+                    {% endif %}
+                    <p><strong>Abierto:</strong> {{ shift_status.get('opened_at', '')[:16] if shift_status.get('opened_at') else 'N/A' }}</p>
+                </div>
+            {% else %}
+                <div class="tool-card" style="border-color: rgba(255, 152, 0, 0.5); background: linear-gradient(135deg, rgba(255, 152, 0, 0.2) 0%, rgba(255, 152, 0, 0.1) 100%); display: none;">
+                    <span class="icon">⏸️</span>
+                    <h3>Turno Cerrado</h3>
+                    <p>No hay un turno abierto actualmente</p>
+                    {% if shift_status.get('closed_at') %}
+                    <p><strong>Último cierre:</strong> {{ shift_status.get('closed_at', '')[:16] if shift_status.get('closed_at') else 'N/A' }}</p>
+                    {% endif %}
+                    <span class="badge" style="background: rgba(255, 152, 0, 0.3); color: #ff9800;">Inactivo</span>
+                </div>
+                <a href="{{ url_for('routes.open_shift') }}" class="tool-card" style="border-color: rgba(76, 175, 80, 0.5);">
+                    <span class="icon">📅</span>
+                    <h3>Abrir Turno</h3>
+                    <p>Abre un nuevo turno para comenzar a registrar entregas y estadísticas</p>
+                    <span class="badge" style="background: rgba(76, 175, 80, 0.3); color: #4caf50;">Abrir</span>
+                </a>
+            {% endif %}
+            
+            <a href="{{ url_for('routes.shift_history') }}" class="tool-card stats">
+                <span class="icon">📅</span>
+                <h3>Historial de Turnos</h3>
+                <p>Consulta detallada de todos los turnos cerrados</p>
+                <span class="badge">Historial Completo</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Sistema de Inventario -->
+    <div class="category-section">
+        <h2 class="category-title">📦 Sistema de Inventario</h2>
+        <div class="tools-grid">
+            <a href="{{ url_for('routes.view_inventory') }}" class="tool-card" style="border-color: rgba(255, 193, 7, 0.5);">
+                <span class="icon">📊</span>
+                <h3>Ver Inventario</h3>
+                <p>Consulta el inventario actual de botellas por barra</p>
+                <span class="badge" style="background: rgba(255, 193, 7, 0.2); color: #ffc107;">Tiempo Real</span>
+            </a>
+            
+            <a href="{{ url_for('routes.register_inventory') }}" class="tool-card" style="border-color: rgba(76, 175, 80, 0.5);">
+                <span class="icon">➕</span>
+                <h3>Registrar Inventario Inicial</h3>
+                <p>Registra la cantidad inicial de botellas al abrir el turno</p>
+                <span class="badge" style="background: rgba(76, 175, 80, 0.2); color: #4caf50;">Inicial</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Sistema de Encuestas -->
+    <div class="category-section">
+        <h2 class="category-title">📝 Sistema de Encuestas</h2>
+        <div class="tools-grid">
+            <a href="{{ url_for('survey.survey_admin') }}" class="tool-card survey">
+                <span class="icon">📈</span>
+                <h3>Dashboard de Encuestas</h3>
+                <p>Visualiza resultados en tiempo real de las encuestas de clientes</p>
+                <span class="badge">Tiempo Real</span>
+            </a>
+            
+            <a href="{{ url_for('survey.session_manager') }}" class="tool-card survey">
+                <span class="icon">🎉</span>
+                <h3>Gestión de Sesiones</h3>
+                <p>Inicia y cierra sesiones de fiesta, configura DJs y bartenders</p>
+                <span class="badge">Control de Turnos</span>
+            </a>
+            
+            <a href="{{ url_for('survey.survey_history') }}" class="tool-card survey">
+                <span class="icon">📚</span>
+                <h3>Historial de Encuestas</h3>
+                <p>Consulta sesiones anteriores y estadísticas históricas</p>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Sistema de Kiosko -->
+    <div class="category-section">
+        <h2 class="category-title">🎫 Sistema de Kiosko</h2>
+        <div class="tools-grid">
+            <a href="/kiosk" class="tool-card" style="border-color: rgba(255, 193, 7, 0.5);" target="_blank">
+                <span class="icon">🖥️</span>
+                <h3>Acceder al Tótem</h3>
+                <p>Abre el tótem de autoatención para que los clientes realicen pedidos</p>
+                <span class="badge" style="background: rgba(255, 193, 7, 0.2); color: #ffc107;">Tótem</span>
+            </a>
+            
+        </div>
+    </div>
+    
+    <!-- Agente de Redes Sociales -->
+    <div class="category-section">
+        <h2 class="category-title">🤖 Agente de Redes Sociales</h2>
+        <div class="tools-grid">
+            <a href="{{ url_for('routes.admin_social_media') }}" class="tool-card" style="border-color: rgba(102, 126, 234, 0.3);">
+                <span class="icon">💬</span>
+                <h3>Gestión del Agente</h3>
+                <p>Gestiona el agente virtual que responde mensajes en redes sociales usando OpenAI</p>
+                <span class="badge" style="background: rgba(102, 126, 234, 0.2); color: #667eea;">IA</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Seguridad y Configuración -->
+    <div class="category-section">
+        <h2 class="category-title">🔒 Seguridad y Configuración</h2>
+        <div class="tools-grid">
+            <a href="{{ url_for('routes.fraud_config') }}" class="tool-card security">
+                <span class="icon">🛡️</span>
+                <h3>Configuración Anti-Fraude</h3>
+                <p>Ajusta los parámetros de detección de fraudes en entregas</p>
+            </a>
+            
+            <a href="{{ url_for('routes.fraud_history') }}" class="tool-card security">
+                <span class="icon">⚠️</span>
+                <h3>Historial de Fraudes</h3>
+                <p>Revisa todos los intentos de fraude detectados y autorizados</p>
+            </a>
+            
+            <form action="{{ url_for('routes.restart_service') }}" method="POST" style="margin: 0; display: block;" id="restart-form">
+                <button type="submit" class="tool-card security" style="border: 2px solid rgba(244, 67, 54, 0.3); width: 100%; cursor: pointer; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); text-align: left; padding: 10px; transition: all 0.3s ease; font-family: inherit; text-decoration: none; color: inherit;">
+                    <span class="icon">🔄</span>
+                    <h3>Reiniciar Servicio</h3>
+                    <p>Reinicia el servidor Flask para aplicar cambios y configuraciones</p>
+                    <span class="badge">Reinicio Seguro</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Estado de Servicios -->
+    <div class="category-section">
+        <h2 class="category-title">⚙️ Estado de Servicios</h2>
+        {% if services_status %}
+        <div class="tools-grid" id="services-status-grid">
+            <!-- Postfix (Correo) -->
+            <div class="tool-card service-status" data-service="postfix" style="border-color: {% if services_status.postfix.running %}rgba(76, 175, 80, 0.5){% else %}rgba(244, 67, 54, 0.5){% endif %};">
+                <span class="icon">📧</span>
+                <h3>Servidor de Correo (Postfix)</h3>
+                <p>
+                    <strong>Estado:</strong> 
+                    <span style="color: {% if services_status.postfix.running %}#4caf50{% else %}#f44336{% endif %};">
+                        {% if services_status.postfix.running %}✅ Activo{% else %}❌ Inactivo{% endif %}
+                    </span>
+                </p>
+                <p style="font-size: 0.9rem; color: #aaa;">{{ services_status.postfix.message }}</p>
+                <p style="font-size: 0.85rem; color: #888; margin-top: 8px;">
+                    <strong>Última actualización:</strong> 
+                    <span class="last-updated" data-service="postfix">
+                        {% if services_status.postfix.last_updated %}
+                            {{ services_status.postfix.last_updated }}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </span>
+                </p>
+                {% if services_status.postfix.enabled is not none %}
+                    {% if services_status.postfix.enabled %}
+                    <span class="badge" style="background: rgba(76, 175, 80, 0.3); color: #4caf50;">Habilitado</span>
+                    {% else %}
+                    <span class="badge" style="background: rgba(255, 152, 0, 0.3); color: #ff9800;">No habilitado</span>
+                    {% endif %}
+                {% endif %}
+                <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    {% if not services_status.postfix.running %}
+                    <button onclick="restartService('postfix')" class="btn-restart-service" style="padding: 8px 16px; background: rgba(255, 152, 0, 0.2); border: 1px solid rgba(255, 152, 0, 0.5); color: #ff9800; border-radius: 5px; cursor: pointer; font-size: 0.9rem; flex: 1; min-width: 120px;">
+                        🔄 Reiniciar Servicio
+                    </button>
+                    {% endif %}
+                    <button onclick="showPostfixQueue()" class="btn-view-queue" style="padding: 8px 16px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 5px; cursor: pointer; font-size: 0.9rem; flex: 1; min-width: 120px;">
+                        📬 Ver Cola de Correo
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Gunicorn (Aplicación Flask) -->
+            <div class="tool-card service-status" data-service="gunicorn" style="border-color: {% if services_status.gunicorn.running %}rgba(76, 175, 80, 0.5){% else %}rgba(244, 67, 54, 0.5){% endif %};">
+                <span class="icon">🚀</span>
+                <h3>Aplicación Flask (Gunicorn)</h3>
+                <p>
+                    <strong>Estado:</strong> 
+                    <span style="color: {% if services_status.gunicorn.running %}#4caf50{% else %}#f44336{% endif %};">
+                        {% if services_status.gunicorn.running %}✅ Activo{% else %}❌ Inactivo{% endif %}
+                    </span>
+                </p>
+                <p style="font-size: 0.9rem; color: #aaa;">{{ services_status.gunicorn.message }}</p>
+                <p style="font-size: 0.85rem; color: #888; margin-top: 8px;">
+                    <strong>Última actualización:</strong> 
+                    <span class="last-updated" data-service="gunicorn">
+                        {% if services_status.gunicorn.last_updated %}
+                            {{ services_status.gunicorn.last_updated }}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </span>
+                </p>
+                {% if services_status.gunicorn.enabled is not none %}
+                    {% if services_status.gunicorn.enabled %}
+                    <span class="badge" style="background: rgba(76, 175, 80, 0.3); color: #4caf50;">Habilitado</span>
+                    {% else %}
+                    <span class="badge" style="background: rgba(255, 152, 0, 0.3); color: #ff9800;">No habilitado</span>
+                    {% endif %}
+                {% endif %}
+                {% if not services_status.gunicorn.running %}
+                <div style="margin-top: 15px;">
+                    <button onclick="restartService('gunicorn')" class="btn-restart-service" style="padding: 8px 16px; background: rgba(255, 152, 0, 0.2); border: 1px solid rgba(255, 152, 0, 0.5); color: #ff9800; border-radius: 5px; cursor: pointer; font-size: 0.9rem; width: 100%;">
+                        🔄 Reiniciar Servicio
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Nginx (Servidor Web) -->
+            <div class="tool-card service-status" data-service="nginx" style="border-color: {% if services_status.nginx.running %}rgba(76, 175, 80, 0.5){% else %}rgba(244, 67, 54, 0.5){% endif %};">
+                <span class="icon">🌐</span>
+                <h3>Servidor Web (Nginx)</h3>
+                <p>
+                    <strong>Estado:</strong> 
+                    <span style="color: {% if services_status.nginx.running %}#4caf50{% else %}#f44336{% endif %};">
+                        {% if services_status.nginx.running %}✅ Activo{% else %}❌ Inactivo{% endif %}
+                    </span>
+                </p>
+                <p style="font-size: 0.9rem; color: #aaa;">{{ services_status.nginx.message }}</p>
+                <p style="font-size: 0.85rem; color: #888; margin-top: 8px;">
+                    <strong>Última actualización:</strong> 
+                    <span class="last-updated" data-service="nginx">
+                        {% if services_status.nginx.last_updated %}
+                            {{ services_status.nginx.last_updated }}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </span>
+                </p>
+                {% if services_status.nginx.enabled is not none %}
+                    {% if services_status.nginx.enabled %}
+                    <span class="badge" style="background: rgba(76, 175, 80, 0.3); color: #4caf50;">Habilitado</span>
+                    {% else %}
+                    <span class="badge" style="background: rgba(255, 152, 0, 0.3); color: #ff9800;">No habilitado</span>
+                    {% endif %}
+                {% endif %}
+                {% if not services_status.nginx.running %}
+                <div style="margin-top: 15px;">
+                    <button onclick="restartService('nginx')" class="btn-restart-service" style="padding: 8px 16px; background: rgba(255, 152, 0, 0.2); border: 1px solid rgba(255, 152, 0, 0.5); color: #ff9800; border-radius: 5px; cursor: pointer; font-size: 0.9rem; width: 100%;">
+                        🔄 Reiniciar Servicio
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- API PHP POS -->
+            <div class="tool-card service-status" data-service="api" style="border-color: {% if services_status.api.online %}rgba(76, 175, 80, 0.5){% else %}rgba(244, 67, 54, 0.5){% endif %};">
+                <span class="icon">🔌</span>
+                <h3>API PHP POS</h3>
+                <p>
+                    <strong>Estado:</strong> 
+                    <span style="color: {% if services_status.api.online %}#4caf50{% else %}#f44336{% endif %};">
+                        {% if services_status.api.online %}✅ Conectada{% else %}❌ Desconectada{% endif %}
+                    </span>
+                </p>
+                {% if services_status.api.online %}
+                <p style="font-size: 0.9rem; color: #aaa;">
+                    Tiempo de respuesta: {{ "%.0f"|format(services_status.api.response_time_ms) }}ms
+                </p>
+                {% else %}
+                <p style="font-size: 0.9rem; color: #aaa;">{{ services_status.api.message }}</p>
+                {% endif %}
+                <p style="font-size: 0.85rem; color: #888; margin-top: 8px;">
+                    <strong>Última actualización:</strong> 
+                    <span class="last-updated" data-service="api">
+                        {% if services_status.api.last_updated %}
+                            {{ services_status.api.last_updated }}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </span>
+                </p>
+                <span class="badge" style="background: {% if services_status.api.online %}rgba(76, 175, 80, 0.3){% else %}rgba(244, 67, 54, 0.3){% endif %}; color: {% if services_status.api.online %}#4caf50{% else %}#f44336{% endif %};">
+                    {% if services_status.api.online %}Online{% else %}Offline{% endif %}
+                </span>
+                <div style="margin-top: 15px;">
+                    <button onclick="refreshApiStatus()" class="btn-refresh-api" style="width: 100%; padding: 8px 16px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s;" onmouseover="this.style.background='rgba(102, 126, 234, 0.3)';" onmouseout="this.style.background='rgba(102, 126, 234, 0.2)';">
+                        🔄 Actualizar Estado API
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 15px;">
+            <button onclick="refreshServicesStatus()" class="btn" style="padding: 10px 20px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 5px; cursor: pointer;">
+                🔄 Actualizar Estado
+            </button>
+        </div>
+        {% else %}
+        <div style="padding: 8px; background: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 10px; color: #ff9800;">
+            <p>⚠️ No se pudo obtener el estado de los servicios. Recarga la página.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Acciones rápidas -->
+    <div class="logout-section">
+        <a href="{{ url_for('auth.logout_admin') }}" class="btn btn-danger" style="padding: 5px 30px; font-size: 1.1rem;">
+            🔓 Cerrar Sesión
+        </a>
+    </div>
+</div>
+
+<script>
+// Confirmación personalizada para reiniciar servicio
+document.getElementById('restart-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const confirmed = await confirmDanger(
+        '¿Estás seguro de que deseas reiniciar el servicio? El servidor se reiniciará y deberás esperar unos segundos antes de poder usarlo nuevamente.',
+        '⚠️ Reiniciar Servicio'
+    );
+    
+    if (confirmed) {
+        showLoading('Reiniciando servicio...');
+        
+        // Enviar formulario
+        const formData = new FormData(this);
+        
+        try {
+            const response = await fetch('{{ url_for("routes.restart_service") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            hideLoading();
+            
+            if (response.ok) {
+                showSuccess('✅ Servicio reiniciado. La página se recargará en unos segundos...');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showError('❌ Error al reiniciar el servicio');
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('Error:', error);
+            showError('❌ Error de conexión al reiniciar el servicio');
+        }
+    }
+});
+
+// Función para actualizar estado de la API específicamente
+function refreshApiStatus() {
+    const btn = document.querySelector('.btn-refresh-api');
+    if (btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Verificando...';
+        btn.disabled = true;
+    }
+    
+    // Llamar directamente al endpoint de health check de la API
+    fetch('/api/health', {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+        },
+        cache: 'no-store'
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    return { ...data, httpStatus: response.status };
+                }).catch(() => {
+                    return {
+                        status: 'error',
+                        message: `HTTP ${response.status}`,
+                        online: false,
+                        httpStatus: response.status
+                    };
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Actualizar el estado de la API en el dashboard
+            const apiCard = document.querySelector('[data-service="api"]');
+            if (apiCard) {
+                const statusSpan = apiCard.querySelector('p strong').nextElementSibling;
+                const messageP = apiCard.querySelector('p[style*="font-size: 0.9rem"]');
+                const badge = apiCard.querySelector('.badge');
+                
+                if (data.online === true || data.status === 'ok') {
+                    // API conectada
+                    apiCard.style.borderColor = 'rgba(76, 175, 80, 0.5)';
+                    if (statusSpan) {
+                        statusSpan.style.color = '#4caf50';
+                        statusSpan.textContent = '✅ Conectada';
+                    }
+                    if (messageP) {
+                        messageP.textContent = data.message || 'API conectada y respondiendo';
+                        messageP.style.color = '#aaa';
+                    }
+                    if (badge) {
+                        badge.style.background = 'rgba(76, 175, 80, 0.3)';
+                        badge.style.color = '#4caf50';
+                        badge.textContent = 'Online';
+                    }
+                } else {
+                    // API desconectada
+                    apiCard.style.borderColor = 'rgba(244, 67, 54, 0.5)';
+                    if (statusSpan) {
+                        statusSpan.style.color = '#f44336';
+                        statusSpan.textContent = '❌ Desconectada';
+                    }
+                    if (messageP) {
+                        messageP.textContent = data.message || 'API desconectada';
+                        messageP.style.color = '#aaa';
+                    }
+                    if (badge) {
+                        badge.style.background = 'rgba(244, 67, 54, 0.3)';
+                        badge.style.color = '#f44336';
+                        badge.textContent = 'Offline';
+                    }
+                }
+            }
+            
+            if (btn) {
+                btn.innerHTML = data.online ? '✅ Conectada' : '❌ Desconectada';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            }
+        })
+        .catch(error => {
+            console.error('Error al verificar API:', error);
+            if (btn) {
+                btn.innerHTML = '❌ Error';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            }
+        });
+}
+
+// Función para actualizar estado de servicios
+function refreshServicesStatus() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Actualizando...';
+    btn.disabled = true;
+    
+    // Llamar a la API para obtener el estado actualizado
+    fetch('/api/services/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                updateServicesStatus(data.services);
+                btn.innerHTML = '✅ Actualizado';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                console.error('Error al obtener estado:', data.message);
+                btn.innerHTML = '❌ Error';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = '❌ Error';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 2000);
+        });
+}
+
+// Función para actualizar el estado de los servicios en la UI
+function updateServicesStatus(services) {
+    // Actualizar Postfix
+    updateServiceCard('postfix', services.postfix);
+    // Actualizar Gunicorn
+    updateServiceCard('gunicorn', services.gunicorn);
+    // Actualizar Nginx
+    updateServiceCard('nginx', services.nginx);
+    // Actualizar API
+    updateServiceCard('api', services.api);
+}
+
+// Función para actualizar una tarjeta de servicio
+function updateServiceCard(serviceName, serviceData) {
+    const card = document.querySelector(`[data-service="${serviceName}"]`);
+    if (!card) {
+        console.warn(`Tarjeta no encontrada para servicio: ${serviceName}`);
+        return;
+    }
+    
+    // Determinar si está activo (running para servicios del sistema, online para API)
+    const isRunning = serviceData.running !== undefined ? serviceData.running : (serviceData.online !== undefined ? serviceData.online : false);
+    
+    // Buscar elementos dentro de la tarjeta
+    const statusParagraph = card.querySelector('p');
+    const statusSpan = statusParagraph ? statusParagraph.querySelector('span') : null;
+    const messageParagraph = statusParagraph ? statusParagraph.nextElementSibling : null;
+    
+    // Actualizar color del borde
+    if (isRunning) {
+        card.style.borderColor = 'rgba(76, 175, 80, 0.5)';
+        if (statusSpan) {
+            statusSpan.style.color = '#4caf50';
+            // Texto diferente para API vs servicios del sistema
+            if (serviceName === 'api') {
+                statusSpan.textContent = '✅ Conectada';
+            } else {
+                statusSpan.textContent = '✅ Activo';
+            }
+        }
+    } else {
+        card.style.borderColor = 'rgba(244, 67, 54, 0.5)';
+        if (statusSpan) {
+            statusSpan.style.color = '#f44336';
+            // Texto diferente para API vs servicios del sistema
+            if (serviceName === 'api') {
+                statusSpan.textContent = '❌ Desconectada';
+            } else {
+                statusSpan.textContent = '❌ Inactivo';
+            }
+        }
+    }
+    
+    // Actualizar mensaje
+    if (messageParagraph && serviceData.message) {
+        // Para API, mostrar tiempo de respuesta si está online
+        if (serviceName === 'api' && serviceData.online && serviceData.response_time_ms !== undefined) {
+            messageParagraph.textContent = `Tiempo de respuesta: ${Math.round(serviceData.response_time_ms)}ms`;
+        } else {
+            messageParagraph.textContent = serviceData.message || 'Estado desconocido';
+        }
+    }
+    
+    // Actualizar fecha de última actualización
+    const lastUpdatedSpan = card.querySelector(`.last-updated[data-service="${serviceName}"]`);
+    if (lastUpdatedSpan && serviceData.last_updated) {
+        const date = new Date(serviceData.last_updated);
+        const formattedDate = date.toLocaleString('es-ES', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        lastUpdatedSpan.textContent = formattedDate;
+    }
+    
+    // Actualizar badge si existe
+    const badge = card.querySelector('.badge');
+    if (badge) {
+        if (serviceName === 'api') {
+            if (isRunning) {
+                badge.textContent = 'Online';
+                badge.style.background = 'rgba(76, 175, 80, 0.3)';
+                badge.style.color = '#4caf50';
+            } else {
+                badge.textContent = 'Offline';
+                badge.style.background = 'rgba(244, 67, 54, 0.3)';
+                badge.style.color = '#f44336';
+            }
+        }
+    }
+    
+    // Mostrar/ocultar botón de reinicio (solo para servicios del sistema, no API)
+    if (serviceName !== 'api') {
+        let restartButton = card.querySelector('.btn-restart-service');
+        if (!isRunning) {
+            // Servicio caído: mostrar botón de reinicio si no existe
+            if (!restartButton) {
+                const buttonDiv = document.createElement('div');
+                buttonDiv.style.marginTop = '15px';
+                buttonDiv.innerHTML = `
+                    <button onclick="restartService('${serviceName}')" class="btn-restart-service" style="padding: 8px 16px; background: rgba(255, 152, 0, 0.2); border: 1px solid rgba(255, 152, 0, 0.5); color: #ff9800; border-radius: 5px; cursor: pointer; font-size: 0.9rem; width: 100%;">
+                        🔄 Reiniciar Servicio
+                    </button>
+                `;
+                card.appendChild(buttonDiv);
+            }
+        } else {
+            // Servicio activo: ocultar botón de reinicio si existe
+            if (restartButton) {
+                restartButton.parentElement.remove();
+            }
+        }
+    }
+    
+    console.log(`Servicio ${serviceName} actualizado:`, { isRunning, status: serviceData.status || serviceData.online });
+}
+
+// Funciones de notificación (si no existen)
+if (typeof showLoading === 'undefined') {
+    window.showLoading = function(message) {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loading-overlay';
+        loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem;';
+        loadingDiv.innerHTML = `<div style="text-align: center;"><div style="margin-bottom: 10px;">⏳</div><div>${message || 'Cargando...'}</div></div>`;
+        document.body.appendChild(loadingDiv);
+    };
+}
+
+if (typeof hideLoading === 'undefined') {
+    window.hideLoading = function() {
+        const loadingDiv = document.getElementById('loading-overlay');
+        if (loadingDiv) {
+            loadingDiv.remove();
+        }
+    };
+}
+
+if (typeof showSuccess === 'undefined') {
+    window.showSuccess = function(message) {
+        alert(message);
+    };
+}
+
+if (typeof showError === 'undefined') {
+    window.showError = function(message) {
+        alert(message);
+    };
+}
+
+// Función para reiniciar un servicio
+function restartService(serviceName) {
+    const serviceNames = {
+        'postfix': 'Servidor de Correo (Postfix)',
+        'gunicorn': 'Aplicación Flask (Gunicorn)',
+        'nginx': 'Servidor Web (Nginx)'
+    };
+    
+    const serviceDisplayName = serviceNames[serviceName] || serviceName;
+    
+    if (!confirm(`¿Estás seguro de que deseas reiniciar ${serviceDisplayName}?\n\nEl servicio se reiniciará y puede tardar unos segundos en volver a estar disponible.`)) {
+        return;
+    }
+    
+    // Mostrar loading
+    showLoading(`Reiniciando ${serviceDisplayName}...`);
+    
+    // Llamar a la API para reiniciar el servicio
+    fetch('/api/services/restart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ service: serviceName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showSuccess(`✅ ${data.message}`);
+            // Esperar un momento y luego actualizar el estado
+            setTimeout(() => {
+                refreshServicesStatus();
+            }, 2000);
+        } else {
+            showError(`❌ ${data.message || 'Error al reiniciar el servicio'}`);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error:', error);
+        showError('❌ Error de conexión al reiniciar el servicio');
+    });
+}
+
+// Verificar estado solo al abrir el turno (no automáticamente)
+// La verificación se hace solo cuando se abre un turno
+
+// Función para mostrar la cola de correo de Postfix
+function showPostfixQueue() {
+    // Crear modal si no existe
+    let modal = document.getElementById('postfix-queue-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'postfix-queue-modal';
+        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10001; display: flex; align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div style="background: #1a1a2e; border: 2px solid rgba(102, 126, 234, 0.5); border-radius: 6px; padding: 10px; max-width: 90%; max-height: 90%; overflow: auto; color: white; min-width: 600px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <h2 style="margin: 0; color: #667eea;">📬 Cola de Correo de Postfix</h2>
+                    <button onclick="closePostfixQueue()" style="background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; border-radius: 5px; padding: 8px 16px; cursor: pointer; font-size: 0.75rem;">&times;</button>
+                </div>
+                <div id="queue-content" style="min-height: 200px;">
+                    <p style="text-align: center; color: #aaa;">Cargando cola de correo...</p>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button onclick="refreshPostfixQueue()" style="padding: 10px 20px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                        🔄 Actualizar
+                    </button>
+                    <button onclick="closePostfixQueue()" style="padding: 10px 20px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; border-radius: 5px; cursor: pointer;">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Mostrar modal
+    modal.style.display = 'flex';
+    
+    // Cargar cola
+    refreshPostfixQueue();
+}
+
+function closePostfixQueue() {
+    const modal = document.getElementById('postfix-queue-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function refreshPostfixQueue() {
+    const content = document.getElementById('queue-content');
+    if (!content) return;
+    
+    content.innerHTML = '<p style="text-align: center; color: #aaa;">Cargando cola de correo...</p>';
+    
+    fetch('/api/services/postfix/queue')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.total === 0) {
+                    content.innerHTML = `
+                        <div style="text-align: center; padding: 40px; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 10px;">
+                            <p style="font-size: 0.75rem; color: #4caf50; margin: 0;">✅ ${data.message}</p>
+                        </div>
+                    `;
+                } else {
+                    let html = `
+                        <div style="margin-bottom: 15px; padding: 5px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 10px;">
+                            <p style="margin: 0; color: #667eea; font-size: 1.1rem;"><strong>Total: ${data.total} correo(s) en cola</strong></p>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: rgba(102, 126, 234, 0.2);">
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.5);">ID Cola</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.5);">Tamaño</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.5);">Hora de Llegada</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.5);">Remitente</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.5);">Destinatario</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    data.queue.forEach((item, index) => {
+                        html += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); ${index % 2 === 0 ? 'background: rgba(255,255,255,0.02);' : ''}">
+                                <td style="padding: 10px; font-family: monospace; color: #667eea;">${item.queue_id || 'N/A'}</td>
+                                <td style="padding: 10px;">${item.size || 'N/A'}</td>
+                                <td style="padding: 10px;">${item.arrival_time || 'N/A'}</td>
+                                <td style="padding: 10px; word-break: break-all;">${item.sender || 'N/A'}</td>
+                                <td style="padding: 10px; word-break: break-all;">${item.recipient || 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    content.innerHTML = html;
+                }
+            } else {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 10px;">
+                        <p style="font-size: 1.1rem; color: #f44336; margin: 0;">❌ ${data.message || 'Error al obtener la cola'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 10px;">
+                    <p style="font-size: 1.1rem; color: #f44336; margin: 0;">❌ Error de conexión al obtener la cola</p>
+                </div>
+            `;
+        });
+}
+
+// Cerrar modal al hacer clic fuera
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('postfix-queue-modal');
+    if (modal && event.target === modal) {
+        closePostfixQueue();
+    }
+});
+
+// Variable global para el contexto de audio
+let audioContext = null;
+
+// Inicializar contexto de audio (requiere interacción del usuario)
+function initAudioContext() {
+    if (!audioContext) {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (error) {
+            console.error('Error al crear contexto de audio:', error);
+        }
+    }
+    return audioContext;
+}
+
+// Reproducir sonido de alarma
+function playAlarmSound() {
+    try {
+        // Intentar inicializar contexto de audio
+        const ctx = initAudioContext();
+        if (!ctx) {
+            console.warn('No se pudo crear contexto de audio');
+            return;
+        }
+        
+        // Si el contexto está suspendido, intentar reanudarlo
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(() => {
+                playAlarmTone(ctx);
+            }).catch(err => {
+                console.error('Error al reanudar contexto de audio:', err);
+            });
+        } else {
+            playAlarmTone(ctx);
+        }
+    } catch (error) {
+        console.error('Error al reproducir sonido de alarma:', error);
+        // Fallback: usar beep del sistema
+        try {
+            // Intentar usar el método más simple
+            const beep = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBzGH0fPTgjMGHm7A7+OZURAJR6Hh8sBpJAUwgM/y14k5CBxpu+/mn00QDE+n4/C2YxwGOJLX8sx5LAUkd8fw3ZBACxRes+nrqFUUCkaf4PK+bCEHMYfR89OCMwYebsDv45lREAlHoeHywGkkBTCAz/LXiTkIHGm77+afTRAMT6fj8LZjHAY4ktfy');
+            beep.play().catch(err => console.error('Error al reproducir beep:', err));
+        } catch (e) {
+            console.error('Error en fallback de audio:', e);
+        }
+    }
+}
+
+// Función auxiliar para reproducir tono de alarma
+function playAlarmTone(ctx) {
+    // Crear oscilador para el sonido de alarma
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    // Configurar frecuencia de alarma (tono agudo)
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    
+    // Configurar volumen (pulsante)
+    const now = ctx.currentTime;
+    gainNode.gain.setValueAtTime(0.3, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.1, now + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.2);
+    
+    // Reproducir durante 0.5 segundos
+    oscillator.start(now);
+    oscillator.stop(now + 0.5);
+    
+    // Repetir 2 veces más
+    setTimeout(() => {
+        try {
+            const oscillator2 = ctx.createOscillator();
+            const gainNode2 = ctx.createGain();
+            oscillator2.connect(gainNode2);
+            gainNode2.connect(ctx.destination);
+            oscillator2.frequency.value = 800;
+            oscillator2.type = 'sine';
+            const now2 = ctx.currentTime;
+            gainNode2.gain.setValueAtTime(0.3, now2);
+            gainNode2.gain.exponentialRampToValueAtTime(0.1, now2 + 0.1);
+            gainNode2.gain.exponentialRampToValueAtTime(0.3, now2 + 0.2);
+            oscillator2.start(now2);
+            oscillator2.stop(now2 + 0.5);
+        } catch (e) {
+            console.error('Error en segundo tono:', e);
+        }
+    }, 600);
+    
+    setTimeout(() => {
+        try {
+            const oscillator3 = ctx.createOscillator();
+            const gainNode3 = ctx.createGain();
+            oscillator3.connect(gainNode3);
+            gainNode3.connect(ctx.destination);
+            oscillator3.frequency.value = 800;
+            oscillator3.type = 'sine';
+            const now3 = ctx.currentTime;
+            gainNode3.gain.setValueAtTime(0.3, now3);
+            gainNode3.gain.exponentialRampToValueAtTime(0.1, now3 + 0.1);
+            gainNode3.gain.exponentialRampToValueAtTime(0.3, now3 + 0.2);
+            oscillator3.start(now3);
+            oscillator3.stop(now3 + 0.5);
+        } catch (e) {
+            console.error('Error en tercer tono:', e);
+        }
+    }, 1200);
+}
+
+// Mostrar splash de alarma al cargar la página si hay solicitudes
+document.addEventListener('DOMContentLoaded', function() {
+    {% if sos_requests and sos_requests|length > 0 %}
+    // El overlay ya está visible por CSS, solo asegurarnos de que esté
+    const overlay = document.getElementById('sos-alarm-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        
+        // Simular un clic automático para activar el contexto de audio
+        setTimeout(() => {
+            // Crear un evento de clic simulado
+            const clickEvent = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true
+            });
+            
+            // Disparar el clic en el overlay para activar audio
+            overlay.dispatchEvent(clickEvent);
+            
+            // También intentar reproducir directamente después del clic simulado
+            setTimeout(() => {
+                playAlarmSound();
+            }, 50);
+        }, 200);
+        
+        // También escuchar clics reales del usuario
+        overlay.addEventListener('click', function initAndPlay() {
+            playAlarmSound();
+        }, { once: false });
+    }
+    {% endif %}
+    
+    // Inicializar contexto de audio automáticamente con un clic simulado
+    setTimeout(() => {
+        const initClick = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        document.body.dispatchEvent(initClick);
+        
+        // Inicializar contexto después del clic simulado
+        setTimeout(() => {
+            initAudioContext();
+        }, 50);
+    }, 100);
+});
+
+// Función para cerrar el splash de alarma
+function closeSOSAlarm() {
+    const overlay = document.getElementById('sos-alarm-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+async function authorizeSOSRequest(requestId) {
+    try {
+        const response = await fetch('/admin/api/authorize-sos-drawer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                request_id: requestId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Cerrar el overlay de alarma
+            closeSOSAlarm();
+            // Recargar la página para actualizar la lista
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    }
+}
+
+async function rejectSOSRequest(requestId) {
+    try {
+        const response = await fetch('/admin/api/reject-sos-drawer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                request_id: requestId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Cerrar el overlay de alarma
+            closeSOSAlarm();
+            // Recargar la página para actualizar la lista
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    }
+}
+</script>
+
+<!-- WebSocket para tiempo real -->
+<script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+<script>
+    // Conectar a WebSocket para actualizaciones en tiempo real
+    const adminSocket = io('/admin');
+    
+    adminSocket.on('connect', function() {
+        console.log('✅ Conectado al dashboard en tiempo real');
+    });
+    
+    adminSocket.on('disconnect', function() {
+        console.log('❌ Desconectado del dashboard');
+    });
+    
+    // Escuchar nuevas ventas (solo para recargar página si es necesario)
+    adminSocket.on('pos_sale_created', function(data) {
+        console.log('💳 Nueva venta:', data);
+    });
+    
+    // Escuchar nuevos cierres
+    adminSocket.on('register_close_created', function(data) {
+        console.log('💰 Nuevo cierre de caja:', data);
+        setTimeout(() => location.reload(), 1000);
+    });
+    
+    // Escuchar cierres resueltos
+    adminSocket.on('register_close_resolved', function(data) {
+        console.log('✅ Cierre resuelto:', data);
+        setTimeout(() => location.reload(), 500);
+    });
+    
+    // Escuchar cambios en bloqueos
+    adminSocket.on('register_unlocked', function(data) {
+        console.log('🔓 Caja liberada:', data);
+        setTimeout(() => location.reload(), 500);
+    });
+    
+    
+    // Resolver cierre de caja
+    async function resolveRegisterClose(closeId) {
+        const notes = prompt('Ingresa notas de resolución (opcional):');
+        if (notes === null) return;
+        try {
+            const response = await fetch('/admin/api/resolve-register-close', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({close_id: closeId, resolution_notes: notes || ''})
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('✅ Cierre resuelto correctamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        }
+    }
+    
+    // Forzar liberación de caja
+    async function forceUnlockRegister(registerId) {
+        if (!confirm(`¿Forzar liberación de ${registerId}?`)) return;
+        try {
+            const response = await fetch('/admin/api/force-unlock-register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({register_id: registerId})
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('✅ Caja liberada correctamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        }
+    }
+    
+    // ============================================
+    // WIZARD DE APERTURA DE JORNADA
+    // ============================================
+    
+    {% if not jornada_abierta %}
+    class WizardApertura {
+        constructor() {
+            this.pasoActual = 1;
+            this.totalPasos = 7;
+            this.datosJornada = {
+                jornada_id: null,
+                jornada: {},
+                planilla: [],
+                responsables: {},
+                cajas: [],
+                checklistTecnico: {},
+                validacionFinal: {}
+            };
+            this.nombresPasos = [
+                'Crear Jornada',
+                'Planilla de Trabajadores',
+                'Asignar Responsables',
+                'Abrir Cajas',
+                'Inventario Inicial',
+                'Checklist Técnico',
+                'Verificación Final'
+            ];
+            this.init();
+        }
+        
+        init() {
+            // Actualizar nombres de pasos
+            this.nombresPasos.forEach((nombre, index) => {
+                const indicador = document.querySelector(`[data-step="${index + 1}"] .step-name`);
+                if (indicador) indicador.textContent = nombre;
+            });
+            
+            // Cargar jornada actual si existe
+            this.cargarJornadaActual();
+            
+            // Mostrar primer paso
+            this.mostrarPaso(1);
+        }
+        
+        async cargarJornadaActual() {
+            try {
+                const response = await fetch('/admin/api/jornada/actual');
+                const data = await response.json();
+                if (data.success && data.jornada) {
+                    this.datosJornada.jornada_id = data.jornada.jornada.id;
+                    this.datosJornada.jornada = data.jornada.jornada;
+                    this.datosJornada.planilla = data.jornada.trabajadores || [];
+                    this.datosJornada.cajas = data.jornada.cajas || [];
+                    
+                    if (data.jornada.jornada.responsable_cajas) {
+                        this.datosJornada.responsables = {
+                            responsable_cajas: data.jornada.jornada.responsable_cajas,
+                            responsable_puerta: data.jornada.jornada.responsable_puerta,
+                            responsable_seguridad: data.jornada.jornada.responsable_seguridad,
+                            responsable_admin: data.jornada.jornada.responsable_admin
+                        };
+                    }
+                    
+                    if (data.jornada.jornada.checklist_tecnico) {
+                        this.datosJornada.checklistTecnico = data.jornada.jornada.checklist_tecnico;
+                    }
+                    
+                    // Determinar en qué paso estamos
+                    this.determinarPasoActual();
+                }
+            } catch (error) {
+                console.error('Error al cargar jornada actual:', error);
+            }
+        }
+        
+        determinarPasoActual() {
+            if (!this.datosJornada.jornada_id) {
+                this.pasoActual = 1;
+                return;
+            }
+            
+            const jornada = this.datosJornada.jornada;
+            
+            if (!jornada.fecha_jornada) {
+                this.pasoActual = 1;
+            } else if (this.datosJornada.planilla.length === 0) {
+                this.pasoActual = 2;
+            } else if (!jornada.responsable_cajas) {
+                this.pasoActual = 3;
+            } else if (this.datosJornada.cajas.length === 0) {
+                this.pasoActual = 4;
+            } else if (!jornada.checklist_tecnico || Object.keys(jornada.checklist_tecnico).length === 0) {
+                this.pasoActual = 6;
+            } else {
+                this.pasoActual = 7;
+            }
+            
+            this.mostrarPaso(this.pasoActual);
+        }
+        
+        mostrarPaso(numero) {
+            this.pasoActual = numero;
+            const container = document.getElementById('wizard-steps-container');
+            if (!container) return;
+            
+            // Actualizar indicadores
+            document.querySelectorAll('.wizard-step-indicator').forEach((ind, idx) => {
+                const stepNum = idx + 1;
+                if (stepNum === numero) {
+                    ind.style.background = 'rgba(102, 126, 234, 0.5)';
+                    ind.style.borderColor = '#667eea';
+                    ind.style.color = '#fff';
+                } else if (stepNum < numero) {
+                    ind.style.background = 'rgba(76, 175, 80, 0.3)';
+                    ind.style.borderColor = '#4caf50';
+                    ind.style.color = '#4caf50';
+                } else {
+                    ind.style.background = 'rgba(102, 126, 234, 0.2)';
+                    ind.style.borderColor = 'rgba(102, 126, 234, 0.3)';
+                    ind.style.color = '#aaa';
+                }
+            });
+            
+            // Mostrar/ocultar botones
+            const btnAnterior = document.getElementById('btn-wizard-anterior');
+            const btnSiguiente = document.getElementById('btn-wizard-siguiente');
+            
+            if (btnAnterior) {
+                btnAnterior.style.display = numero > 1 ? 'block' : 'none';
+            }
+            
+            if (btnSiguiente) {
+                if (numero === this.totalPasos) {
+                    btnSiguiente.textContent = 'ABRIR LOCAL 🚀';
+                    btnSiguiente.onclick = () => this.abrirLocal();
+                } else {
+                    btnSiguiente.textContent = 'Continuar →';
+                    btnSiguiente.onclick = () => this.siguientePaso();
+                }
+            }
+            
+            // Renderizar paso
+            container.innerHTML = this.renderPaso(numero);
+            
+            // Cargar datos si existen
+            this.cargarDatosPaso(numero);
+        }
+        
+        renderPaso(numero) {
+            const pasos = {
+                1: this.renderPaso1(),
+                2: this.renderPaso2(),
+                3: this.renderPaso3(),
+                4: this.renderPaso4(),
+                5: this.renderPaso5(),
+                6: this.renderPaso6(),
+                7: this.renderPaso7()
+            };
+            return pasos[numero] || '';
+        }
+        
+        renderPaso1() {
+            return `
+                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); border: 2px solid rgba(102, 126, 234, 0.5); border-radius: 8px; padding: 20px;">
+                    <h3 style="color: #667eea; margin-top: 0; margin-bottom: 20px; font-size: 1.1rem;">📅 Paso 1: Crear Jornada</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 8px; font-size: 0.9rem;">Fecha</label>
+                            <input type="date" id="wizard-fecha-jornada" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: #fff; font-size: 0.9rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 8px; font-size: 0.9rem;">Tipo de Turno</label>
+                            <select id="wizard-tipo-turno" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: #fff; font-size: 0.9rem;">
+                                <option value="Noche">Noche</option>
+                                <option value="Día">Día</option>
+                                <option value="Especial">Especial</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 8px; font-size: 0.9rem;">Nombre de la Fiesta</label>
+                            <input type="text" id="wizard-nombre-fiesta" placeholder="Ej: Viernes de Éxitos" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: #fff; font-size: 0.9rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 8px; font-size: 0.9rem;">Horario Apertura</label>
+                            <input type="time" id="wizard-hora-apertura" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: #fff; font-size: 0.9rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 8px; font-size: 0.9rem;">Horario Cierre</label>
+                            <input type="time" id="wizard-hora-cierre" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: #fff; font-size: 0.9rem;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: #aaa; margin-bottom: 8px; font-size: 0.9rem;">DJs (opcional)</label>
+                            <input type="text" id="wizard-djs" placeholder="Ej: DJ Juan, DJ María" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: #fff; font-size: 0.9rem;">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        renderPaso2() {
+            return `
+                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); border: 2px solid rgba(102, 126, 234, 0.5); border-radius: 8px; padding: 20px;">
+                    <h3 style="color: #667eea; margin-top: 0; margin-bottom: 20px; font-size: 1.1rem;">👥 Paso 2: Planilla de Trabajadores</h3>
+                    <div id="wizard-planilla-container">
+                        <!-- Lista de trabajadores se cargará aquí -->
+                    </div>
+                    <button onclick="wizardApertura.mostrarModalAgregarTrabajador()" style="margin-top: 15px; padding: 10px 20px; background: rgba(76, 175, 80, 0.3); border: 2px solid rgba(76, 175, 80, 0.5); border-radius: 6px; color: #4caf50; cursor: pointer; font-weight: bold;">
+                        + Agregar Trabajador
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Continuaré con los otros pasos... por ahora esto es suficiente para empezar
+        renderPaso3() { return '<div>Paso 3</div>'; }
+        renderPaso4() { return '<div>Paso 4</div>'; }
+        renderPaso5() { return '<div>Paso 5</div>'; }
+        renderPaso6() { return '<div>Paso 6</div>'; }
+        renderPaso7() { return '<div>Paso 7</div>'; }
+        
+        cargarDatosPaso(numero) {
+            if (numero === 1 && this.datosJornada.jornada.id) {
+                const jornada = this.datosJornada.jornada;
+                const fechaInput = document.getElementById('wizard-fecha-jornada');
+                const tipoInput = document.getElementById('wizard-tipo-turno');
+                const nombreInput = document.getElementById('wizard-nombre-fiesta');
+                const horaAperturaInput = document.getElementById('wizard-hora-apertura');
+                const horaCierreInput = document.getElementById('wizard-hora-cierre');
+                const djsInput = document.getElementById('wizard-djs');
+                
+                if (fechaInput && jornada.fecha_jornada) fechaInput.value = jornada.fecha_jornada;
+                if (tipoInput && jornada.tipo_turno) tipoInput.value = jornada.tipo_turno;
+                if (nombreInput && jornada.nombre_fiesta) nombreInput.value = jornada.nombre_fiesta;
+                if (horaAperturaInput && jornada.horario_apertura_programado) {
+                    horaAperturaInput.value = jornada.horario_apertura_programado;
+                }
+                if (horaCierreInput && jornada.horario_cierre_programado) {
+                    horaCierreInput.value = jornada.horario_cierre_programado;
+                }
+                if (djsInput && jornada.djs) djsInput.value = jornada.djs;
+            }
+        }
+        
+        async siguientePaso() {
+            // Guardar datos del paso actual
+            await this.guardarPasoActual();
+            
+            // Validar paso actual
+            if (!this.validarPaso(this.pasoActual)) {
+                return;
+            }
+            
+            // Avanzar
+            if (this.pasoActual < this.totalPasos) {
+                this.mostrarPaso(this.pasoActual + 1);
+            }
+        }
+        
+        pasoAnterior() {
+            if (this.pasoActual > 1) {
+                this.mostrarPaso(this.pasoActual - 1);
+            }
+        }
+        
+        async guardarPasoActual() {
+            switch(this.pasoActual) {
+                case 1:
+                    await this.guardarPaso1();
+                    break;
+                case 2:
+                    // La planilla se guarda individualmente
+                    break;
+                // Otros casos...
+            }
+        }
+        
+        async guardarPaso1() {
+            const fecha = document.getElementById('wizard-fecha-jornada')?.value;
+            const tipoTurno = document.getElementById('wizard-tipo-turno')?.value;
+            const nombreFiesta = document.getElementById('wizard-nombre-fiesta')?.value;
+            const horaApertura = document.getElementById('wizard-hora-apertura')?.value;
+            const horaCierre = document.getElementById('wizard-hora-cierre')?.value;
+            const djs = document.getElementById('wizard-djs')?.value;
+            
+            if (!fecha || !nombreFiesta || !horaApertura || !horaCierre) {
+                alert('Por favor completa todos los campos obligatorios');
+                return false;
+            }
+            
+            try {
+                const response = await fetch('/admin/api/jornada/crear', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        fecha_jornada: fecha,
+                        tipo_turno: tipoTurno,
+                        nombre_fiesta: nombreFiesta,
+                        horario_apertura_programado: horaApertura,
+                        horario_cierre_programado: horaCierre,
+                        djs: djs || null
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    this.datosJornada.jornada_id = data.jornada_id;
+                    this.datosJornada.jornada = data.jornada;
+                    return true;
+                } else {
+                    alert('Error: ' + data.error);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error al guardar jornada:', error);
+                alert('Error al guardar jornada');
+                return false;
+            }
+        }
+        
+        validarPaso(numero) {
+            switch(numero) {
+                case 1:
+                    const fecha = document.getElementById('wizard-fecha-jornada')?.value;
+                    const nombreFiesta = document.getElementById('wizard-nombre-fiesta')?.value;
+                    if (!fecha || !nombreFiesta) {
+                        alert('Por favor completa todos los campos obligatorios');
+                        return false;
+                    }
+                    return true;
+                // Otros casos...
+                default:
+                    return true;
+            }
+        }
+        
+        async abrirLocal() {
+            if (!this.datosJornada.jornada_id) {
+                alert('Primero debes crear la jornada');
+                return;
+            }
+            
+            if (!confirm('¿Estás seguro de que quieres abrir el local? Una vez abierto, la jornada comenzará oficialmente.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/api/jornada/abrir-local', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        jornada_id: this.datosJornada.jornada_id
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error al abrir local:', error);
+                alert('Error al abrir local');
+            }
+        }
+    }
+    
+    // Inicializar wizard cuando no hay jornada abierta
+    let wizardApertura;
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if not jornada_abierta %}
+        wizardApertura = new WizardApertura();
+        {% endif %}
+    });
+    {% endif %}
+</script>
+</div>
+
+</div>
+{% endblock %}

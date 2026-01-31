@@ -1,0 +1,169 @@
+Quiero que construyas una "CÁPSULA DE TRANSACCIÓN GETNET" en Node.js.
+
+Contexto:
+
+- Estoy usando POS INTEGRADO de Getnet.
+- La app de prueba oficial de Getnet YA funciona en esta misma máquina: se conecta a COM3, envía Command 101 y recibe ResponseCode 0 "Aprobado", AuthorizationCode, Amount, etc.
+- La transacción con la máquina de Getnet SIEMPRE se hará localmente en este PC (la cápsula corre donde está enchufado el POS).
+
+Objetivo de la cápsula:
+
+- Exponer un micro-servicio HTTP súper simple que reciba un monto y hable con el POS.
+- La cápsula NO sabe nada de carrito, tickets, inventario, barra, ni Bimbaverso.
+- Sólo hace: monto → venta local con POS → respuesta JSON estándar.
+
+Arquitectura:
+
+- Node.js + Express.
+- Servidor escuchando en http://127.0.0.1:7777
+- Un endpoint principal: POST /pago
+- Opcional: GET /estado para debug.
+
+Request de POST /pago:
+
+{
+  "amount": 5000,
+  "currency": "CLP",
+  "metadata": {
+    "caja_codigo": "caja1",
+    "cajero": "TOTEM_AUTO_1",
+    "origen": "TOTEM"
+  }
+}
+
+Response de POST /pago (salida estándar):
+
+{
+  "ok": true/false,
+  "responseCode": 0,
+  "responseMessage": "Aprobado",
+  "authorizationCode": "250349",
+  "amount": 5000,
+  "cardBrand": "VI",
+  "cardType": "DB",
+  "last4Digits": 1690,
+  "terminalId": "20129179",
+  "commerceCode": 266665,
+  "raw": { ...respuesta completa del POS... }
+}
+
+Reglas:
+
+- ok = true si ResponseCode == 0 o "0".
+- ok = false en cualquier otro caso, o si hay error en la comunicación.
+- Siempre responder HTTP 200 con JSON (aunque ok=false), salvo errores de request mal formado.
+
+Integración con el SDK / proyecto de ejemplo Getnet:
+
+- En esta máquina ya tengo el proyecto de ejemplo de Getnet que funciona con el POS (COM3).
+- Usa la clase / módulo POSIntegrado (o similar) del SDK.
+- Quiero que:
+
+  1. Crees un archivo pos_adapter.js que ENVUELVA la lógica de venta del ejemplo oficial.
+  2. Dentro de pos_adapter.js haya una función:
+
+     async function realizarVentaGetnet(monto) -> Promise<RespuestaEstándar>
+
+  3. Esa función debe:
+     - Inicializar el POS si es necesario (reutilizar lo que hace la demo).
+     - Enviar el comando de venta (Command 101 u otro, según el ejemplo).
+     - Esperar la respuesta del POS.
+     - Tomar el JSON que entrega el ejemplo (similar al log que ya tengo) y mapearlo a:
+
+       {
+         ok,
+         responseCode,
+         responseMessage,
+         authorizationCode,
+         amount,
+         cardBrand,
+         cardType,
+         last4Digits,
+         terminalId,
+         commerceCode,
+         raw
+       }
+
+- NO inventes el protocolo serial tú: reusa DIRECTAMENTE la misma llamada que hace la app de prueba para vender (esa que genera un log como este):
+
+  RESPONSE: {
+    "JsonSerialized": {
+      "AccountingDate": "2025-12-18 00:25:02",
+      "Amount": 500,
+      "AuthorizationCode": "250349",
+      "CardBrand": "VI",
+      "CardType": "DB",
+      "CommerceCode": 266665,
+      "FunctionCode": 101,
+      "Last4Digits": 1690,
+      "PosMode": 1,
+      "RealDate": "2025-12-18 07:18:25",
+      "ResponseCode": 0,
+      "ResponseMessage": "Aprobado",
+      "SaleType": 0,
+      "SharesNumber": 0,
+      "TerminalId": "20129179"
+    },
+    "Sign": "..."
+  }
+
+- Usa exactamente esos campos para mapear la respuesta.
+
+Estructura de archivos que quiero:
+
+getnet-capsula/
+  package.json
+  server.js           // servidor Express, define POST /pago y GET /estado
+  pos_adapter.js      // envuelve la lógica de venta del proyecto de ejemplo Getnet
+  README.md           // cómo levantar y cómo probar
+
+Detalles de implementación:
+
+- GET /estado devuelve:
+
+  {
+    "status": "ok",
+    "posReady": true/false,
+    "lastPayment": { ...última respuesta estándar o null... }
+  }
+
+- server.js:
+  - Importa pos_adapter.
+  - POST /pago:
+    - valida amount.
+    - llama realizarVentaGetnet(amount).
+    - devuelve el JSON estándar.
+  - Maneja errores con try/catch y logs en consola.
+
+- README.md debe incluir:
+  - Cómo instalar: npm install
+  - Cómo levantar: npm start
+  - Ejemplo de prueba con curl:
+
+    curl -X POST http://127.0.0.1:7777/pago \\
+      -H "Content-Type: application/json" \\
+      -d '{"amount":500,"currency":"CLP"}'
+
+Objetivo final:
+
+- Bimbaverso (mi backend) sólo verá la cápsula como un servicio HTTP local.
+- Toda la lógica sucia de POS Integrado / COM3 / SDK oficial queda adentro de pos_adapter.js.
+- La transacción con la máquina de Getnet se hace siempre localmente, pero el resto del sistema la ve como una simple API REST.
+
+Entrega:
+
+- Genera TODO el código de:
+  - package.json
+  - server.js
+  - pos_adapter.js (con TODOs mínimos SOLO donde falte algo imposible sin ver el código del ejemplo, pero lo más completo posible)
+  - README.md
+
+
+
+
+
+
+
+
+
+

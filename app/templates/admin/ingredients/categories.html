@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Categorías de Ingredientes - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .categories-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-section h1 {
+        color: #00ff00;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+    }
+
+    .category-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .category-card h3 {
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .form-inline {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .form-inline input {
+        flex: 1;
+        padding: 10px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="categories-container">
+    <div class="header-section">
+        <h1>📂 Categorías de Ingredientes</h1>
+        <div class="form-inline">
+            <input type="text" id="categoryName" placeholder="Nombre de la categoría (ej: Destilados, Mixers, etc.)">
+            <input type="text" id="categoryDescription" placeholder="Descripción (opcional)">
+            <button onclick="createCategory()" class="btn btn-primary">➕ Crear Categoría</button>
+        </div>
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('ingredients.list_ingredients') }}" class="btn" style="background: #444; color: #e8e8e8;">
+                ← Volver a Ingredientes
+            </a>
+        </div>
+    </div>
+
+    {% if categorias %}
+        {% for categoria in categorias %}
+        <div class="category-card">
+            <h3>{{ categoria.name }}</h3>
+            {% if categoria.description %}
+            <p style="color: #aaa;">{{ categoria.description }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="category-card">
+            <p style="color: #888; text-align: center;">No hay categorías creadas. Crea una categoría para organizar los ingredientes.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function createCategory() {
+    const name = document.getElementById('categoryName').value.trim();
+    const description = document.getElementById('categoryDescription').value.trim();
+    
+    if (!name) {
+        showError('El nombre de la categoría es requerido');
+        return;
+    }
+    
+    showLoading('Creando categoría...');
+    
+    const formData = new FormData();
+    formData.append('name', name);
+    if (description) {
+        formData.append('description', description);
+    }
+    
+    fetch('{{ url_for("ingredients.create_category") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showSuccess('✅ ' + data.message);
+            document.getElementById('categoryName').value = '';
+            document.getElementById('categoryDescription').value = '';
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showError('❌ ' + (data.error || 'Error al crear categoría'));
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error:', error);
+        showError('❌ Error de conexión');
+    });
+}
+</script>
+{% endblock %}
+
+
+
+
+

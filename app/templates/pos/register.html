@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Caja - Seleccionar Caja{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Ocultar footer solo en registro de caja */
+    .footer-desarrollador,
+    .footer-bar {
+        display: none !important;
+    }
+    
+    .register-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 30px;
+        background: var(--card-bg, #1a1a2e);
+        border-radius: 12px;
+    }
+    
+    .register-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .register-btn {
+        padding: 30px;
+        background: var(--primary-color, #667eea);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        min-height: 90px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .register-btn .register-name {
+        font-weight: bold;
+    }
+    
+    .register-btn .cashier-name {
+        font-size: 0.85rem;
+        font-weight: normal;
+        opacity: 0.85;
+        color: rgba(255, 255, 255, 0.9);
+        margin-top: 4px;
+    }
+    
+    .register-btn:hover:not(.locked) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .register-btn.locked {
+        background: #444;
+        color: #999;
+        cursor: not-allowed;
+        opacity: 0.6;
+        position: relative;
+    }
+    
+    .register-btn.locked:hover {
+        background: #444;
+        opacity: 0.6;
+    }
+    
+    /* Si es tu propia caja bloqueada, se ve diferente (clicable) */
+    .register-btn.locked[data-is-locked-by-me="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        cursor: pointer;
+        opacity: 1;
+    }
+    
+    .register-btn.locked[data-is-locked-by-me="true"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .register-btn.locked::after {
+        content: '🔒';
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        font-size: 0.8rem;
+    }
+    
+    .register-btn.locked[data-is-locked-by-me="true"]::after {
+        content: '🔓';
+    }
+    
+    .register-btn.locked[data-blocked-by-sales="true"] {
+        background: #2a1a1a;
+        border: 2px solid #f5576c;
+        color: #f5576c;
+        cursor: not-allowed;
+    }
+    
+    .register-btn.locked[data-blocked-by-sales="true"]::after {
+        content: '🚫';
+        color: #f5576c;
+    }
+    
+    .register-btn.locked[data-blocked-by-sales="true"]::before {
+        content: attr(data-locked-by-text);
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.7rem;
+        color: #f5576c;
+        white-space: nowrap;
+    }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <h1>🎯 Selecciona tu Caja</h1>
+    <p style="text-align: center; color: #aaa; margin-bottom: 30px; font-size: 1rem;">
+        Elige la caja donde trabajarás hoy. ¡Vamos a hacer un excelente trabajo! 💪
+    </p>
+    
+    <form method="POST" action="{{ url_for('caja.register') }}" id="register-form">
+        <div class="register-list">
+            {% for reg in registers %}
+            {% set is_locked = reg.get('is_locked', False) %}
+            {% set locked_by_name = reg.get('locked_by_name', '') %}
+            {% set is_locked_by_me = reg.get('is_locked_by_me', False) %}
+            <button 
+                type="button"
+                data-register-id="{{ reg.id }}"
+                data-register-name="{{ reg.name }}"
+                data-is-locked="{{ 'true' if is_locked else 'false' }}"
+                data-locked-by="{{ reg.get('locked_by', '') if is_locked else '' }}"
+                data-locked-by-name="{{ locked_by_name if is_locked else '' }}"
+                data-is-locked-by-me="{{ 'true' if is_locked_by_me else 'false' }}"
+                data-blocked-by-sales="{{ 'true' if reg.get('blocked_by_sales') else 'false' }}"
+                data-locked-by-text="{% if reg.get('blocked_by_sales') %}Bloqueada por {{ reg.get('locked_by', '') }}{% endif %}"
+                class="register-btn {% if is_locked %}locked{% endif %}">
+                <span style="font-weight: bold;">{{ reg.name }}</span>
+                {% if reg.get('superadmin_only') %}
+                <span style="display: block; font-size: 0.75rem; color: #ff9800; margin-top: 5px; font-weight: normal;">
+                    🔐 SUPERADMIN (Cortesías/Pruebas)
+                </span>
+                {% endif %}
+                {% if reg.get('is_test') %}
+                <span style="display: block; font-size: 0.75rem; color: #00e676; margin-top: 5px; font-weight: normal;">
+                    🧪 TEST (Caja de Prueba)
+                </span>
+                {% endif %}
+                {% if is_locked and locked_by_name %}
+                <span style="font-size: 0.85rem; font-weight: normal; margin-top: 8px; opacity: 0.85;">
+                    👤 {{ locked_by_name }}
+                </span>
+                {% endif %}
+            </button>
+            {% endfor %}
+        </div>
+        <input type="hidden" name="register_id" id="register_id" value="">
+        <input type="hidden" name="register_name" id="register_name" value="">
+    </form>
+</div>
+
+
+<script>
+// Esperar a que el DOM esté completamente cargado
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Inicializando listeners de botones de caja...');
+    
+    const buttons = document.querySelectorAll('.register-btn');
+    console.log(`✅ Encontrados ${buttons.length} botones de caja`);
+    
+    buttons.forEach((btn, index) => {
+        const registerId = btn.dataset.registerId;
+        const registerName = btn.dataset.registerName;
+        const isLocked = btn.dataset.isLocked === 'true';
+        const lockedBy = btn.dataset.lockedBy;
+        const lockedByName = btn.dataset.lockedByName || '';
+        const isLockedByMe = btn.dataset.isLockedByMe === 'true';
+        
+        console.log(`Botón ${index + 1}: ${registerName}, locked: ${isLocked}, lockedByMe: ${isLockedByMe}, lockedBy: ${lockedBy}, lockedByName: ${lockedByName}`);
+        
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const blockedBySales = btn.dataset.blockedBySales === 'true';
+            console.log('🖱️ Click en caja:', registerName, 'isLocked:', isLocked, 'isLockedByMe:', isLockedByMe, 'blockedBySales:', blockedBySales);
+            
+            // Si está bloqueada por ventas de otro cajero, no permitir acceso
+            if (blockedBySales) {
+                const blockedByName = lockedByName || lockedBy || 'otro cajero';
+                alert(`🚫 Esta caja está bloqueada por ${blockedByName}. No puedes acceder a una caja con ventas de otro cajero por razones de seguridad.`);
+                return;
+            }
+            
+            if (isLocked) {
+                // Si es mi propia caja bloqueada, retomar directamente sin PIN
+                // (Ya estoy autenticado, no necesito verificar PIN de nuevo)
+                if (isLockedByMe) {
+                    console.log('✅ Caja bloqueada por mí, retomando directamente (sin PIN)...');
+                    document.getElementById('register_id').value = registerId;
+                    document.getElementById('register_name').value = registerName;
+                    document.getElementById('register-form').submit();
+                    return;
+                }
+                
+                // Si es de otro cajero, no permitir acceso
+                console.log('🚫 Caja bloqueada por otro cajero - acceso denegado');
+                const cashierName = lockedByName || lockedBy || 'otro cajero';
+                alert(`🔒 Esta caja está siendo usada por ${cashierName}.\n\nNo puedes acceder a una caja que está en uso por otro cajero.`);
+                return;
+            } else {
+                // Caja disponible, seleccionar directamente
+                console.log('✅ Caja disponible, seleccionando directamente...');
+                document.getElementById('register_id').value = registerId;
+                document.getElementById('register_name').value = registerName;
+                document.getElementById('register-form').submit();
+            }
+        });
+    });
+});
+</script>
+
+<!-- Incluir galleta de la fortuna -->
+{% include 'partials/fortune_cookie.html' %}
+{% endblock %}
+

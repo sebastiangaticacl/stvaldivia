@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Configuración de Fraude - Admin{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>Configuración de Umbrales de Fraude</h2>
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('routes.admin_dashboard') }}" class="btn btn-primary">🏠 Dashboard Principal</a>
+        <a href="{{ url_for('routes.admin_logs') }}" class="btn btn-primary">📋 Logs de Entregas</a>
+        <a href="{{ url_for('routes.fraud_history') }}" class="btn btn-primary">Historial de Fraudes</a>
+        <a href="{{ url_for('auth.logout_admin') }}" class="btn btn-danger">Cerrar Sesión</a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+    <div style="background-color: #222; padding: 20px; border-radius: 8px; text-align: center;">
+        <h3 style="color: #00ff00; margin: 0 0 10px 0;">Total Intentos</h3>
+        <p style="font-size: 2rem; font-weight: bold; margin: 0; color: #e8e8e8;">{{ total_fraud_attempts }}</p>
+    </div>
+    <div style="background-color: #222; padding: 20px; border-radius: 8px; text-align: center;">
+        <h3 style="color: #00ff00; margin: 0 0 10px 0;">Autorizados</h3>
+        <p style="font-size: 2rem; font-weight: bold; margin: 0; color: #00ff00;">{{ authorized_count }}</p>
+    </div>
+    <div style="background-color: #222; padding: 20px; border-radius: 8px; text-align: center;">
+        <h3 style="color: #00ff00; margin: 0 0 10px 0;">No Autorizados</h3>
+        <p style="font-size: 2rem; font-weight: bold; margin: 0; color: #ff0000;">{{ unauthorized_count }}</p>
+    </div>
+</div>
+
+<div style="background-color: #222; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+    <h3 style="color: #00ff00; margin-top: 0;">Umbrales Actuales</h3>
+    
+    <form method="POST" action="{{ url_for('routes.fraud_config') }}">
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; color: #e8e8e8; font-weight: bold;">
+                Horas Máximas para Ticket Antiguo:
+            </label>
+            <input type="number" 
+                   name="max_hours_old_ticket" 
+                   value="{{ config.max_hours_old_ticket }}" 
+                   min="1" 
+                   max="720"
+                   required
+                   style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background-color: #18181a; color: #e8e8e8; font-size: 1.1rem;">
+            <p style="color: #aaa; font-size: 0.9rem; margin-top: 5px;">
+                Tickets más antiguos que este tiempo requerirán autorización administrativa.
+            </p>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+            <label style="display: block; margin-bottom: 8px; color: #e8e8e8; font-weight: bold;">
+                Máximo de Intentos de Entrega:
+            </label>
+            <input type="number" 
+                   name="max_delivery_attempts" 
+                   value="{{ config.max_delivery_attempts }}" 
+                   min="1" 
+                   max="20"
+                   required
+                   style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background-color: #18181a; color: #e8e8e8; font-size: 1.1rem;">
+            <p style="color: #aaa; font-size: 0.9rem; margin-top: 5px;">
+                Si un ticket se intenta entregar más veces que este número, requerirá autorización.
+            </p>
+        </div>
+        
+        <button type="submit" class="btn btn-success" style="width: 100%; padding: 15px; font-size: 1.2rem;">
+            Guardar Configuración
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+
+
+

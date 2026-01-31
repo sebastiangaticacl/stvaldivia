@@ -1,0 +1,895 @@
+{% extends "base.html" %}
+
+{% block title %}Compras Ecommerce - Panel de Control{% endblock %}
+
+{% block content %}
+<style>
+    .compras-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 2rem;
+        box-sizing: border-box;
+    }
+    
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        color: #fff;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+    
+    .stat-card h3 {
+        color: #aaa;
+        font-size: 0.9rem;
+        margin: 0 0 0.5rem 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-card .value {
+        color: #fff;
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .filters-section {
+        width: 100%;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-sizing: border-box;
+    }
+    
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-group label {
+        color: #aaa;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 0.75rem;
+        color: #fff;
+        font-size: 0.9rem;
+    }
+    
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .eventos-stats {
+        width: 100%;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-sizing: border-box;
+    }
+    
+    .eventos-stats h2 {
+        color: #fff;
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .evento-stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .evento-stat-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .evento-name {
+        color: #fff;
+        font-weight: 600;
+        flex: 1;
+    }
+    
+    .evento-cupos {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .cupos-bar {
+        width: 200px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .cupos-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.3s ease;
+    }
+    
+    .cupos-text {
+        color: #aaa;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+    
+    .compras-table {
+        width: 100%;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+    
+    .table-header {
+        background: rgba(15, 23, 42, 0.8);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .table-header h2 {
+        color: #fff;
+        font-size: 1.3rem;
+        margin: 0;
+    }
+    
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        box-sizing: border-box;
+    }
+    
+    table {
+        width: 100%;
+        max-width: 100%;
+        border-collapse: collapse;
+        table-layout: auto;
+    }
+    
+    thead {
+        background: rgba(15, 23, 42, 0.5);
+    }
+    
+    th {
+        color: #aaa;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    td {
+        color: #fff;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge-success {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+    }
+    
+    .badge-pending {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+    }
+    
+    .btn-link {
+        color: #667eea;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+    
+    .btn-link:hover {
+        text-decoration: underline;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #aaa;
+    }
+    
+    .empty-state p {
+        font-size: 1.1rem;
+        margin: 0;
+    }
+    
+    /* Estilos para selector de estado */
+    .estado-selector {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 0.5rem;
+        color: #fff;
+        font-size: 0.85rem;
+        cursor: pointer;
+        min-width: 120px;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    
+    .estado-selector:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Color para estado Recibido (amarillo/naranja) */
+    .estado-selector.estado-recibido {
+        background: rgba(255, 193, 7, 0.2);
+        border-color: rgba(255, 193, 7, 0.4);
+        color: #ffc107;
+    }
+    
+    .estado-selector.estado-recibido:hover {
+        background: rgba(255, 193, 7, 0.3);
+        border-color: rgba(255, 193, 7, 0.6);
+    }
+    
+    /* Color para estado Pagado (azul) */
+    .estado-selector.estado-pagado {
+        background: rgba(33, 150, 243, 0.2);
+        border-color: rgba(33, 150, 243, 0.4);
+        color: #2196f3;
+    }
+    
+    .estado-selector.estado-pagado:hover {
+        background: rgba(33, 150, 243, 0.3);
+        border-color: rgba(33, 150, 243, 0.6);
+    }
+    
+    /* Color para estado Entregado (verde) */
+    .estado-selector.estado-entregado {
+        background: rgba(76, 175, 80, 0.2);
+        border-color: rgba(76, 175, 80, 0.4);
+        color: #4caf50;
+    }
+    
+    .estado-selector.estado-entregado:hover {
+        background: rgba(76, 175, 80, 0.3);
+        border-color: rgba(76, 175, 80, 0.6);
+    }
+    
+    /* Estilos para las opciones del selector */
+    .estado-selector option {
+        background: #1e293b;
+        color: #fff;
+        padding: 0.5rem;
+    }
+    
+    .estado-selector option[value="recibido"] {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+    
+    .estado-selector option[value="pagado"] {
+        background: rgba(33, 150, 243, 0.1);
+        color: #2196f3;
+    }
+    
+    .estado-selector option[value="entregado"] {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4caf50;
+    }
+    
+    /* Estilos para acciones masivas */
+    .acciones-masivas {
+        width: 100%;
+        animation: slideDown 0.3s ease;
+        box-sizing: border-box;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .acciones-masivas button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    /* Estilos para checkboxes */
+    .checkbox-pedido,
+    #seleccionar-todos {
+        accent-color: #667eea;
+    }
+    
+    tr:hover .checkbox-pedido {
+        opacity: 1;
+    }
+</style>
+
+<div class="compras-container">
+    <div class="page-header">
+        <h1>🛒 Compras Ecommerce</h1>
+        <p style="color: #aaa;">Gestión de compradores y ventas online</p>
+    </div>
+    
+    <!-- Estadísticas Generales -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Compras</h3>
+            <p class="value">{{ total_compras }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Recaudado</h3>
+            <p class="value">${{ "{:,.0f}".format(total_recaudado) }}</p>
+        </div>
+    </div>
+    
+    <!-- Estadísticas de Cupos por Evento -->
+    {% if eventos_stats %}
+    <div class="eventos-stats">
+        <h2>📊 Estado de Cupos por Evento</h2>
+        {% for evento_nombre, stats in eventos_stats.items() %}
+        <div class="evento-stat-item">
+            <div class="evento-name">{{ evento_nombre }}</div>
+            <div class="evento-cupos">
+                <div class="cupos-bar">
+                    <div class="cupos-bar-fill" style="width: {{ stats.porcentaje }}%"></div>
+                </div>
+                <div class="cupos-text">
+                    <strong>{{ stats.vendidos }}</strong> / {{ stats.total }} vendidos
+                    ({{ stats.disponibles }} disponibles)
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Filtros -->
+    <div class="filters-section">
+        <form method="GET" action="{{ url_for('admin_ecommerce.list_compras') }}">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label>Buscar</label>
+                    <input type="text" name="search" value="{{ filtro_search }}" placeholder="Nombre, email o ticket">
+                </div>
+                <div class="filter-group">
+                    <label>Evento</label>
+                    <select name="evento">
+                        <option value="">Todos los eventos</option>
+                        {% for evento in eventos_list %}
+                        <option value="{{ evento }}" {% if filtro_evento == evento %}selected{% endif %}>
+                            {{ evento }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Estado</label>
+                    <select name="estado">
+                        <option value="recibido" {% if filtro_estado == 'recibido' %}selected{% endif %}>Recibido</option>
+                        <option value="pagado" {% if filtro_estado == 'pagado' %}selected{% endif %}>Pagado</option>
+                        <option value="entregado" {% if filtro_estado == 'entregado' %}selected{% endif %}>Entregado</option>
+                        <option value="" {% if not filtro_estado %}selected{% endif %}>Todos</option>
+                    </select>
+                </div>
+                <div class="filter-group" style="justify-content: flex-end; flex-direction: row; gap: 0.5rem;">
+                    <label>&nbsp;</label>
+                    <button type="submit" style="background: #667eea; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">
+                        Filtrar
+                    </button>
+                    <a href="{{ url_for('admin_ecommerce.export_compras', evento=filtro_evento, estado=filtro_estado, search=filtro_search) }}" 
+                       style="background: #10b981; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; margin-left: 0.5rem;">
+                        📥 Exportar CSV
+                    </a>
+                    <button id="btn-cambiar-todos-recibido" 
+                            type="button"
+                            style="background: #f59e0b; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; margin-left: 0.5rem; display: inline-block;">
+                        🔄 Cambiar Todos a Recibido
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Panel de Acciones Masivas -->
+    <div id="acciones-masivas" class="acciones-masivas" style="display: none; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <span style="color: #fff; font-weight: 600;">
+                <span id="contador-seleccionados">0</span> pedido(s) seleccionado(s)
+            </span>
+            <select id="estado-masivo" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 0.75rem; color: #fff; font-size: 0.9rem; min-width: 150px;">
+                <option value="">Seleccionar estado...</option>
+                <option value="recibido">Recibido</option>
+                <option value="pagado">Pagado</option>
+                <option value="entregado">Entregado</option>
+            </select>
+            <button id="aplicar-estado-masivo" style="background: #667eea; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">
+                Aplicar Estado
+            </button>
+            <button id="deseleccionar-todos" style="background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                Deseleccionar Todos
+            </button>
+        </div>
+    </div>
+    
+    <!-- Tabla de Compras -->
+    <div class="compras-table">
+        <div class="table-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>Lista de Compradores</h2>
+            <a href="{{ url_for('admin_ecommerce.export_compras', evento=filtro_evento, estado=filtro_estado, search=filtro_search) }}" 
+               style="background: #10b981; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 0.9rem;">
+                📥 Exportar CSV
+            </a>
+        </div>
+        <div class="table-container">
+            {% if compras %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="seleccionar-todos" style="cursor: pointer; width: 18px; height: 18px;">
+                        </th>
+                        <th>Ticket</th>
+                        <th>Comprador</th>
+                        <th>Email</th>
+                        <th>Evento</th>
+                        <th>Fecha Evento</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unit.</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Fecha Pago</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for compra in compras %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="checkbox-pedido" data-entrada-id="{{ compra.id }}" style="cursor: pointer; width: 18px; height: 18px;">
+                        </td>
+                        <td><code style="color: #667eea;">{{ compra.ticket_code }}</code></td>
+                        <td>{{ compra.comprador_nombre }}</td>
+                        <td>
+                            {{ compra.comprador_email }}
+                            {% if hasattr(compra, 'email_resumen_enviado') %}
+                                {% if compra.email_resumen_enviado %}
+                                    <span style="color: #10b981; font-size: 0.85rem; margin-left: 0.5rem;" title="Email enviado el {{ compra.email_resumen_enviado_at.strftime('%d/%m/%Y %H:%M') if compra.email_resumen_enviado_at else 'N/A' }}">
+                                        ✅ Enviado
+                                    </span>
+                                {% else %}
+                                    <span style="color: #f59e0b; font-size: 0.85rem; margin-left: 0.5rem;" title="Email no enviado">
+                                        ⏳ Pendiente
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ compra.evento_nombre }}</td>
+                        <td>{{ compra.evento_fecha.strftime('%d/%m/%Y %H:%M') if compra.evento_fecha else 'N/A' }}</td>
+                        <td>{{ compra.cantidad }}</td>
+                        <td>${{ "{:,.0f}".format(compra.precio_unitario) }}</td>
+                        <td><strong>${{ "{:,.0f}".format(compra.cantidad * compra.precio_unitario) }}</strong></td>
+                        <td>
+                            <select class="estado-selector estado-{{ compra.estado_pago }}" 
+                                    data-entrada-id="{{ compra.id }}"
+                                    data-ticket-code="{{ compra.ticket_code }}"
+                                    data-estado-actual="{{ compra.estado_pago }}">
+                                <option value="recibido" {% if compra.estado_pago == 'recibido' %}selected{% endif %}>Recibido</option>
+                                <option value="pagado" {% if compra.estado_pago == 'pagado' %}selected{% endif %}>Pagado</option>
+                                <option value="entregado" {% if compra.estado_pago == 'entregado' %}selected{% endif %}>Entregado</option>
+                            </select>
+                        </td>
+                        <td>{{ compra.paid_at.strftime('%d/%m/%Y %H:%M') if compra.paid_at else 'N/A' }}</td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <a href="{{ url_for('ecommerce.view_ticket', ticket_code=compra.ticket_code) }}" 
+                                   class="btn-link" target="_blank">
+                                    Ver Ticket
+                                </a>
+                                <a href="{{ url_for('admin_ecommerce.preview_resumen_compra', entrada_id=compra.id) }}" 
+                                   target="_blank"
+                                   class="btn-preview-email"
+                                   data-entrada-id="{{ compra.id }}"
+                                   style="background: #10b981; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block;">
+                                    👁️ Ver/Enviar Resumen
+                                </a>
+                                <button class="btn-enviar-email" 
+                                        data-entrada-id="{{ compra.id }}"
+                                        data-email="{{ compra.comprador_email }}"
+                                        style="background: #667eea; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;"
+                                        title="Enviar email de resumen a {{ compra.comprador_email }}">
+                                    📧 Enviar Mail
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>No se encontraron compras con los filtros seleccionados</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const estadoSelectors = document.querySelectorAll('.estado-selector');
+    const checkboxPedidos = document.querySelectorAll('.checkbox-pedido');
+    const seleccionarTodos = document.getElementById('seleccionar-todos');
+    const accionesMasivas = document.getElementById('acciones-masivas');
+    const contadorSeleccionados = document.getElementById('contador-seleccionados');
+    const estadoMasivo = document.getElementById('estado-masivo');
+    const aplicarEstadoMasivo = document.getElementById('aplicar-estado-masivo');
+    const deseleccionarTodos = document.getElementById('deseleccionar-todos');
+    
+    // Función para actualizar el contador y mostrar/ocultar el panel
+    function actualizarContador() {
+        const seleccionados = document.querySelectorAll('.checkbox-pedido:checked');
+        const cantidad = seleccionados.length;
+        contadorSeleccionados.textContent = cantidad;
+        
+        if (cantidad > 0) {
+            accionesMasivas.style.display = 'block';
+        } else {
+            accionesMasivas.style.display = 'none';
+            estadoMasivo.value = '';
+        }
+        
+        // Actualizar el estado del checkbox "Seleccionar todos"
+        if (seleccionarTodos) {
+            seleccionarTodos.checked = cantidad === checkboxPedidos.length && cantidad > 0;
+            seleccionarTodos.indeterminate = cantidad > 0 && cantidad < checkboxPedidos.length;
+        }
+    }
+    
+    // Función para actualizar el color del selector según el estado
+    function actualizarColorSelector(selector, estado) {
+        // Remover todas las clases de estado
+        selector.classList.remove('estado-recibido', 'estado-pagado', 'estado-entregado');
+        // Agregar la clase correspondiente al nuevo estado
+        selector.classList.add('estado-' + estado);
+        // Actualizar el atributo data-estado-actual
+        selector.dataset.estadoActual = estado;
+    }
+    
+    // Manejar selección/deselección de todos
+    if (seleccionarTodos) {
+        seleccionarTodos.addEventListener('change', function() {
+            checkboxPedidos.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            actualizarContador();
+        });
+    }
+    
+    // Manejar selección individual
+    checkboxPedidos.forEach(checkbox => {
+        checkbox.addEventListener('change', actualizarContador);
+    });
+    
+    // Manejar deseleccionar todos
+    if (deseleccionarTodos) {
+        deseleccionarTodos.addEventListener('click', function() {
+            checkboxPedidos.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            if (seleccionarTodos) {
+                seleccionarTodos.checked = false;
+                seleccionarTodos.indeterminate = false;
+            }
+            actualizarContador();
+        });
+    }
+    
+    // Manejar aplicación de estado masivo
+    if (aplicarEstadoMasivo) {
+        aplicarEstadoMasivo.addEventListener('click', function() {
+            const nuevoEstado = estadoMasivo.value;
+            
+            if (!nuevoEstado) {
+                alert('Por favor selecciona un estado');
+                return;
+            }
+            
+            const seleccionados = document.querySelectorAll('.checkbox-pedido:checked');
+            if (seleccionados.length === 0) {
+                alert('Por favor selecciona al menos un pedido');
+                return;
+            }
+            
+            const entradaIds = Array.from(seleccionados).map(cb => parseInt(cb.dataset.entradaId));
+            
+            // Confirmar acción
+            if (!confirm(`¿Estás seguro de cambiar el estado de ${entradaIds.length} pedido(s) a "${nuevoEstado}"?`)) {
+                return;
+            }
+            
+            // Deshabilitar botón mientras se procesa
+            this.disabled = true;
+            this.textContent = 'Procesando...';
+            const estiloOriginal = this.style.opacity;
+            this.style.opacity = '0.7';
+            
+            // Hacer la petición AJAX
+            fetch('/admin/ecommerce/compras/cambiar-estado-masivo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    entrada_ids: entradaIds,
+                    estado: nuevoEstado
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar los selectores de estado de los pedidos actualizados
+                    seleccionados.forEach(checkbox => {
+                        const entradaId = checkbox.dataset.entradaId;
+                        const selector = document.querySelector(`.estado-selector[data-entrada-id="${entradaId}"]`);
+                        if (selector) {
+                            selector.value = nuevoEstado;
+                            actualizarColorSelector(selector, nuevoEstado);
+                            selector.dataset.estadoActual = nuevoEstado;
+                        }
+                        checkbox.checked = false;
+                    });
+                    
+                    // Deseleccionar todos
+                    if (seleccionarTodos) {
+                        seleccionarTodos.checked = false;
+                        seleccionarTodos.indeterminate = false;
+                    }
+                    
+                    actualizarContador();
+                    estadoMasivo.value = '';
+                    
+                    alert(`✅ ${data.message}`);
+                    
+                    // Opcional: recargar la página después de un breve delay
+                    // setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudieron cambiar los estados'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar los estados. Por favor intenta nuevamente.');
+            })
+            .finally(() => {
+                // Rehabilitar botón
+                this.disabled = false;
+                this.textContent = 'Aplicar Estado';
+                this.style.opacity = estiloOriginal || '1';
+            });
+        });
+    }
+    
+    estadoSelectors.forEach(selector => {
+        // Inicializar el color según el estado actual
+        const estadoActual = selector.dataset.estadoActual || selector.value;
+        actualizarColorSelector(selector, estadoActual);
+        
+        selector.addEventListener('change', function() {
+            const entradaId = this.dataset.entradaId;
+            const ticketCode = this.dataset.ticketCode;
+            const nuevoEstado = this.value;
+            const estadoAnterior = this.dataset.estadoActual || this.value;
+            
+            // Actualizar el color inmediatamente para feedback visual
+            actualizarColorSelector(this, nuevoEstado);
+            
+            // Deshabilitar el selector mientras se procesa
+            this.disabled = true;
+            const estiloOriginal = this.style.opacity;
+            this.style.opacity = '0.7';
+            
+            // Hacer la petición AJAX
+            fetch(`/admin/ecommerce/compras/${entradaId}/cambiar-estado`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    estado: nuevoEstado
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar el estado actual
+                    this.dataset.estadoActual = nuevoEstado;
+                    
+                    // Mostrar mensaje de éxito (opcional, puedes usar un toast o notificación)
+                    console.log(`Estado del pedido ${ticketCode} cambiado a ${nuevoEstado}`);
+                    
+                    // Opcional: recargar la página después de un breve delay
+                    // setTimeout(() => location.reload(), 500);
+                } else {
+                    // Revertir al estado anterior si falla
+                    this.value = estadoAnterior;
+                    actualizarColorSelector(this, estadoAnterior);
+                    alert('Error: ' + (data.error || 'No se pudo cambiar el estado'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revertir al estado anterior
+                this.value = estadoAnterior;
+                actualizarColorSelector(this, estadoAnterior);
+                alert('Error al cambiar el estado. Por favor intenta nuevamente.');
+            })
+            .finally(() => {
+                // Rehabilitar el selector
+                this.disabled = false;
+                this.style.opacity = estiloOriginal || '1';
+            });
+        });
+    });
+    
+    // Botón para cambiar todos a recibido
+    const btnCambiarTodos = document.getElementById('btn-cambiar-todos-recibido');
+    if (btnCambiarTodos) {
+        btnCambiarTodos.addEventListener('click', function() {
+            if (!confirm('¿Estás seguro de cambiar TODAS las compras a estado "Recibido"?\n\nEsto afectará a todas las compras en la base de datos.')) {
+                return;
+            }
+            
+            this.disabled = true;
+            const textoOriginal = this.textContent;
+            this.textContent = 'Procesando...';
+            
+            fetch('/admin/ecommerce/compras/cambiar-todos-a-recibido', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ ${data.message}\n\nTotal: ${data.total} compras\nActualizadas: ${data.actualizados}`);
+                    // Recargar la página para ver los cambios
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudieron cambiar los estados'));
+                    this.disabled = false;
+                    this.textContent = textoOriginal;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar estados. Por favor intenta nuevamente.');
+                this.disabled = false;
+                this.textContent = textoOriginal;
+            });
+        });
+    }
+    
+    // Botones para enviar email directamente
+    const btnEnviarEmails = document.querySelectorAll('.btn-enviar-email');
+    btnEnviarEmails.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const entradaId = this.getAttribute('data-entrada-id');
+            const email = this.getAttribute('data-email');
+            
+            if (!entradaId) {
+                alert('Error: No se pudo identificar la compra');
+                return;
+            }
+            
+            if (!confirm(`¿Enviar email de resumen a ${email}?`)) {
+                return;
+            }
+            
+            this.disabled = true;
+            const textoOriginal = this.textContent;
+            this.textContent = 'Enviando...';
+            
+            // Obtener token CSRF si existe
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            
+            fetch(`/admin/ecommerce/compras/${entradaId}/enviar-resumen`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(csrfToken && { 'X-CSRFToken': csrfToken })
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.textContent = '✅ Enviado';
+                    this.style.background = '#10b981';
+                    setTimeout(() => {
+                        this.textContent = textoOriginal;
+                        this.style.background = '#667eea';
+                        this.disabled = false;
+                    }, 2000);
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo enviar el email'));
+                    this.disabled = false;
+                    this.textContent = textoOriginal;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al enviar email. Por favor intenta nuevamente.');
+                this.disabled = false;
+                this.textContent = textoOriginal;
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+
+
+

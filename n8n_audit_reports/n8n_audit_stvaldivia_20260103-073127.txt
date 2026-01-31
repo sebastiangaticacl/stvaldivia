@@ -1,0 +1,1082 @@
+
+================================================================================
+== 0) Estado servicio + env visibles (redactados)
+================================================================================
+active
+service: active
+Environment=PATH=/var/www/stvaldivia/venv/bin AGENT_API_KEY=<redacted> FLASK_ENV=production DATABASE_URL=postgresql://stvaldivia_user:fvt37Kf3LZtbZ0YCIRO6JGMA4DVHAO@127.0.0.1:5432/stvaldivia
+
+================================================================================
+== 1) Buscar archivos relacionados a n8n y rutas admin
+================================================================================
+-- candidatos n8n_* --
+./docs/CONFIGURAR_N8N.md
+./app/helpers/n8n_client.py
+./app/routes.py
+./app/routes/n8n_routes.py
+./app/routes/__pycache__/n8n_routes.cpython-310.pyc
+./app/blueprints/kiosk/routes.py
+./app/blueprints/bartender_turnos/routes.py
+./app/blueprints/admin/routes.py
+./app/blueprints/equipo/routes.py
+./app/blueprints/ecommerce/routes.py
+./app/blueprints/pos/routes.py
+./app/blueprints/guardarropia/routes.py
+
+-- grep endpoints admin/api/n8n --
+./app/templates/admin/panel_control.html:1562:                                    fetch('/admin/api/n8n/config')
+./app/templates/admin/panel_control.html:1624:                                fetch('/admin/api/n8n/config', {
+./app/templates/admin/panel_control.html:1682:                                fetch('/admin/api/n8n/test', {
+./app/routes.py:2712:@bp.route('/admin/api/n8n/config', methods=['GET'])
+./app/routes.py:2749:@bp.route('/admin/api/n8n/config', methods=['POST'])
+./app/routes.py:2818:@bp.route('/admin/api/n8n/test', methods=['POST'])
+
+================================================================================
+== 2) Mostrar código clave (si existe) — redacción aplicada
+================================================================================
+
+--- FILE: ./app/helpers/n8n_client.py ---
+"""
+Cliente para enviar eventos a n8n
+Permite que la aplicación envíe eventos a n8n cuando ocurren acciones específicas
+"""
+import requests
+import logging
+from datetime import datetime
+from typing import Optional, Dict, Any
+from flask import current_app
+
+logger = logging.getLogger(__name__)
+
+
+def send_to_n8n(event_type: str, data: Dict[str, Any], workflow_id: Optional[str] = None) -> bool:
+    """
+    Envía un evento a n8n
+    
+    Args:
+        event_type: Tipo de evento (ej: 'delivery_created', 'inventory_updated', 'shift_closed')
+        data: Datos del evento
+        workflow_id: ID del workflow específico (opcional)
+        
+    Returns:
+        bool: True si el evento se envió correctamente, False en caso contrario
+    """
+    webhook_url = current_app.config.get('N8N_WEBHOOK_URL')
+    
+    if not webhook_url:
+        logger.debug("N8N_WEBHOOK_URL no configurada, no se enviará evento a n8n")
+        return False
+    
+    # Si hay workflow_id, agregarlo a la URL
+    if workflow_id:
+        # Si la URL termina con /, no agregar otro /
+        if webhook_url.endswith('/'):
+            webhook_url = f"{webhook_url}{workflow_id}"
+        else:
+            webhook_url = f"{webhook_url}/{workflow_id}"
+    
+    payload = {
+        'event_type': event_type,
+        'timestamp': datetime.utcnow().isoformat(),
+        'data': data
+    }
+    
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    
+    # Agregar autenticación si está configurada (leer desde SystemConfig primero)
+    try:
+        from app.models.system_config_models import SystemConfig
+        secret = SystemConfig.get('n8n_webhook_secret') or current_app.config.get('N8N_WEBHOOK_SECRET')
+        api_key = SystemConfig.get('n8n_api_key') or current_app.config.get('N8N_API_KEY')
+    except:
+        secret = current_app.config.get('N8N_WEBHOOK_SECRET')
+        api_key = current_app.config.get('N8N_API_KEY')
+    
+    if secret:
+        headers['X-Webhook-Secret'] = secret
+    
+    if api_key:
+        headers['X-API-Key'] = api_key
+    
+    try:
+        response = requests.post(
+            webhook_url,
+            json=payload,
+            headers=headers,
+            timeout=5
+        )
+        response.raise_for_status()
+        logger.info(f"Evento enviado a n8n: {event_type}")
+        return True
+    except requests.exceptions.Timeout:
+        logger.warning(f"Timeout enviando evento a n8n: {event_type}")
+        return False
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error enviando evento a n8n: {event_type}, error: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Error inesperado enviando evento a n8n: {event_type}, error: {e}")
+        return False
+
+
+def send_delivery_created(delivery_id: int, item_name: str, quantity: int, bartender: str, barra: str):
+    """
+    Envía evento cuando se crea una entrega
+    
+    Args:
+        delivery_id: ID de la entrega
+        item_name: Nombre del item
+        quantity: Cantidad
+        bartender: Nombre del bartender
+        barra: Nombre de la barra
+    """
+    return send_to_n8n('delivery_created', {
+        'delivery_id': delivery_id,
+        'item_name': item_name,
+        'quantity': quantity,
+        'bartender': bartender,
+        'barra': barra
+    })
+
+
+def send_inventory_updated(ingredient_id: int, ingredient_name: str, quantity: float, location: str):
+    """
+    Envía evento cuando se actualiza el inventario
+    
+    Args:
+        ingredient_id: ID del ingrediente
+        ingredient_name: Nombre del ingrediente
+        quantity: Nueva cantidad
+        location: Ubicación
+    """
+    return send_to_n8n('inventory_updated', {
+        'ingredient_id': ingredient_id,
+        'ingredient_name': ingredient_name,
+        'quantity': quantity,
+        'location': location
+    })
+
+
+def send_shift_closed(shift_date: str, total_sales: float, total_deliveries: int):
+    """
+    Envía evento cuando se cierra un turno
+    
+    Args:
+        shift_date: Fecha del turno
+        total_sales: Total de ventas
+        total_deliveries: Total de entregas
+    """
+    return send_to_n8n('shift_closed', {
+        'shift_date': shift_date,
+        'total_sales': total_sales,
+        'total_deliveries': total_deliveries
+    })
+
+
+def send_sale_created(sale_id: str, amount: float, payment_method: str, register_id: int):
+    """
+    Envía evento cuando se crea una venta
+    
+    Args:
+        sale_id: ID de la venta
+        amount: Monto de la venta
+        payment_method: Método de pago
+        register_id: ID de la caja
+    """
+    return send_to_n8n('sale_created', {
+        'sale_id': sale_id,
+        'amount': amount,
+        'payment_method': payment_method,
+        'register_id': register_id
+    })
+
+
+def send_custom_event(event_type: str, data: Dict[str, Any], workflow_id: Optional[str] = None):
+    """
+    Envía un evento personalizado a n8n
+    
+    Args:
+        event_type: Tipo de evento personalizado
+        data: Datos del evento
+        workflow_id: ID del workflow específico (opcional)
+    """
+    return send_to_n8n(event_type, data, workflow_id)
+
+
+--- FILE: ./app/routes/n8n_routes.py ---
+"""
+Rutas para integración con n8n
+Endpoints para recibir webhooks de n8n y enviar eventos a n8n
+"""
+from flask import Blueprint, request, jsonify, current_app
+import hmac
+import hashlib
+import logging
+from datetime import datetime
+from app.infrastructure.rate_limiter.decorators import rate_limit
+from app.helpers.logger import get_logger
+
+logger = get_logger(__name__)
+
+n8n_bp = Blueprint('n8n', __name__, url_prefix='/api/n8n')
+
+
+def verify_n8n_signature(payload, signature, secret):
+    """
+    Valida la firma del webhook de n8n usando HMAC SHA256.
+    
+    Args:
+        payload: El cuerpo del request en bytes o string
+        signature: La firma recibida en el header
+        secret: El secreto compartido configurado
+        
+    Returns:
+        bool: True si la firma es válida
+    """
+    try:
+        if not secret:
+            # Si no hay secret configurado, permitir (para desarrollo)
+            return True
+        
+        if isinstance(payload, str):
+            payload = payload.encode('utf-8')
+        
+        expected_signature = hmac.new(
+            secret.encode('utf-8'),
+            payload,
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Comparar firmas de forma segura
+        return hmac.compare_digest(f'sha256={expected_signature}', signature)
+    except Exception as e:
+        logger.error(f"Error validando firma n8n: {e}")
+        return False
+
+
+@n8n_bp.route('/webhook', methods=['POST'])
+@rate_limit(max_requests=60, per_seconds=60)
+def n8n_webhook():
+    """
+    Endpoint para recibir webhooks de n8n
+    
+    Headers esperados:
+    - X-n8n-Signature: (opcional) Firma para validar el webhook
+    - X-API-Key: (opcional) API Key para autenticación
+    
+    Body: JSON con los datos que n8n envía
+    
+    Ejemplo de payload:
+    {
+        "action": "create_delivery",
+        "data": {
+            "item_name": "Cerveza Artesanal",
+            "quantity": 2,
+            "bartender": "Juan",
+            "barra": "barra_principal"
+        }
+    }
+    """
+    try:
+        # Obtener datos del request
+        data = request.get_json()
+        
+        if not data:
+            logger.warning("Webhook n8n recibido sin datos")
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        # Validar autenticación por API Key si está configurada (leer desde SystemConfig primero)
+        try:
+            from app.models.system_config_models import SystemConfig
+            expected_api_key = SystemConfig.get('n8n_api_key') or current_app.config.get('N8N_API_KEY')
+            secret = SystemConfig.get('n8n_webhook_secret') or current_app.config.get('N8N_WEBHOOK_SECRET')
+        except:
+            expected_api_key = current_app.config.get('N8N_API_KEY')
+            secret = current_app.config.get('N8N_WEBHOOK_SECRET')
+        
+        api_key = request.headers.get('X-API-Key')
+        if expected_api_key:
+            if not api_key or api_key != expected_api_key:
+                logger.warning("Webhook n8n rechazado: API Key inválida")
+                return jsonify({
+                    'success': False,
+                    'error': 'Unauthorized'
+                }), 401
+        
+        # Validar firma si está configurada
+        signature = request.headers.get('X-n8n-Signature')
+        
+        if signature and secret:
+            payload_str = request.get_data(as_text=True)
+            if not verify_n8n_signature(payload_str, signature, secret):
+                logger.warning("Webhook n8n rechazado: Firma inválida")
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid signature'
+                }), 403
+        
+        logger.info(f"Webhook recibido de n8n: {data}")
+        
+        # Procesar según el tipo de acción
+        action = data.get('action')
+        
+        if action == 'create_delivery':
+            return _handle_create_delivery(data.get('data', {}))
+        elif action == 'update_inventory':
+            return _handle_update_inventory(data.get('data', {}))
+        elif action == 'get_shift_status':
+            return _handle_get_shift_status()
+        elif action == 'test':
+            return jsonify({
+                'success': True,
+                'message': 'Webhook de prueba procesado correctamente',
+                'timestamp': datetime.utcnow().isoformat()
+            }), 200
+        else:
+            # Acción no reconocida, pero procesar igual
+            logger.info(f"Acción no reconocida: {action}, procesando como genérico")
+            return jsonify({
+                'success': True,
+                'message': 'Webhook procesado correctamente',
+                'action': action,
+                'data': data
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"Error procesando webhook n8n: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@n8n_bp.route('/webhook/<string:workflow_id>', methods=['POST'])
+@rate_limit(max_requests=60, per_seconds=60)
+def n8n_webhook_specific(workflow_id):
+    """
+    Endpoint específico para un workflow de n8n
+    Útil para tener múltiples workflows apuntando a diferentes endpoints
+    
+    Args:
+        workflow_id: Identificador del workflow (ej: "nueva-entrega", "actualizar-inventario")
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            logger.warning(f"Webhook n8n workflow {workflow_id} recibido sin datos")
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        # Validar autenticación (leer desde SystemConfig primero)
+        try:
+            from app.models.system_config_models import SystemConfig
+            expected_api_key = SystemConfig.get('n8n_api_key') or current_app.config.get('N8N_API_KEY')
+        except:
+            expected_api_key = current_app.config.get('N8N_API_KEY')
+        
+        api_key = request.headers.get('X-API-Key')
+        if expected_api_key:
+            if not api_key or api_key != expected_api_key:
+                logger.warning(f"Webhook n8n workflow {workflow_id} rechazado: API Key inválida")
+                return jsonify({
+                    'success': False,
+                    'error': 'Unauthorized'
+                }), 401
+        
+        logger.info(f"Webhook recibido de n8n workflow {workflow_id}: {data}")
+        
+        # Procesar según el workflow_id
+        # Aquí puedes agregar lógica específica para cada workflow
+        
+        return jsonify({
+            'success': True,
+            'workflow_id': workflow_id,
+            'message': 'Webhook procesado correctamente',
+            'data': data
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error procesando webhook n8n workflow {workflow_id}: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+def _handle_create_delivery(data):
+    """Maneja la creación de una entrega desde n8n"""
+    try:
+        from app.models.delivery_models import Delivery
+        from app.models import db
+        
+        # Validar datos requeridos
+        required_fields = ['item_name', 'quantity']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'success': False,
+                    'error': f'Campo requerido faltante: {field}'
+                }), 400
+        
+        # Crear entrega
+        delivery = Delivery(
+            item_name=data['item_name'],
+            quantity=data.get('quantity', 1),
+            bartender=data.get('bartender', 'n8n'),
+            barra=data.get('barra', 'barra_principal'),
+            timestamp=datetime.utcnow()
+        )
+        
+        db.session.add(delivery)
+        db.session.commit()
+        
+        logger.info(f"Entrega creada desde n8n: {delivery.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Entrega creada correctamente',
+            'delivery_id': delivery.id
+        }), 200
+        
+
+--- FILE: ./app/routes.py ---
+"""
+Rutas principales del sistema BIMBA
+"""
+import os
+from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash, current_app
+from datetime import datetime, date
+from app.application.services.jornada_service import JornadaService
+from app.application.dto.jornada_dto import (
+    CrearJornadaRequest, AsignarResponsablesRequest, AbrirLocalRequest
+)
+from app.models.jornada_models import Jornada, PlanillaTrabajador
+from app.models import db
+
+# Crear blueprint principal (puede estar vacío si las rutas están en otros módulos)
+bp = Blueprint('routes', __name__)
+
+# Las rutas principales están definidas en otros módulos/blueprints
+# Este blueprint puede usarse para rutas comunes si es necesario
+
+@bp.route('/admin')
+def admin():
+    """Redirigir /admin a /admin/dashboard"""
+    # Verificar autenticación
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('auth.login_admin'))
+    
+    return redirect(url_for('routes.admin_dashboard'))
+
+@bp.route('/admin/dashboard')
+def admin_dashboard():
+    """Dashboard administrativo"""
+    # Verificar autenticación
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('auth.login_admin'))
+    
+    # Obtener todas las métricas usando el servicio
+    try:
+        from app.helpers.dashboard_metrics_service import get_metrics_service
+        metrics_service = get_metrics_service()
+        metrics = metrics_service.get_all_metrics(use_cache=True)
+    except Exception as e:
+        current_app.logger.error(f"Error al cargar métricas del dashboard: {e}", exc_info=True)
+        metrics = None
+    
+    return render_template('admin_dashboard.html', metrics=metrics)
+
+
+@bp.route('/admin/logs')
+def admin_logs():
+    """Logs de entregas - redirige a admin_area"""
+    # Verificar autenticación
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('auth.login_admin'))
+    
+    # Obtener parámetros de paginación
+    page = request.args.get('page', 1, type=int)
+    turno = request.args.get('turno', 'false')
+    per_page = request.args.get('per_page', 50, type=int)
+    
+    # Variables básicas para el template
+    filter_by_turno = turno == 'true'
+    current_page = page
+    total_logs = 0  # Los logs se cargan dinámicamente via JavaScript/SocketIO
+    logs = []  # Lista vacía - los logs se cargan dinámicamente
+    
+    # Calcular paginación (valores por defecto para evitar errores en el template)
+    total_pages = 1
+    has_prev = False
+    has_next = False
+    
+    # Renderizar admin_area.html que parece ser la página principal de logs
+    return render_template('admin_area.html',
+                         filter_by_turno=filter_by_turno,
+                         current_page=current_page,
+                         per_page=per_page,
+                         total_logs=total_logs,
+                         logs=logs,
+                         total_pages=total_pages,
+                         has_prev=has_prev,
+                         has_next=has_next)
+
+
+@bp.route('/admin/pos_stats')
+def pos_stats():
+    """Redirigir a dashboard - módulo de cajas eliminado"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('auth.login_admin'))
+    flash('El módulo de gestión de cajas ha sido eliminado.', 'info')
+    return redirect(url_for('routes.admin_dashboard'))
+
+
+@bp.route('/admin/api/register/toggle', methods=['POST'])
+def api_toggle_register():
+    """API deshabilitada - módulo de cajas eliminado"""
+    return jsonify({'success': False, 'error': 'Módulo de gestión de cajas eliminado'}), 410
+
+@bp.route('/admin/api/register/clear-all', methods=['POST'])
+def api_clear_all_registers():
+    """API: Desbloquear todas las cajas"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'error': 'No autenticado'}), 401
+    
+    try:
+        from app.helpers.register_lock_db import unlock_all_registers
+        
+        count = unlock_all_registers()
+        
+        if count > 0:
+            # Emitir actualización de métricas
+            try:
+                from app import socketio
+                from app.helpers.dashboard_metrics_service import get_metrics_service
+                
+                metrics_service = get_metrics_service()
+                metrics = metrics_service.get_all_metrics(use_cache=False)
+                socketio.emit('metrics_update', {'metrics': metrics}, namespace='/admin_stats')
+            except Exception as e:
+                current_app.logger.warning(f"No se pudo emitir actualización: {e}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'{count} caja(s) desbloqueada(s)',
+            'count': count
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error al desbloquear todas las cajas: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@bp.route('/admin/panel_control')
+def admin_panel_control():
+    """Panel de control administrativo"""
+    # Verificar autenticación
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('auth.login_admin'))
+    
+    # Verificar si es superadmin
+    username = session.get('admin_username', '').lower()
+    is_superadmin = (username == 'sebagatica')
+    
+    # Crear información del sistema
+    from app.helpers.timezone_utils import CHILE_TZ
+    from datetime import datetime, timedelta
+    
+    now = datetime.now(CHILE_TZ)
+    
+    # Nombres de días en español
+    days_spanish = {
+        'Monday': 'Lunes',
+        'Tuesday': 'Martes',
+        'Wednesday': 'Miércoles',
+        'Thursday': 'Jueves',
+        'Friday': 'Viernes',
+        'Saturday': 'Sábado',
+        'Sunday': 'Domingo'
+    }
+    
+    day_name_english = now.strftime('%A')
+    day_name = days_spanish.get(day_name_english, day_name_english)
+    
+    system_info = {
+        'current_time': now.strftime('%H:%M:%S'),
+        'current_date': now.strftime('%d/%m/%Y'),
+        'day_name': day_name,
+        'timezone': 'America/Santiago (CLT)'
+    }
+    
+    # Obtener logs de auditoría (solo para superadmin)
+    audit_logs = []
+    audit_alerts_count = 0
+    if is_superadmin:
+        try:
+            from app.models.audit_log_models import AuditLog
+            from app.models.cargo_audit_models import CargoSalaryAuditLog
+            
+            # Obtener últimos 100 logs de auditoría general
+            audit_logs_general = AuditLog.query.order_by(
+                AuditLog.timestamp.desc()
+            ).limit(100).all()
+            
+            # Obtener últimos 50 logs de auditoría de cargos/sueldos
+            audit_logs_cargos = CargoSalaryAuditLog.query.order_by(
+                CargoSalaryAuditLog.created_at.desc()
+            ).limit(50).all()
+            
+            # Combinar y ordenar por fecha
+            all_logs = []
+            for log in audit_logs_general:
+                all_logs.append({
+                    'type': 'general',
+                    'id': log.id,
+                    'action': log.action,
+                    'entity_type': log.entity_type,
+                    'username': log.username or 'unknown',
+                    'timestamp': log.timestamp,
+                    'success': log.success,
+                    'old_value': log.old_value,
+                    'new_value': log.new_value,
+                    'ip_address': log.ip_address
+                })
+            
+            for log in audit_logs_cargos:
+                all_logs.append({
+                    'type': 'cargo_salary',
+                    'id': log.id,
+                    'action': log.action,
+                    'entity_type': log.entity_type,
+                    'cargo_nombre': log.cargo_nombre,
+                    'username': log.changed_by_username or 'unknown',
+                    'timestamp': log.created_at,
+                    'success': True,
+                    'old_values': log.old_values,
+                    'new_values': log.new_values,
+                    'ip_address': log.ip_address
+                })
+            
+            # Ordenar por timestamp descendente
+            all_logs.sort(key=lambda x: x['timestamp'], reverse=True)
+            audit_logs = all_logs[:100]  # Limitar a 100 más recientes
+            
+            # Contar acciones que requieren atención (últimas 24 horas)
+            last_24h = now - timedelta(hours=24)
+            recent_logs = [log for log in all_logs if log['timestamp'] >= last_24h]
+            
+            # Contar acciones críticas que requieren revisión
+            critical_actions = ['delete', 'update_salary', 'mark_payment', 'close_shift', 'update']
+            audit_alerts_count = sum(1 for log in recent_logs 
+                                    if log['action'] in critical_actions or 
+                                    (log['type'] == 'cargo_salary' and log['action'] in ['update', 'delete']))
+            
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener logs de auditoría: {e}", exc_info=True)
+            audit_logs = []
+            audit_alerts_count = 0
+    
+    # Obtener información de base de datos actual
+    try:
+
+--- FILE: ./app/__init__.py ---
+
+# BIMBA POS System - Dashboard Rewritten v4.0
+import os
+from flask import Flask
+from flask_socketio import SocketIO
+from dotenv import load_dotenv
+from datetime import datetime
+import pytz
+
+# Configurar zona horaria de Chile
+CHILE_TZ = pytz.timezone('America/Santiago')
+
+# Cache thread-safe para context processor (optimización)
+from .helpers.thread_safe_cache import (
+    get_cached_shift_info,
+    set_cached_shift_info,
+    invalidate_shift_cache
+)
+
+
+socketio = SocketIO(cors_allowed_origins="*")
+
+def create_app():
+    # Cargar variables de entorno
+    # En producción, solo cargar desde variables de entorno del sistema, no desde archivos
+    is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
+    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+    
+    # VALIDACIÓN CRÍTICA ANTES de crear la app Flask
+    if is_production:
+        secret_key = os.environ.get('FLASK_SECRET_KEY')
+        if not secret_key or secret_key == 'dev_key':
+            import sys
+            print("❌ CRÍTICO: FLASK_SECRET_KEY debe estar configurado en producción", file=sys.stderr)
+            raise ValueError("❌ CRÍTICO: FLASK_SECRET_KEY debe estar configurado en producción")
+        
+        database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            import sys
+            print("❌ ERROR: DATABASE_URL no configurado en producción. La aplicación no puede funcionar sin base de datos.", file=sys.stderr)
+            raise ValueError("DATABASE_URL debe estar configurado en producción. No se permite SQLite en producción.")
+    
+    if is_production:
+        # En producción, solo usar variables de entorno del sistema
+        load_dotenv()  # Cargar desde variables de entorno, no desde archivos
+        env_loaded = True
+    else:
+        # En desarrollo: intentar cargar desde archivos .env
+        env_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'),  # Raíz del proyecto
+            '/var/www/flask_app/.env',  # Servidor producción común (solo si no es Cloud Run)
+            os.path.expanduser('~/.env'),  # Home del usuario
+            '.env'  # Directorio actual
+        ]
+        
+        env_loaded = False
+        for env_path in env_paths:
+            if os.path.exists(env_path):
+                load_dotenv(env_path)
+                env_loaded = True
+                app_logger = None
+                try:
+                    from flask import current_app
+                    if current_app:
+                        app_logger = current_app.logger
+                except:
+                    import logging
+                    app_logger = logging.getLogger(__name__)
+                if app_logger:
+                    app_logger.info(f"✅ Variables de entorno cargadas desde: {env_path}")
+                break
+        
+        # Si no se encontró ningún .env, intentar cargar desde el directorio actual
+        if not env_loaded:
+            load_dotenv()  # Buscar en directorio actual y padres
+
+    app = Flask(__name__)
+    
+    # Configurar logging a archivo
+    import logging
+    from logging.handlers import RotatingFileHandler
+    from datetime import datetime
+    
+    # Crear directorio de logs si no existe
+    logs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+    
+    # Configurar archivo de log con rotación
+    log_file = os.path.join(logs_dir, 'app.log')
+    file_handler = RotatingFileHandler(
+        log_file, 
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=10
+    )
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    
+    # Agregar handler solo si no está en producción o si se especifica
+    if not is_production or os.environ.get('ENABLE_FILE_LOGGING', '').lower() == 'true':
+        app.logger.addHandler(file_handler)
+        app.logger.setLevel(logging.INFO)
+        app.logger.info(f'✅ Logging configurado: {log_file}')
+    
+    # También configurar logging para GetNet específicamente
+    getnet_log_file = os.path.join(logs_dir, 'getnet.log')
+    getnet_handler = RotatingFileHandler(
+        getnet_log_file,
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=10
+    )
+    getnet_handler.setLevel(logging.INFO)
+    getnet_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    
+    # Logger específico para GetNet
+    getnet_logger = logging.getLogger('app.helpers.getnet_web_helper')
+    if not is_production or os.environ.get('ENABLE_FILE_LOGGING', '').lower() == 'true':
+        getnet_logger.addHandler(getnet_handler)
+        getnet_logger.setLevel(logging.INFO)
+
+    # Configuración - Validar ANTES de crear app si estamos en producción
+    secret_key = os.environ.get('FLASK_SECRET_KEY')
+    if is_production:
+        if not secret_key or secret_key == 'dev_key':
+            import sys
+            print("❌ CRÍTICO: FLASK_SECRET_KEY debe estar configurado en producción", file=sys.stderr)
+            raise ValueError("❌ CRÍTICO: FLASK_SECRET_KEY debe estar configurado en producción")
+    
+    if not secret_key or secret_key == 'dev_key':
+        app.logger.warning("⚠️ Usando SECRET_KEY por defecto (solo desarrollo)")
+    app.secret_key = secret_key or 'dev_key'
+    
+    # Validación de variables críticas en producción
+    if is_production:
+        app.logger.info("🔍 Validando variables de entorno críticas para producción...")
+        
+        # DATABASE_URL se valida más abajo, pero loggeamos aquí
+        if not os.environ.get('DATABASE_URL'):
+            app.logger.error("❌ CRÍTICO: DATABASE_URL no configurado en producción")
+            # El error se lanzará más abajo, pero loggeamos aquí
+        
+        # Variables opcionales pero importantes
+        if not os.environ.get('OPENAI_API_KEY'):
+            app.logger.warning("⚠️ OPENAI_API_KEY no configurada. Bot funcionará solo con RuleEngine.")
+        
+        if not os.environ.get('BIMBA_INTERNAL_API_KEY'):
+            app.logger.warning("⚠️ BIMBA_INTERNAL_API_KEY no configurada. API operational no funcionará.")
+        
+        if not os.environ.get('BIMBA_INTERNAL_API_BASE_URL'):
+            app.logger.warning("⚠️ BIMBA_INTERNAL_API_BASE_URL no configurada. Bot no usará contexto operativo en producción.")
+        
+        app.logger.info("✅ Validación de variables de entorno completada")
+    
+    # Configurar CSRF Protection
+    csrf = None
+    try:
+        from flask_wtf.csrf import CSRFProtect, CSRFError
+        
+        # Verificar si estamos en desarrollo (antes de inicializar CSRFProtect)
+        # Verificar tanto variables de entorno como configuración de la app
+        flask_env = os.environ.get('FLASK_ENV', '').lower()
+        flask_debug = os.environ.get('FLASK_DEBUG', '').lower()
+        
+        # Si no es producción ni Cloud Run, asumimos que es desarrollo
+        # Esto es más seguro: solo habilitamos CSRF en producción explícita
+        is_development = not is_production and not is_cloud_run
+        
+        # También verificar variables de entorno explícitas
+        if flask_env == 'production':
+            is_development = False
+        elif flask_env == 'development':
+            is_development = True
+        elif flask_debug == 'true':
+            is_development = True
+        
+        csrf = CSRFProtect(app)
+        
+        if is_development:
+            # En desarrollo: deshabilitar CSRF para facilitar testing
+            app.config['WTF_CSRF_ENABLED'] = False
+            app.logger.info("🔓 CSRF deshabilitado en modo desarrollo")
+        else:
+            # En producción: habilitar CSRF pero eximir ecommerce
+            app.config['WTF_CSRF_ENABLED'] = True
+            app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hora
+            app.config['WTF_CSRF_CHECK_DEFAULT'] = True
+            app.config['WTF_CSRF_HEADERS'] = ['X-CSRFToken', 'X-CSRF-Token']  # Headers para AJAX
+            # Eximir rutas de ecommerce de CSRF (se manejará después de registrar blueprint)
+            app.config['WTF_CSRF_EXEMPT_LIST'] = ['ecommerce.checkout', 'ecommerce.payment_callback', 'ecommerce.getnet_webhook']
+        
+        # Hacer csrf disponible globalmente para usar @csrf.exempt
+        app.csrf = csrf
+        
+        # Registrar handler de errores CSRF
+        @app.errorhandler(CSRFError)
+        def handle_csrf_error(e):
+            from flask import request, jsonify, flash, redirect, url_for
+            try:
+                app.logger.warning(f"⚠️ Error CSRF: {e.description}")
+                
+                # Si es una ruta de ecommerce, ignorar el error y permitir la petición
+                if request and hasattr(request, 'path') and request.path.startswith('/ecommerce/'):
+                    app.logger.info(f"⚠️ Error CSRF en ruta ecommerce ignorado: {request.path}")
+                    # No hacer nada, dejar que la petición continúe
+                    # Flask-WTF debería permitir la petición si la función está exenta
+                    # Si no está exenta, intentar eximirla ahora
+                    try:
+                        # Obtener el endpoint de la ruta
+                        adapter = app.url_map.bind_to_environ(request.environ)
+                        endpoint, _ = adapter.match()
+                        view_func = app.view_functions.get(endpoint)
+                        if view_func and csrf:
+                            csrf.exempt(view_func)
+                            app.logger.info(f"✅ Función {endpoint} exenta de CSRF después del error")
+                            # Reintentar la petición (no es posible directamente, pero al menos está exenta para la próxima)
+                    except Exception as exempt_err:
+                        app.logger.debug(f"No se pudo eximir función después del error: {exempt_err}")
+                    
+                    # Para ecommerce, simplemente no mostrar error, dejar que continúe
+                    # Esto es un workaround - idealmente las funciones deberían estar exentas desde el inicio
+                    return None  # Esto puede no funcionar, pero intentamos
+                
+                if request and hasattr(request, 'path') and request.path.startswith('/api/'):
+                    return jsonify({'success': False, 'error': 'CSRF token missing or invalid'}), 400
+                flash('Error de seguridad. Por favor, recarga la página e intenta nuevamente.', 'error')
+                if request and hasattr(request, 'url'):
+                    return redirect(request.url or url_for('routes.home'))
+                return redirect(url_for('routes.home'))
+            except Exception as err:
+                app.logger.error(f"Error en handle_csrf_error: {err}")
+                return redirect(url_for('routes.home'))
+        
+        # Context processor para csrf_token en templates (solo si CSRF está habilitado)
+        @app.context_processor
+        def inject_csrf_token():
+            """Inyecta csrf_token en todos los templates"""
+            try:
+
+================================================================================
+== 3) Validaciones automáticas (contrato y seguridad)
+================================================================================
+-- Debe existir lectura DB->fallback env (SystemConfig o similar) --
+./test_database_toggle.py:7:from app.models.system_config_models import SystemConfig
+./test_database_toggle.py:126:                saved_dev = SystemConfig.get('database_dev_url')
+./test_database_toggle.py:127:                saved_prod = SystemConfig.get('database_prod_url')
+./migrate_system_config.py:7:from app.models.system_config_models import SystemConfig
+./migrate_system_config.py:27:                count = SystemConfig.query.count()
+./migrate_system_config.py:36:                    SystemConfig.set('database_dev_url', dev_url, 'URL de base de datos de desarrollo', 'migration')
+./migrate_system_config.py:40:                    SystemConfig.set('database_prod_url', prod_url, 'URL de base de datos de producción', 'migration')
+./migrate_system_config.py:44:                current_mode = SystemConfig.get('database_mode')
+./migrate_system_config.py:46:                    SystemConfig.set('database_mode', 'prod', 'Modo de base de datos actual', 'migration')
+./logs/error.log:2607856:    SystemConfig.set(
+./logs/error.log:2607930:    SystemConfig.set(
+./logs/error.log:2608004:    SystemConfig.set(
+./logs/error.log:2608078:    SystemConfig.set(
+./logs/error.log:2614809:    SystemConfig.set(
+./logs/error.log:2614883:    SystemConfig.set(
+./logs/error.log:2614957:    SystemConfig.set(
+./logs/error.log:2615031:    SystemConfig.set(
+./app/helpers/n8n_client.py:50:    # Agregar autenticación si está configurada (leer desde SystemConfig primero)
+./app/helpers/n8n_client.py:52:        from app.models.system_config_models import SystemConfig
+./app/helpers/n8n_client.py:53:        secret = SystemConfig.get('n8n_webhook_secret') or current_app.config.get('N8N_WEBHOOK_SECRET')
+./app/helpers/n8n_client.py:54:        api_key = SystemConfig.get('n8n_api_key') or current_app.config.get('N8N_API_KEY')
+./app/helpers/database_config_helper.py:25:        from app.models.system_config_models import SystemConfig
+./app/helpers/database_config_helper.py:26:        mode = SystemConfig.get(DB_MODE_KEY, 'prod')
+./app/helpers/database_config_helper.py:48:        from app.models.system_config_models import SystemConfig
+./app/helpers/database_config_helper.py:49:        SystemConfig.set(
+./app/helpers/database_config_helper.py:79:        from app.models.system_config_models import SystemConfig
+./app/helpers/database_config_helper.py:82:            url = SystemConfig.get(DB_DEV_URL_KEY)
+./app/helpers/database_config_helper.py:87:            url = SystemConfig.get(DB_PROD_URL_KEY)
+./app/helpers/database_config_helper.py:111:        from app.models.system_config_models import SystemConfig
+./app/helpers/database_config_helper.py:114:            SystemConfig.set(
+./app/helpers/database_config_helper.py:123:            SystemConfig.set(
+./app/models/system_config_models.py:8:class SystemConfig(db.Model):
+./app/models/system_config_models.py:20:        return f'<SystemConfig {self.key}={self.value}>'
+./app/models/system_config_models.py:25:        config = SystemConfig.query.filter_by(key=key).first()
+./app/models/system_config_models.py:31:        config = SystemConfig.query.filter_by(key=key).first()
+./app/models/system_config_models.py:40:            config = SystemConfig(
+./app/models/system_config_models.py:53:        config = SystemConfig.query.filter_by(key=key).first()
+./app/models/__init__.py:90:from .system_config_models import SystemConfig
+./app/models/__init__.py:134:    'SystemConfig',
+./app/routes.py:2719:        from app.models.system_config_models import SystemConfig
+./app/routes.py:2721:        # Obtener configuración desde SystemConfig, con fallback a variables de entorno
+./app/routes.py:2722:        webhook_url = SystemConfig.get('n8n_webhook_url') or os.environ.get('N8N_WEBHOOK_URL', '')
+./app/routes.py:2723:        webhook_secret = SystemConfig.get('n8n_webhook_secret') or os.environ.get('N8N_WEBHOOK_SECRET', '')
+./app/routes.py:2724:        api_key = SystemConfig.get('n8n_api_key') or os.environ.get('N8N_API_KEY', '')
+./app/routes.py:2756:        from app.models.system_config_models import SystemConfig
+./app/routes.py:2762:        # Guardar configuración en SystemConfig
+./app/routes.py:2766:                SystemConfig.set(
+./app/routes.py:2773:                SystemConfig.delete('n8n_webhook_url')
+./app/routes.py:2778:                SystemConfig.set(
+./app/routes.py:2785:                SystemConfig.delete('n8n_webhook_secret')
+./app/routes.py:2790:                SystemConfig.set(
+./app/routes.py:2797:                SystemConfig.delete('n8n_api_key')
+./app/routes.py:2800:        current_app.config['N8N_WEBHOOK_URL'] = SystemConfig.get('n8n_webhook_url') or os.environ.get('N8N_WEBHOOK_URL')
+./app/routes.py:2801:        current_app.config['N8N_WEBHOOK_SECRET'] = SystemConfig.get('n8n_webhook_secret') or os.environ.get('N8N_WEBHOOK_SECRET')
+./app/routes.py:2802:        current_app.config['N8N_API_KEY'] = SystemConfig.get('n8n_api_key') or os.environ.get('N8N_API_KEY')
+./app/routes/n8n_routes.py:85:        # Validar autenticación por API Key si está configurada (leer desde SystemConfig primero)
+./app/routes/n8n_routes.py:87:            from app.models.system_config_models import SystemConfig
+./app/routes/n8n_routes.py:88:            expected_api_key = SystemConfig.get('n8n_api_key') or current_app.config.get('N8N_API_KEY')
+./app/routes/n8n_routes.py:89:            secret = SystemConfig.get('n8n_webhook_secret') or current_app.config.get('N8N_WEBHOOK_SECRET')
+./app/routes/n8n_routes.py:170:        # Validar autenticación (leer desde SystemConfig primero)
+./app/routes/n8n_routes.py:172:            from app.models.system_config_models import SystemConfig
+./app/routes/n8n_routes.py:173:            expected_api_key = SystemConfig.get('n8n_api_key') or current_app.config.get('N8N_API_KEY')
+./app/__init__.py:476:                from app.models.system_config_models import SystemConfig
+./app/__init__.py:477:                saved_dev_url = SystemConfig.get('database_dev_url')
+./app/__init__.py:478:                saved_prod_url = SystemConfig.get('database_prod_url')
+./app/__init__.py:1340:    # Se leerá desde SystemConfig en tiempo de ejecución, pero inicializar con variables de entorno
+./app/__init__.py:1345:    # Actualizar desde SystemConfig si existe (después de inicializar la BD)
+./app/__init__.py:1348:            from app.models.system_config_models import SystemConfig
+./app/__init__.py:1349:            n8n_webhook_url = SystemConfig.get('n8n_webhook_url')
+./app/__init__.py:1350:            n8n_webhook_secret = SystemConfig.get('n8n_webhook_secret')
+./app/__init__.py:1351:            n8n_api_key = SystemConfig.get('n8n_api_key')
+./app/__init__.py:1360:            app.logger.debug(f"No se pudo leer configuración n8n desde SystemConfig: {e}")
+./scripts/migrar_todo_a_sql.py:24:from app.models.system_config_models import SystemConfig
+./scripts/migrar_todo_a_sql.py:28:    """Migra usuarios admin desde .admin_users.json a SystemConfig"""
+./scripts/migrar_todo_a_sql.py:48:            existing = SystemConfig.query.filter_by(
+./scripts/migrar_todo_a_sql.py:56:            # Crear entrada en SystemConfig
+./scripts/migrar_todo_a_sql.py:57:            config = SystemConfig(
+./scripts/migrar_todo_a_sql.py:80:    """Migra configuración de fraude desde fraud_config.json a SystemConfig"""
+./scripts/migrar_todo_a_sql.py:93:        existing = SystemConfig.query.filter_by(key='fraud_config').first()
+./scripts/migrar_todo_a_sql.py:98:        # Crear entrada en SystemConfig
+./scripts/migrar_todo_a_sql.py:99:        config = SystemConfig(
+./MIGRACION_A_SQL_COMPLETADA.md:38:2. **Compatibilidad hacia atrás:** El código actual aún puede leer desde archivos JSON. Para una migración completa, se recomienda actualizar el código para leer desde `SystemConfig` en lugar de archivos JSON.
+./MIGRACION_A_SQL_COMPLETADA.md:40:3. **Usuarios Admin:** Los usuarios admin ahora están en `SystemConfig` con formato JSON. Para usar estos usuarios, el código debe actualizarse para leer desde `SystemConfig` en lugar de `.admin_users.json`.
+./MIGRACION_A_SQL_COMPLETADA.md:44:1. Actualizar `app/helpers/admin_users.py` para leer desde `SystemConfig` en lugar de archivos JSON
+./MIGRACION_A_SQL_COMPLETADA.md:45:2. Actualizar código que lee `fraud_config.json` para usar `SystemConfig`
+./RESUMEN_PRUEBAS_DATABASE_TOGGLE.md:49:- `SystemConfig` - Modelo para guardar configuración
+
+-- Debe existir validación de token/firma (recomendado) --
+(no se encontró token/firma en código)
+
+-- Evitar filtrar secretos (UI/API no debe devolver valores completos) --
+
+================================================================================
+== 4) Probar endpoint /admin/api/n8n/test (si existe) desde localhost
+================================================================================
+Encontrado n8n/test en código. Probando request local...
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Date: Sat, 03 Jan 2026 10:32:16 GMT
+Content-Type: text/html
+Content-Length: 178
+Connection: keep-alive
+Location: https://stvaldivia.cl/admin/api/n8n/test
+
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+<hr><center>nginx/1.18.0 (Ubuntu)</center>
+</body>
+</html>
+
+================================================================================
+== 5) Logs recientes buscando n8n
+================================================================================
+Jan 03 10:27:40 stvaldivia gunicorn[2857036]: DETAIL:  Failing row contains (null, 2026-01-03 10:27:40.59699+00, error, 0, API no configurada, null, system).
+Jan 03 10:27:40 stvaldivia gunicorn[2857036]: [parameters: {'timestamp': datetime.datetime(2026, 1, 3, 10, 27, 40, 596990), 'status': 'error', 'response_time_ms': 0, 'message': 'API no configurada', 'api_url': None, 'checked_by': 'system'}]
+Jan 03 10:28:11 stvaldivia gunicorn[2857032]: DETAIL:  Failing row contains (null, 2026-01-03 10:28:11.372364+00, error, 0, API no configurada, null, system).
+Jan 03 10:28:11 stvaldivia gunicorn[2857032]: [parameters: {'timestamp': datetime.datetime(2026, 1, 3, 10, 28, 11, 372364), 'status': 'error', 'response_time_ms': 0, 'message': 'API no configurada', 'api_url': None, 'checked_by': 'system'}]
+Jan 03 10:28:46 stvaldivia gunicorn[2857796]: [2026-01-03 10:28:46,047] WARNING in __init__: ⚠️ OPENAI_API_KEY no configurada. Bot funcionará solo con RuleEngine.
+Jan 03 10:28:46 stvaldivia gunicorn[2857796]: [2026-01-03 10:28:46,047] WARNING in __init__: ⚠️ BIMBA_INTERNAL_API_KEY no configurada. API operational no funcionará.
+Jan 03 10:28:46 stvaldivia gunicorn[2857796]: [2026-01-03 10:28:46,048] WARNING in __init__: ⚠️ BIMBA_INTERNAL_API_BASE_URL no configurada. Bot no usará contexto operativo en producción.
+Jan 03 10:28:46 stvaldivia gunicorn[2857797]: [2026-01-03 10:28:46,111] WARNING in __init__: ⚠️ OPENAI_API_KEY no configurada. Bot funcionará solo con RuleEngine.
+Jan 03 10:28:46 stvaldivia gunicorn[2857797]: [2026-01-03 10:28:46,111] WARNING in __init__: ⚠️ BIMBA_INTERNAL_API_KEY no configurada. API operational no funcionará.
+Jan 03 10:28:46 stvaldivia gunicorn[2857797]: [2026-01-03 10:28:46,111] WARNING in __init__: ⚠️ BIMBA_INTERNAL_API_BASE_URL no configurada. Bot no usará contexto operativo en producción.
+Jan 03 10:28:46 stvaldivia gunicorn[2857798]: [2026-01-03 10:28:46,345] WARNING in __init__: ⚠️ OPENAI_API_KEY no configurada. Bot funcionará solo con RuleEngine.
+Jan 03 10:28:46 stvaldivia gunicorn[2857798]: [2026-01-03 10:28:46,345] WARNING in __init__: ⚠️ BIMBA_INTERNAL_API_KEY no configurada. API operational no funcionará.
+Jan 03 10:28:46 stvaldivia gunicorn[2857798]: [2026-01-03 10:28:46,345] WARNING in __init__: ⚠️ BIMBA_INTERNAL_API_BASE_URL no configurada. Bot no usará contexto operativo en producción.
+Jan 03 10:28:46 stvaldivia gunicorn[2857799]: [2026-01-03 10:28:46,396] WARNING in __init__: ⚠️ OPENAI_API_KEY no configurada. Bot funcionará solo con RuleEngine.
+Jan 03 10:28:46 stvaldivia gunicorn[2857799]: [2026-01-03 10:28:46,396] WARNING in __init__: ⚠️ BIMBA_INTERNAL_API_KEY no configurada. API operational no funcionará.
+Jan 03 10:28:46 stvaldivia gunicorn[2857799]: [2026-01-03 10:28:46,396] WARNING in __init__: ⚠️ BIMBA_INTERNAL_API_BASE_URL no configurada. Bot no usará contexto operativo en producción.
+Jan 03 10:32:04 stvaldivia gunicorn[2857798]: DETAIL:  Failing row contains (null, 2026-01-03 10:32:04.944469+00, error, 0, API no configurada, null, system).
+Jan 03 10:32:04 stvaldivia gunicorn[2857798]: [parameters: {'timestamp': datetime.datetime(2026, 1, 3, 10, 32, 4, 944469), 'status': 'error', 'response_time_ms': 0, 'message': 'API no configurada', 'api_url': None, 'checked_by': 'system'}]
+
+================================================================================
+== 6) Checklist final (heurístico)
+================================================================================
+[OK] Servicio activo: active
+[CHECK] Existe n8n_client: ./app/helpers/n8n_client.py
+[CHECK] Existe n8n_routes: ./app/routes/n8n_routes.py
+[CHECK] Endpoints /admin/api/n8n/* encontrados: 6
+[CHECK] Referencias a SystemConfig: 86
+[CHECK] Validación token/firma encontrada: 0
+
+== FIN AUDITORIA N8N ==

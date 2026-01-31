@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% block title %}Visor de Cajas en Tiempo Real - Admin{% endblock %}
+
+{% block head_extra %}
+<style>
+    .live-registers-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .register-selector {
+        margin-bottom: 30px;
+    }
+    
+    .register-selector select {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.1rem;
+        background: #2a2a4a;
+        color: #e8e8e8;
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    
+    .register-status-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .register-status-card:hover {
+        border-color: rgba(102, 126, 234, 0.6);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .register-status-card.open {
+        border-color: #4caf50;
+    }
+    
+    .register-status-card.closed {
+        border-color: #666;
+    }
+    
+    .register-status-card.pending_close {
+        border-color: #ff9800;
+    }
+    
+    .status-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+    
+    .status-badge.open {
+        background: #4caf50;
+        color: white;
+    }
+    
+    .status-badge.closed {
+        background: #666;
+        color: white;
+    }
+    
+    .status-badge.pending_close {
+        background: #ff9800;
+        color: white;
+    }
+    
+    .status-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .info-item {
+        background: rgba(102, 126, 234, 0.1);
+        padding: 12px;
+        border-radius: 8px;
+    }
+    
+    .info-label {
+        font-size: 0.85rem;
+        color: #aaa;
+        margin-bottom: 5px;
+    }
+    
+    .info-value {
+        font-size: 1.1rem;
+        color: #e8e8e8;
+        font-weight: bold;
+    }
+    
+    .activity-timeline {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .activity-item {
+        padding: 10px;
+        margin-bottom: 10px;
+        background: rgba(102, 126, 234, 0.05);
+        border-left: 3px solid #667eea;
+        border-radius: 4px;
+    }
+    
+    .activity-time {
+        font-size: 0.8rem;
+        color: #888;
+    }
+    
+    .no-register-selected {
+        text-align: center;
+        padding: 60px 20px;
+        color: #888;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #667eea;
+    }
+    
+    .last-update {
+        text-align: right;
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="live-registers-container">
+    <h1 style="margin-bottom: 30px; color: #e8e8e8;">
+        📊 Visor de Cajas en Tiempo Real
+    </h1>
+    
+    <div class="register-selector">
+        <select id="register-selector" onchange="loadRegisterStatus()">
+            <option value="">-- Seleccionar Caja --</option>
+            {% for reg in registers %}
+                <option value="{{ reg.id }}">{{ reg.name }} ({{ reg.code }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div id="register-status-container">
+        <div class="no-register-selected">
+            <p>Selecciona una caja para ver su estado en tiempo real</p>
+        </div>
+    </div>
+    
+    <div class="last-update" id="last-update">
+        Última actualización: --
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+<script>
+    const socket = io('/admin');
+    let selectedRegisterId = null;
+    let updateInterval = null;
+    
+    // Conectar a SocketIO
+    socket.on('connect', () => {
+        console.log('✅ Conectado al visor de cajas');
+    });
+    
+    socket.on('disconnect', () => {
+        console.log('❌ Desconectado del visor de cajas');
+    });
+    
+    // Escuchar eventos de actividad de cajas
+    socket.on('register_activity', (data) => {
+        console.log('📊 Actividad de caja:', data);
+        if (selectedRegisterId && data.register_id === selectedRegisterId.toString()) {
+            loadRegisterStatus();
+        }
+    });
+    
+    socket.on('pos_sale_created_admin', (data) => {
+        console.log('💰 Venta creada:', data);
+        if (selectedRegisterId && data.register_id === selectedRegisterId.toString()) {
+            loadRegisterStatus();
+        }
+    });
+    
+    socket.on('register_closed', (data) => {
+        console.log('🔒 Caja cerrada:', data);
+        if (selectedRegisterId && data.register_id === selectedRegisterId.toString()) {
+            loadRegisterStatus();
+        }
+    });
+    
+    function loadRegisterStatus() {
+        const selector = document.getElementById('register-selector');
+        selectedRegisterId = selector.value;
+        
+        if (!selectedRegisterId) {
+            document.getElementById('register-status-container').innerHTML = `
+                <div class="no-register-selected">
+                    <p>Selecciona una caja para ver su estado en tiempo real</p>
+                </div>
+            `;
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+            return;
+        }
+        
+        // Mostrar loading
+        document.getElementById('register-status-container').innerHTML = `
+            <div class="loading">⏳ Cargando estado de la caja...</div>
+        `;
+        
+        // Cargar estado inicial
+        fetchRegisterStatus();
+        
+        // Actualizar cada 5 segundos
+        if (updateInterval) {
+            clearInterval(updateInterval);
+        }
+        updateInterval = setInterval(fetchRegisterStatus, 5000);
+    }
+    
+    async function fetchRegisterStatus() {
+        try {
+            const response = await fetch('/admin/api/cajas/live/status');
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Error al cargar estado');
+            }
+            
+            // Buscar la caja seleccionada
+            const register = data.registers.find(r => r.register_id === selectedRegisterId.toString());
+            
+            if (!register) {
+                document.getElementById('register-status-container').innerHTML = `
+                    <div class="no-register-selected">
+                        <p>❌ Caja no encontrada</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Renderizar estado
+            renderRegisterStatus(register);
+            
+            // Actualizar timestamp
+            document.getElementById('last-update').textContent = 
+                `Última actualización: ${new Date().toLocaleTimeString()}`;
+            
+        } catch (error) {
+            console.error('Error al cargar estado:', error);
+            document.getElementById('register-status-container').innerHTML = `
+                <div class="no-register-selected">
+                    <p>❌ Error al cargar estado: ${error.message}</p>
+                </div>
+            `;
+        }
+    }
+    
+    function renderRegisterStatus(register) {
+        const statusClass = register.status.toLowerCase().replace('_', '-');
+        const statusLabel = {
+            'open': 'ABIERTA',
+            'closed': 'CERRADA',
+            'pending_close': 'PENDIENTE CIERRE'
+        }[register.status] || register.status;
+        
+        const html = `
+            <div class="register-status-card ${statusClass}">
+                <div class="status-header">
+                    <h2 style="margin: 0; color: #e8e8e8;">${register.register_name}</h2>
+                    <span class="status-badge ${statusClass}">${statusLabel}</span>
+                </div>
+                
+                <div class="status-info">
+                    <div class="info-item">
+                        <div class="info-label">Cajero</div>
+                        <div class="info-value">${register.cashier_name || 'N/A'}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Abierta desde</div>
+                        <div class="info-value">${register.opened_at ? new Date(register.opened_at).toLocaleString() : 'N/A'}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Ventas del turno</div>
+                        <div class="info-value">${register.sales_count}</div>
+                    </div>
+                    
+                    ${register.last_sale ? `
+                    <div class="info-item">
+                        <div class="info-label">Última venta</div>
+                        <div class="info-value">${new Date(register.last_sale.created_at).toLocaleTimeString()}</div>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                ${register.last_sale ? `
+                <div class="activity-timeline">
+                    <h3 style="color: #e8e8e8; margin-bottom: 15px;">Última Actividad</h3>
+                    <div class="activity-item">
+                        <div style="color: #4caf50; font-weight: bold;">💰 Venta #${register.last_sale.sale_id}</div>
+                        <div class="activity-time">${new Date(register.last_sale.created_at).toLocaleString()}</div>
+                        <div style="color: #aaa; font-size: 0.9rem;">${register.last_sale.items_count} items</div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        
+        document.getElementById('register-status-container').innerHTML = html;
+    }
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+

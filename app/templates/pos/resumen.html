@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}Cajas - Resumen{% endblock %}
+
+{% block content %}
+<div class="page-container-full" style="overflow-y: auto; max-height: calc(100vh - 140px); padding: 10px; padding-top: 20px;">
+    
+    <!-- Estadísticas Generales -->
+    <div class="grid grid-6" style="margin-bottom: 12px; gap: 8px;">
+        <div class="stat-box stat-box-primary">
+            <div class="stat-label">Total Recaudado</div>
+            <div class="stat-value">${{ "{:,.0f}".format(total_amount_all) }}</div>
+        </div>
+        <div class="stat-box stat-box-primary">
+            <div class="stat-label">💵 Efectivo</div>
+            <div class="stat-value">${{ "{:,.0f}".format(total_cash_all) }}</div>
+        </div>
+        <div class="stat-box stat-box-primary">
+            <div class="stat-label">💳 Débito</div>
+            <div class="stat-value">${{ "{:,.0f}".format(total_debit_all) }}</div>
+        </div>
+        <div class="stat-box stat-box-primary">
+            <div class="stat-label">💳 Crédito</div>
+            <div class="stat-value">${{ "{:,.0f}".format(total_credit_all) }}</div>
+        </div>
+        <div class="stat-box stat-box-primary">
+            <div class="stat-label">Total Ventas</div>
+            <div class="stat-value">{{ total_sales_all }}</div>
+        </div>
+        <div class="stat-box stat-box-primary">
+            <div class="stat-label">💰 Ticket Promedio</div>
+            <div class="stat-value">${{ "{:,.0f}".format(avg_ticket_all) }}</div>
+        </div>
+    </div>
+    
+    <!-- Lista de Cajas -->
+    <div class="grid grid-3" style="gap: 10px;">
+        {% if not registers or registers|length == 0 %}
+        <div class="alert alert-warning" style="padding: 20px; margin: 20px 0;">
+            <strong>⚠️ No se encontraron cajas</strong>
+            <p>No hay cajas disponibles para mostrar.</p>
+        </div>
+        {% else %}
+        {% for reg in registers %}
+        <!-- Debug: Caja {{ reg.id }} - {{ reg.name }} -->
+        <div class="card {% if reg.is_open %}card-success{% else %}card-secondary{% endif %}" style="padding: 12px;">
+            <!-- Header de la Caja -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid rgba(255,255,255,0.1);">
+                <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                    <h2 style="margin: 0; font-size: 1.5rem; color: {% if reg.is_open %}#4caf50{% else %}#666{% endif %};">
+                        {{ reg.name }}
+                    </h2>
+                    <div class="badge {% if reg.is_open %}badge-success{% else %}badge-secondary{% endif %}" style="display: inline-block;">
+                        {% if reg.is_open %}✅ ABIERTA{% else %}🔒 CERRADA{% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información Principal - Horizontal -->
+            <div style="display: flex; justify-content: space-around; align-items: center; margin-bottom: 10px; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 8px;">
+                <div style="text-align: center; flex: 1;">
+                    <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 3px;">👤 Cajero</div>
+                    <div style="color: white; font-size: 1rem; font-weight: 500;">
+                        {{ reg.locked_by or 'N/A' }}
+                    </div>
+                </div>
+                <div style="width: 1px; background: rgba(255,255,255,0.1); height: 35px; margin: 0 8px;"></div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 3px;">🕐 Apertura</div>
+                    <div style="color: white; font-size: 1rem; font-weight: 500;">
+                        {{ reg.opened_at or 'N/A' }}
+                    </div>
+                </div>
+                <div style="width: 1px; background: rgba(255,255,255,0.1); height: 35px; margin: 0 8px;"></div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 3px;">🕐 Cierre</div>
+                    <div style="color: white; font-size: 1rem; font-weight: 500;">
+                        {{ reg.closed_at or 'N/A' }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas de Ventas -->
+            {% if reg.total_sales > 0 or reg.is_open %}
+            <div style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h3 style="margin: 0; font-size: 1.1rem; color: #4caf50;">📊 Estadísticas</h3>
+                    {% if reg.peak_hour %}
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="color: #aaa; font-size: 0.85rem;">⏰ Hora Peak:</span>
+                        <span style="color: #2196F3; font-size: 1.1rem; font-weight: bold;">{{ reg.peak_hour }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px;">
+                    <div style="text-align: center; flex: 1; min-width: 75px;">
+                        <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 3px;">Total Ventas</div>
+                        <div style="color: white; font-size: 1.2rem; font-weight: bold;">{{ reg.total_sales }}</div>
+                    </div>
+                    <div style="text-align: center; flex: 1; min-width: 75px;">
+                        <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 3px;">Total Recaudado</div>
+                        <div style="color: white; font-size: 1.2rem; font-weight: bold;">${{ "{:,.0f}".format(reg.total_amount) }}</div>
+                    </div>
+                    <div style="text-align: center; flex: 1; min-width: 75px;">
+                        <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 3px;">💰 Media de Venta</div>
+                        <div style="color: #4caf50; font-size: 1.2rem; font-weight: bold;">${{ "{:,.0f}".format(reg.avg_sale or 0) }}</div>
+                    </div>
+                    <div style="text-align: center; flex: 1; min-width: 75px;">
+                        <div style="color: #aaa; font-size: 0.8rem; margin-bottom: 3px;">⚡ Rendimiento</div>
+                        <div style="color: #ff9800; font-size: 1.2rem; font-weight: bold;">
+                            {{ "{:.1f}".format(reg.performance or 0) }} v/h
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Desglose de Medios de Pago -->
+            {% if reg.total_sales > 0 %}
+            <div style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; color: #4caf50;">💳 Medios de Pago</h3>
+                <div style="display: flex; justify-content: space-around; gap: 8px;">
+                    <div style="text-align: center; flex: 1; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 6px;">
+                        <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">💵 Efectivo</div>
+                        <div style="color: #4caf50; font-size: 1.4rem; font-weight: bold;">${{ "{:,.0f}".format(reg.total_cash) }}</div>
+                        {% if reg.total_amount > 0 %}
+                        <div style="color: #666; font-size: 0.8rem; margin-top: 3px;">
+                            {{ "{:.0f}".format((reg.total_cash / reg.total_amount * 100) if reg.total_amount > 0 else 0) }}%
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: center; flex: 1; padding: 10px; background: rgba(33, 150, 243, 0.1); border-radius: 6px;">
+                        <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">💳 Débito</div>
+                        <div style="color: #2196F3; font-size: 1.4rem; font-weight: bold;">${{ "{:,.0f}".format(reg.total_debit) }}</div>
+                        {% if reg.total_amount > 0 %}
+                        <div style="color: #666; font-size: 0.8rem; margin-top: 3px;">
+                            {{ "{:.0f}".format((reg.total_debit / reg.total_amount * 100) if reg.total_amount > 0 else 0) }}%
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: center; flex: 1; padding: 10px; background: rgba(255, 152, 0, 0.1); border-radius: 6px;">
+                        <div style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px;">💳 Crédito</div>
+                        <div style="color: #ff9800; font-size: 1.4rem; font-weight: bold;">${{ "{:,.0f}".format(reg.total_credit) }}</div>
+                        {% if reg.total_amount > 0 %}
+                        <div style="color: #666; font-size: 0.8rem; margin-top: 3px;">
+                            {{ "{:.0f}".format((reg.total_credit / reg.total_amount * 100) if reg.total_amount > 0 else 0) }}%
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Productos Más Vendidos -->
+            {% if reg.top_products and reg.top_products|length > 0 %}
+            <div style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; color: #4caf50;">🏆 Productos Más Vendidos</h3>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    {% for product in reg.top_products %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                        <span style="color: white; font-size: 0.9rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px;">{{ product.name }}</span>
+                        <span style="color: #4caf50; font-weight: bold; font-size: 0.9rem; white-space: nowrap;">{{ product.quantity }} u.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Últimos Tickets (Colapsable) -->
+            {% if reg.last_sales and reg.last_sales|length > 0 %}
+            <div style="margin: 10px 0;">
+                <button onclick="toggleTickets('tickets-{{ reg.id }}')" 
+                        style="width: 100%; padding: 10px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #667eea; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🎫 Últimos Tickets ({{ reg.last_sales|length }})</span>
+                    <span id="tickets-{{ reg.id }}-icon">▼</span>
+                </button>
+                <div id="tickets-{{ reg.id }}" style="display: none; margin-top: 8px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; max-height: 300px; overflow-y: auto;">
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        {% for sale in reg.last_sales %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; border-left: 3px solid #4caf50;">
+                            <div style="flex: 1;">
+                                <div style="color: white; font-weight: bold; font-size: 0.9rem;">Ticket {{ sale.id }}</div>
+                                <div style="color: #aaa; font-size: 0.75rem;">{{ sale.created_at }} - {{ sale.employee_name }}</div>
+                                <div style="color: #667eea; font-size: 0.75rem; margin-top: 2px;">{{ sale.payment_type }}</div>
+                            </div>
+                            <div style="color: #4caf50; font-weight: bold; font-size: 1.1rem; margin-left: 10px;">${{ "{:,.0f}".format(sale.total) }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if reg.total_sales == 0 and not reg.is_open %}
+            <!-- Si la caja no tiene ventas y está cerrada -->
+            <div style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; text-align: center; color: #aaa;">
+                <p style="margin: 0;">Sin ventas registradas para esta caja.</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleTickets(id) {
+    const element = document.getElementById(id);
+    const icon = document.getElementById(id + '-icon');
+    if (element.style.display === 'none' || element.style.display === '') {
+        element.style.display = 'block';
+        icon.textContent = '▲';
+    } else {
+        element.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+</script>
+
+<style>
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 3px;
+    }
+    
+    .stat-box {
+        padding: 10px !important;
+    }
+    
+    .badge-secondary {
+        background: #666;
+        color: white;
+    }
+    
+    .grid-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .grid-6 {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    
+    @media (max-width: 1200px) {
+        .grid-3 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .grid-4 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .grid-6 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .grid-2, .grid-3, .grid-4, .grid-6 {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

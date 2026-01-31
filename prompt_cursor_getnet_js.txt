@@ -1,0 +1,141 @@
+Quiero que implementes la integración de pago con Getnet para el TÓTEM en Windows usando la librería JavaScript OFICIAL según el manual "Integracion Getnet - Manual de integracion 1.11.pdf".
+
+⚠️ REQUISITOS IMPORTANTES (estas reglas NO se rompen):
+
+- El POS Getnet opera USB usando su "Serial Communication Server".
+- NO enviar mensajes serial manuales.
+- NO armar frames ni comandos a mano.
+- NO usar Linux para tótems: Getnet USB sólo funciona con el servidor serial en Windows.
+- Todo ocurre desde navegador chromium en Windows.
+
+────────────────────────────────────────────
+OBJETIVO
+────────────────────────────────────────────
+
+Implementar un módulo JS que permita:
+
+1. Ejecutar venta Getnet desde el front del tótem.
+2. Recibir callback "ResponseCode" de aprobación o rechazo.
+3. Si aprobación:
+   - llamar a /api/caja/venta-ok en mi backend
+   - descontar inventario (en backend, no local)
+   - imprimir voucher automáticamente (window.print)
+   - limpiar carrito
+4. Si rechazo:
+   - llamar a /api/caja/venta-fallida-log
+   - mantener carrito
+   - mostrar mensaje neutro:
+     "No se pudo completar la operación. ¿Quieres volver a intentarlo?"
+
+────────────────────────────────────────────
+DETALLES TÉCNICOS EXTRAÍDOS DEL MANUAL
+────────────────────────────────────────────
+
+Implementar:
+
+import Getnet from "./getnet/getnet.min.js";
+
+Luego registrar callback:
+
+Getnet.SetCallback(callback);
+
+Llamado a venta según manual:
+
+Getnet.Sale(
+    total,                 // monto
+    ticketNumber,          // correlativo
+    true,                  // imprimir voucher en POS
+    Getnet.POSCommands.SaleType.Sale,
+    true,                  // callback
+    employeeId             // opcional
+);
+
+
+El callback recibe objeto `datos`. Debe parsear:
+
+resp = JSON.parse(datos.JsonSerialized)
+
+resp.ResponseCode:
+- "0" = aprobado
+- otro = rechazo
+
+────────────────────────────────────────────
+ESTRUCTURA QUE NECESITO IMPLEMENTES
+────────────────────────────────────────────
+
+Crear módulo front con estas funciones JS:
+
+initGetnet()          // registra callback
+pagarGetnet(total)    // ejecuta Getnet.Sale
+handleGetnetOK(resp)  // payload listo para /venta-ok
+handleGetnetFail(resp)// payload listo para /venta-fallida-log
+
+URL backend venta OK:
+POST /api/caja/venta-ok
+
+URL backend intento fallido:
+POST /api/caja/venta-fallida-log
+
+POST venta-ok debe enviar JSON:
+
+{
+  "total": total,
+  "canal": "TOTEM",
+  "venta": {
+    "caja_codigo": "caja1",
+    "cajero": "TOTEM_AUTO_1",
+    "items": carritoActual
+  },
+  "medio_pago": "TARJETA_GETNET",
+  "getnet": {
+    "responseCode": resp.ResponseCode,
+    "responseMessage": resp.ResponseMessage,
+    "authorizationCode": resp.AuthorizationCode,
+    "raw": datos.JsonSerialized
+  }
+}
+
+POST venta-fallida-log:
+{
+  "total": total,
+  "venta": {...},
+  "motivo": resp.ResponseMessage
+}
+
+UI cuando falla tarjeta:
+- mensaje neutro (sin humillación)
+"No se pudo completar la operación. ¿Quieres volver a intentarlo?"
+Botones:
+[Volver a intentar]
+[Cancelar compra]
+
+NO mostrar: "tarjeta rechazada", "falta saldo", etc.
+
+────────────────────────────────────────────
+ENTREGABLES DEL CÓDIGO
+────────────────────────────────────────────
+
+Entregar archivos listos para copiar:
+
+/public/js/getnet.js       (modulo)
+/public/js/caja.js         (invoca al módulo getnet)
+/public/html/voucher.html  (ya imprime automático)
+
+Cada módulo debe estar limpio, con comentarios:
+
+// TODO: set ticketNumber secuencial
+// TODO: set employeeId real
+
+No usar nada inventado.
+Seguir manual literalmente.
+
+
+
+
+
+
+
+
+
+
+

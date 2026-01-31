@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Seleccionar Caja - Sistema POS BIMBA{% endblock %}
+{% block meta_description %}Selecciona la caja o barra que deseas abrir en el sistema de punto de venta BIMBA. Barra Principal, Terraza, VIP y más.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .register-selection-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .register-selection-container h1 {
+        text-align: center;
+        color: var(--primary-color, #667eea);
+        margin-bottom: 30px;
+        font-size: 2rem;
+    }
+    
+    .registers-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .register-card {
+        background: var(--card-bg, #1a1a2e);
+        border: 2px solid rgba(102, 126, 234, 0.5);
+        border-radius: 12px;
+        padding: 25px;
+        text-align: center;
+        text-decoration: none;
+        color: #e8e8e8 !important;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 150px;
+    }
+    
+    .register-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(102, 126, 234, 0.6);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .register-card.guardarropia {
+        border-color: rgba(76, 175, 80, 0.3);
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
+    }
+    
+    .register-card.guardarropia:hover {
+        border-color: rgba(76, 175, 80, 0.6);
+        box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+    }
+    
+    .register-card .icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        display: block;
+    }
+    
+    .register-card h3 {
+        color: #e8e8e8;
+        margin: 0 0 10px 0;
+        font-size: 1.3rem;
+    }
+    
+    .register-card p {
+        color: #aaa;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    
+    @media (max-width: 768px) {
+        .registers-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-selection-container">
+    <h1>💰 Seleccionar Caja</h1>
+    <p style="text-align: center; color: #aaa; margin-bottom: 20px;">
+        Elige la caja que deseas abrir
+    </p>
+    
+    <div class="registers-grid">
+        {% for register in registers %}
+        <a href="{% if register.type == 'guardarropia' %}{{ url_for('guardarropia.login') }}{% else %}{{ url_for('caja.login_old', register_id=register.id, register_name=register.name) }}{% endif %}" 
+           class="register-card {% if register.type == 'guardarropia' %}guardarropia{% endif %}">
+            <span class="icon">
+                {% if register.type == 'guardarropia' %}🧥{% else %}💰{% endif %}
+            </span>
+            <h3>{{ register.display_name or register.name }}</h3>
+            <p>
+                {% if register.type == 'guardarropia' %}
+                    Sistema de guardarropía
+                {% else %}
+                    Caja de ventas
+                {% endif %}
+            </p>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

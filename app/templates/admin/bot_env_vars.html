@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+{% block title %}Gestionar Variables de Entorno - Bot BIMBA{% endblock %}
+{% block meta_description %}Gestiona las variables de entorno del chatbot BIMBA. Solo accesible para superadministradores.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .env-vars-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .section-title {
+        color: #667eea;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .warning-box {
+        background: rgba(245, 158, 11, 0.1);
+        border-left: 4px solid #f59e0b;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+    
+    .warning-box p {
+        color: #fbbf24;
+        margin: 5px 0;
+        font-size: 0.95rem;
+    }
+    
+    .vars-form {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .var-group {
+        margin-bottom: 25px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .var-group:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .var-label {
+        color: #e8e8e8;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .var-label .required {
+        color: #ef4444;
+        font-size: 0.9rem;
+    }
+    
+    .var-description {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+        font-style: italic;
+    }
+    
+    .var-input {
+        width: 100%;
+        padding: 12px 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #e8e8e8;
+        font-size: 0.95rem;
+        font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+        transition: border-color 0.3s;
+    }
+    
+    .var-input:focus {
+        outline: none;
+        border-color: rgba(102, 126, 234, 0.6);
+    }
+    
+    .var-input::placeholder {
+        color: #64748b;
+    }
+    
+    .current-value {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin-top: 5px;
+        font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    }
+    
+    .current-value.has-value {
+        color: #10b981;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        color: #667eea;
+    }
+    
+    .btn-secondary:hover {
+        background: rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        border-radius: 8px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+    
+    .btn-back:hover {
+        background: rgba(102, 126, 234, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+        color: #667eea;
+    }
+    
+    .loading.active {
+        display: block;
+    }
+    
+    .message {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    .message.active {
+        display: block;
+    }
+    
+    .message.success {
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #10b981;
+    }
+    
+    .message.error {
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+    
+    .password-toggle {
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        color: #667eea;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        margin-left: 10px;
+    }
+    
+    .password-toggle:hover {
+        background: rgba(102, 126, 234, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="env-vars-container">
+    <a href="{{ url_for('admin.bot_config') }}" class="btn-back">
+        ← Volver a Configuración
+    </a>
+    
+    <h1 class="section-title">
+        ⚙️ Gestionar Variables de Entorno
+    </h1>
+    
+    <div class="warning-box">
+        <p><strong>⚠️ Importante:</strong> Modificar estas variables actualizará el servicio systemd y reiniciará la aplicación.</p>
+        <p>Se creará un backup automático antes de cualquier cambio.</p>
+        <p>Solo el superadministrador puede acceder a esta interfaz.</p>
+    </div>
+    
+    <div id="message" class="message"></div>
+    
+    <form id="envVarsForm" class="vars-form">
+        {% for var_name, var_info in vars.items() %}
+        <div class="var-group">
+            <label class="var-label">
+                {{ var_info.label }}
+                {% if var_info.required %}
+                <span class="required">*</span>
+                {% endif %}
+            </label>
+            <div class="var-description">{{ var_info.description }}</div>
+            <input 
+                type="{{ var_info.type }}" 
+                name="{{ var_name }}" 
+                id="{{ var_name }}"
+                class="var-input"
+                value="{{ var_info.current }}"
+                placeholder="Ingresa el valor..."
+                {% if var_info.type == 'password' %}
+                data-password-toggle="true"
+                {% endif %}
+            >
+            <div class="current-value {{ 'has-value' if var_info.current else '' }}">
+                {% if var_info.current %}
+                    Valor actual: {{ var_info.current[:20] }}{% if var_info.current|length > 20 %}...{% endif %}
+                {% else %}
+                    No configurado
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary" id="saveBtn">
+                💾 Guardar Cambios
+            </button>
+            <a href="{{ url_for('admin.bot_config') }}" class="btn btn-secondary">
+                Cancelar
+            </a>
+        </div>
+    </form>
+    
+    <div class="loading" id="loading">
+        <p>⏳ Guardando cambios y reiniciando servicio...</p>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('envVarsForm');
+    const saveBtn = document.getElementById('saveBtn');
+    const loading = document.getElementById('loading');
+    const message = document.getElementById('message');
+    
+    // Toggle para campos de contraseña
+    document.querySelectorAll('[data-password-toggle="true"]').forEach(input => {
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'password-toggle';
+        toggle.textContent = '👁️ Mostrar';
+        toggle.style.marginTop = '5px';
+        
+        toggle.addEventListener('click', function() {
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.textContent = '🙈 Ocultar';
+            } else {
+                input.type = 'password';
+                toggle.textContent = '👁️ Mostrar';
+            }
+        });
+        
+        input.parentElement.appendChild(toggle);
+    });
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validar campos requeridos
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.style.borderColor = '#ef4444';
+            } else {
+                field.style.borderColor = '';
+            }
+        });
+        
+        if (!isValid) {
+            showMessage('Por favor completa todos los campos requeridos', 'error');
+            return;
+        }
+        
+        // Recopilar datos
+        const formData = new FormData(form);
+        const data = {};
+        for (const [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        
+        // Deshabilitar botón y mostrar loading
+        saveBtn.disabled = true;
+        loading.classList.add('active');
+        hideMessage();
+        
+        try {
+            const response = await fetch('{{ url_for("admin.bot_env_vars_update") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showMessage('✅ ' + result.message + (result.backup ? ' (Backup: ' + result.backup + ')' : ''), 'success');
+                // Recargar página después de 2 segundos
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showMessage('❌ ' + result.message, 'error');
+                saveBtn.disabled = false;
+            }
+        } catch (error) {
+            showMessage('❌ Error de conexión: ' + error.message, 'error');
+            saveBtn.disabled = false;
+        } finally {
+            loading.classList.remove('active');
+        }
+    });
+    
+    function showMessage(text, type) {
+        message.textContent = text;
+        message.className = `message ${type} active`;
+        message.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function hideMessage() {
+        message.classList.remove('active');
+    }
+});
+</script>
+{% endblock %}
+

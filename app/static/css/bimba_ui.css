@@ -1,0 +1,529 @@
+/* 
+   🎨 BIMBA UI - Sistema Responsivo y Táctil
+   Mobile-first + Responsive real para POS/TPV
+   Compatible con iPad, tablets, pantallas táctiles y desktop
+*/
+
+:root {
+  /* === COLORES BIMBA === */
+  --bg: #0f0f1e;
+  --bg-panel: #1a1a2e;
+  --bg-panel2: #252540;
+  --text: #e8e8e8;
+  --text-muted: #aaaaaa;
+  --accent: #667eea;
+  --accent2: #764ba2;
+  --danger: #f44336;
+  --ok: #4caf50;
+  --border: rgba(255, 255, 255, 0.1);
+  
+  /* === RADIOS === */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  /* === ESPACIADO === */
+  --gap-1: 0.5rem;   /* 8px */
+  --gap-2: 1rem;     /* 16px */
+  --gap-3: 1.5rem;   /* 24px */
+  --gap-4: 2rem;     /* 32px */
+  
+  /* === SOMBRAS === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3);
+  
+  /* === TRANSICIONES === */
+  --transition: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+/* === UTILIDADES BASE === */
+.bimba-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--gap-2);
+  box-sizing: border-box;
+}
+
+.bimba-grid {
+  display: grid;
+  gap: var(--gap-2);
+}
+
+.bimba-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-2);
+}
+
+.bimba-flex {
+  display: flex;
+  gap: var(--gap-2);
+}
+
+/* === BOTONES TÁCTILES === */
+.bimba-btn {
+  min-height: 44px; /* Mínimo táctil */
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: clamp(14px, 1.6vw, 16px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  touch-action: manipulation; /* Mejora respuesta táctil */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bimba-btn:active {
+  transform: scale(0.98);
+}
+
+.bimba-btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.bimba-btn-primary:hover,
+.bimba-btn-primary:focus {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.bimba-btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.bimba-btn-success {
+  background: var(--ok);
+  color: white;
+}
+
+.bimba-btn-secondary {
+  background: var(--bg-panel2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* === BREAKPOINTS === */
+/* Mobile: <= 480px */
+/* Tablet: 481px - 768px */
+/* Tablet Landscape: 769px - 1024px */
+/* Desktop: > 1024px */
+
+@media (max-width: 480px) {
+  .bimba-container {
+    padding: var(--gap-1);
+  }
+  
+  .bimba-btn {
+    min-height: 56px; /* Más grande en mobile */
+    font-size: 16px;
+    width: 100%;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .bimba-btn {
+    min-height: 52px;
+  }
+}
+
+@media (min-width: 769px) {
+  .bimba-btn {
+    min-height: 48px;
+  }
+}
+
+/* === LAYOUT POS RESPONSIVO === */
+.pos-layout {
+  display: grid;
+  gap: var(--gap-2);
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Mobile: Stack vertical */
+@media (max-width: 768px) {
+  .pos-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .pos-cart-panel {
+    order: 1;
+    max-height: 50vh;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-panel);
+    border-bottom: 2px solid var(--border);
+  }
+  
+  .pos-products-panel {
+    order: 2;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Tablet: Sidebar colapsable */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .pos-layout {
+    grid-template-columns: 320px 1fr;
+  }
+  
+  .pos-cart-panel {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Desktop: Sidebar fija */
+@media (min-width: 1025px) {
+  .pos-layout {
+    grid-template-columns: 360px 1fr;
+  }
+  
+  .pos-cart-panel {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* === PRODUCTOS GRID RESPONSIVO === */
+.products-grid {
+  display: grid;
+  gap: var(--gap-2);
+  padding: var(--gap-2);
+}
+
+/* Mobile: 2 columnas */
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--gap-1);
+    padding: var(--gap-1);
+  }
+}
+
+/* Tablet: 3 columnas */
+@media (min-width: 481px) and (max-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Tablet Landscape: 4 columnas */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Desktop: 4-6 columnas según ancho */
+@media (min-width: 1025px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+/* === TARJETAS DE PRODUCTO === */
+.product-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--gap-2);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  text-align: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.product-card:active {
+  transform: scale(0.95);
+}
+
+.product-card:hover,
+.product-card:focus {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.product-card-name {
+  font-size: clamp(14px, 1.6vw, 16px);
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--gap-1);
+  word-break: break-word;
+}
+
+.product-card-price {
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 700;
+  color: var(--ok);
+  margin-top: auto;
+}
+
+/* === CARRITO RESPONSIVO === */
+.cart-items {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-height: 0;
+}
+
+.cart-item {
+  padding: var(--gap-2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--gap-2);
+}
+
+.cart-item-name {
+  font-size: clamp(14px, 1.6vw, 16px);
+  flex: 1;
+  word-break: break-word;
+}
+
+.cart-item-price {
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 600;
+  color: var(--ok);
+  white-space: nowrap;
+}
+
+.cart-total {
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 700;
+  color: var(--ok);
+  padding: var(--gap-2);
+  border-top: 2px solid var(--border);
+  text-align: center;
+}
+
+/* === BOTONES DE PAGO === */
+.payment-buttons {
+  display: grid;
+  gap: var(--gap-2);
+  padding: var(--gap-2);
+}
+
+@media (max-width: 768px) {
+  .payment-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 769px) {
+  .payment-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.payment-btn {
+  min-height: 64px; /* Extra grande para táctil */
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 700;
+}
+
+/* === TABLA RESPONSIVA (BARRA) === */
+.responsive-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+@media (max-width: 768px) {
+  .responsive-table,
+  .responsive-table thead,
+  .responsive-table tbody,
+  .responsive-table th,
+  .responsive-table td,
+  .responsive-table tr {
+    display: block;
+  }
+  
+  .responsive-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  .responsive-table tr {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--gap-2);
+    padding: var(--gap-2);
+  }
+  
+  .responsive-table td {
+    border: none;
+    position: relative;
+    padding: var(--gap-2);
+    padding-left: 50%;
+  }
+  
+  .responsive-table td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: var(--gap-2);
+    width: 45%;
+    padding-right: var(--gap-2);
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+}
+
+/* === BOTONES DE ENTREGA TÁCTILES === */
+.delivery-btn {
+  width: 100%;
+  min-height: 64px;
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 700;
+  margin-bottom: var(--gap-2);
+  padding: var(--gap-3);
+}
+
+/* === DRAWER/PANEL COLAPSABLE === */
+.cart-drawer-toggle {
+  position: fixed;
+  bottom: 80px;
+  right: var(--gap-2);
+  z-index: 1000;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-lg);
+  display: none; /* Oculto por defecto en desktop */
+}
+
+@media (max-width: 768px) {
+  .cart-drawer-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .pos-cart-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1001;
+    transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+    max-height: 100vh;
+  }
+  
+  .pos-cart-panel.open {
+    transform: translateX(0);
+  }
+}
+
+/* === SCROLLBAR PERSONALIZADA === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent2);
+}
+
+/* === UTILIDADES DE TEXTO === */
+.text-responsive {
+  font-size: clamp(14px, 1.6vw, 18px);
+}
+
+.text-responsive-lg {
+  font-size: clamp(18px, 2.2vw, 24px);
+}
+
+.text-responsive-xl {
+  font-size: clamp(24px, 3vw, 32px);
+}
+
+/* === ESPACIADO RESPONSIVO === */
+@media (max-width: 480px) {
+  .bimba-container {
+    padding: var(--gap-1);
+  }
+}
+
+@media (min-width: 481px) {
+  .bimba-container {
+    padding: var(--gap-2);
+  }
+}
+
+/* === ACCESIBILIDAD === */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* === FOCUS VISIBLE === */
+.bimba-btn:focus-visible,
+.product-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+
+
+
+
+
+
+
+
+
+

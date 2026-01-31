@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block head_extra %}
+<style>
+    .employee-buttons-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 0 15px;
+    }
+
+    .employee-button {
+        padding: 20px 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .employee-button:hover {
+        background-color: #0056b3;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+    }
+
+    .employee-button:active {
+        transform: scale(0.98);
+    }
+
+    .pin-entry-container {
+        max-width: 500px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #222;
+        border-radius: 12px;
+    }
+
+    .selected-employee-info {
+        text-align: center;
+        margin-bottom: 25px;
+        padding: 15px;
+        background-color: #333;
+        border-radius: 8px;
+    }
+
+    .selected-employee-info h2 {
+        color: #00ff00;
+        margin: 0 0 10px 0;
+        font-size: 1.5rem;
+    }
+
+    .selected-employee-info p {
+        color: #aaa;
+        margin: 5px 0;
+    }
+
+    .pin-display {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.5rem;
+        text-align: center;
+        border-radius: 8px;
+        border: 2px solid #444;
+        background-color: #18181a;
+        color: #00ff00;
+        font-weight: bold;
+        letter-spacing: 0.2em;
+        margin-bottom: 15px;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pin-display.empty {
+        color: #666;
+        letter-spacing: 0;
+    }
+
+    .numeric-keyboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 15px;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .keyboard-btn {
+        padding: 15px;
+        background: #4a4a4a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .keyboard-btn:hover {
+        background: #5a5a5a;
+        transform: scale(1.05);
+    }
+
+    .keyboard-btn:active {
+        transform: scale(0.95);
+        background: #3a3a3a;
+    }
+
+    .keyboard-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .btn-clear, .btn-submit {
+        padding: 18px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.3rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-clear {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-clear:hover {
+        background-color: #c82333;
+    }
+
+    .btn-submit {
+        background-color: #00ff00;
+        color: #000;
+    }
+
+    .btn-submit:hover {
+        background-color: #00cc00;
+    }
+
+    .btn-submit:disabled {
+        background-color: #666;
+        color: #999;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin-top: 15px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-cancel:hover {
+        background-color: #5a6268;
+    }
+
+    @media (max-width: 768px) {
+        .employee-buttons-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .numeric-keyboard {
+            gap: 6px;
+            max-width: 280px;
+        }
+        
+        .keyboard-btn {
+            padding: 12px;
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
+<script>
+function appendDigit(digit) {
+    const pinInput = document.getElementById('pin');
+    const pinDisplay = document.getElementById('pin-display');
+    const currentPin = pinInput.value;
+    
+    if (currentPin.length < 10) { // Limitar a 10 dígitos
+        pinInput.value = currentPin + digit;
+        updatePinDisplay();
+    }
+}
+
+function clearPin() {
+    const pinInput = document.getElementById('pin');
+    pinInput.value = '';
+    updatePinDisplay();
+}
+
+function deleteLastDigit() {
+    const pinInput = document.getElementById('pin');
+    const currentPin = pinInput.value;
+    pinInput.value = currentPin.slice(0, -1);
+    updatePinDisplay();
+}
+
+function updatePinDisplay() {
+    const pinInput = document.getElementById('pin');
+    const pinDisplay = document.getElementById('pin-display');
+    const submitBtn = document.getElementById('submit-btn');
+    const pinValue = pinInput.value;
+    
+    if (pinValue.length === 0) {
+        pinDisplay.textContent = 'Ingresa tu PIN';
+        pinDisplay.classList.add('empty');
+        submitBtn.disabled = true;
+    } else {
+        // Mostrar asteriscos
+        pinDisplay.textContent = '*'.repeat(pinValue.length);
+        pinDisplay.classList.remove('empty');
+        submitBtn.disabled = false;
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+
+{% if selected_employee_info %}
+    {# Mostrar teclado numérico para ingresar PIN #}
+    <div class="pin-entry-container">
+        <div class="selected-employee-info">
+            <h2>{{ selected_employee_info.name }}</h2>
+            <p>Ingresa tu PIN</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('scanner.seleccionar_bartender') }}" id="pin-form">
+            <input type="hidden" name="pin" id="pin" required>
+            
+            <div class="pin-display empty" id="pin-display">Ingresa tu PIN</div>
+
+            <div class="numeric-keyboard">
+                <button type="button" class="keyboard-btn" onclick="appendDigit('1')">1</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('2')">2</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('3')">3</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('4')">4</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('5')">5</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('6')">6</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('7')">7</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('8')">8</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('9')">9</button>
+                <button type="button" class="keyboard-btn" onclick="clearPin()">C</button>
+                <button type="button" class="keyboard-btn" onclick="appendDigit('0')">0</button>
+                <button type="button" class="keyboard-btn" onclick="deleteLastDigit()">⌫</button>
+            </div>
+
+            <div class="keyboard-actions">
+                <button type="button" class="btn-clear" onclick="clearPin()">Limpiar</button>
+                <button type="submit" class="btn-submit" id="submit-btn" disabled>Ingresar</button>
+            </div>
+        </form>
+
+        <form method="POST" action="{{ url_for('scanner.seleccionar_bartender') }}" style="margin-top: 10px;">
+            <input type="hidden" name="cancel" value="1">
+            <button type="submit" class="btn-cancel">Cancelar y seleccionar otro empleado</button>
+        </form>
+    </div>
+
+{% else %}
+    {# Mostrar lista de empleados bartenders #}
+    <h1>Selecciona tu nombre</h1>
+    <p style="color: #aaa; margin-bottom: 20px;">Selecciona tu nombre para ingresar tu PIN</p>
+
+    {% if employees %}
+        <div class="employee-buttons-container">
+            {% for emp in employees %}
+                {% set emp_id = emp.get('person_id') or emp.get('employee_id') or emp.get('id') %}
+                {% set first_name = emp.get('first_name') or '' %}
+                {% set last_name = emp.get('last_name') or '' %}
+                {% set emp_name = ((first_name + " " + last_name).strip() if (first_name or last_name) else '') or emp.get('name', 'Empleado') %}
+                
+                {% if emp_id and emp_name %}
+                <form method="POST" action="{{ url_for('scanner.seleccionar_bartender') }}" style="margin: 0;">
+                    <input type="hidden" name="employee_id" value="{{ emp_id }}">
+                    <button type="submit" class="employee-button">{{ emp_name }}</button>
+                </form>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="msg msg-info" style="max-width: 500px; margin: 20px auto;">
+            No se encontraron bartenders disponibles. Contacta al administrador.
+        </div>
+    {% endif %}
+
+{% endif %}
+
+{% endblock %}

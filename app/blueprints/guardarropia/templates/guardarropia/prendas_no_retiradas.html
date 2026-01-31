@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% block title %}Prendas No Retiradas - Guardarropía BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .photo-preview {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        transition: transform 0.2s;
+        display: block;
+        background: #1e293b;
+    }
+    .photo-preview:hover {
+        transform: scale(1.05);
+        border-color: #667eea;
+    }
+    .photo-preview:not([src]) {
+        display: none;
+    }
+    .photo-placeholder {
+        width: 150px;
+        height: 150px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 2px dashed rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 10px;
+    }
+    .tracking-notes {
+        background: rgba(102, 126, 234, 0.1);
+        border-left: 3px solid #667eea;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    .tracking-note-item {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .tracking-note-item:last-child {
+        border-bottom: none;
+    }
+    .tracking-note-date {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+    }
+    .tracking-note-text {
+        color: #e8e8e8;
+    }
+    .days-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    .days-1-7 {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+    }
+    .days-8-30 {
+        background: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+    }
+    .days-31-90 {
+        background: rgba(255, 87, 34, 0.2);
+        color: #ff5722;
+    }
+    .days-90-plus {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+    }
+    .modal-photo {
+        max-width: 100%;
+        max-height: 80vh;
+        border-radius: 8px;
+    }
+    .upload-photo-btn {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #667eea;
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+    }
+    .upload-photo-btn:hover {
+        background: #5568d3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="section">
+        <h2 class="section-title">📸 Prendas No Retiradas</h2>
+        <p style="color: #94a3b8; margin-bottom: 30px;">
+            Gestión y seguimiento de prendas que no han sido retiradas por sus dueños
+        </p>
+        
+        <!-- Estadísticas -->
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 30px;">
+            <div class="stat-card" style="border-left: 4px solid #4caf50;">
+                <div class="stat-label">Total Prendas</div>
+                <div class="stat-number" style="color: #4caf50;">{{ total_prendas }}</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid #2196f3;">
+                <div class="stat-label">Con Foto</div>
+                <div class="stat-number" style="color: #2196f3;">{{ prendas_con_foto }}</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid #ff9800;">
+                <div class="stat-label">Sin Foto</div>
+                <div class="stat-number" style="color: #ff9800;">{{ prendas_sin_foto }}</div>
+            </div>
+        </div>
+        
+        <!-- Distribución por días -->
+        {% if prendas_por_dias %}
+        <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">📊 Distribución por Tiempo</h3>
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                {% for rango, cantidad in prendas_por_dias.items() %}
+                <div style="text-align: center; padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                    <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 5px;">{{ rango }}</div>
+                    <div style="color: #667eea; font-size: 1.5rem; font-weight: bold;">{{ cantidad }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Lista de prendas -->
+        {% if prendas %}
+        <div class="section">
+            <h3 class="section-title" style="font-size: 1.3rem; margin-bottom: 20px;">📦 Lista de Prendas</h3>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Foto</th>
+                            <th>Ticket</th>
+                            <th>Cliente</th>
+                            <th>Descripción</th>
+                            <th>Días Sin Retirar</th>
+                            <th>Marcado Por</th>
+                            <th>Seguimiento</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prenda in prendas %}
+                        <tr>
+                            <td>
+                                {% if prenda.photo_path %}
+                                {% set photo_url = url_for('static', filename=prenda.photo_path) %}
+                                <img src="{{ photo_url }}" 
+                                     alt="Foto {{ prenda.ticket_code }}"
+                                     class="photo-preview"
+                                     onclick="showPhotoModal('{{ photo_url }}', '{{ prenda.ticket_code }}')"
+                                     onerror="console.error('Error cargando foto:', '{{ photo_url }}'); this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div class="photo-placeholder" style="display: none;">
+                                    📷<br>Error al cargar
+                                </div>
+                                {% else %}
+                                <div class="photo-placeholder">
+                                    📷<br>Sin foto
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ prenda.ticket_code }}</strong></td>
+                            <td>{{ prenda.customer_name or 'N/A' }}</td>
+                            <td>{{ prenda.description or 'N/A' }}</td>
+                            <td>
+                                {% set dias = prenda.days_since_unretrieved() %}
+                                <span class="days-badge {% if dias <= 7 %}days-1-7{% elif dias <= 30 %}days-8-30{% elif dias <= 90 %}days-31-90{% else %}days-90-plus{% endif %}">
+                                    {{ dias }} día{% if dias != 1 %}s{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {{ prenda.marked_unretrieved_by or 'N/A' }}<br>
+                                <small style="color: #94a3b8;">
+                                    {% if prenda.marked_unretrieved_at %}
+                                    {{ prenda.marked_unretrieved_at.strftime('%d/%m/%Y %H:%M') }}
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                {% if prenda.tracking_notes %}
+                                <div class="tracking-notes">
+                                    {% for note in prenda.tracking_notes.split('\n') %}
+                                    {% if note.strip() %}
+                                    <div class="tracking-note-item">
+                                        <div class="tracking-note-date">{{ note.split(']')[0]|replace('[', '') }}]</div>
+                                        <div class="tracking-note-text">{{ note.split(']')[1:]|join(']') }}</div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span style="color: #94a3b8;">Sin seguimiento</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    {% if not prenda.photo_path %}
+                                    <a href="#" onclick="showUploadPhotoModal('{{ prenda.ticket_code }}'); return false;" 
+                                       class="upload-photo-btn">
+                                        📷 Agregar Foto
+                                    </a>
+                                    {% else %}
+                                    <a href="#" onclick="showUploadPhotoModal('{{ prenda.ticket_code }}'); return false;" 
+                                       class="upload-photo-btn" style="background: #ff9800;">
+                                        📷 Cambiar Foto
+                                    </a>
+                                    {% endif %}
+                                    <a href="#" onclick="showTrackingModal('{{ prenda.ticket_code }}'); return false;" 
+                                       class="upload-photo-btn" style="background: #2196f3;">
+                                        📝 Agregar Seguimiento
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state" style="text-align: center; padding: 40px; background: #1e293b; border-radius: 12px; margin-top: 20px;">
+            <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
+            <h3 style="color: #e8e8e8; margin-bottom: 10px;">No hay prendas no retiradas</h3>
+            <p style="color: #94a3b8;">Todas las prendas han sido retiradas o no hay prendas marcadas como no retiradas</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para ver foto -->
+<div id="photoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="position: relative; max-width: 90%; max-height: 90%; text-align: center;">
+        <button onclick="closePhotoModal()" style="position: absolute; top: -40px; right: 0; background: rgba(255, 255, 255, 0.2); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 18px;">✕ Cerrar</button>
+        <img id="modalPhoto" src="" alt="" class="modal-photo">
+        <div style="color: white; margin-top: 15px; font-size: 1.2rem;" id="modalTicketCode"></div>
+    </div>
+</div>
+
+<!-- Modal para subir foto -->
+<div id="uploadPhotoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10001; align-items: center; justify-content: center;">
+    <div style="background: #1e293b; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;">
+        <h3 style="color: #667eea; margin-bottom: 20px;">📷 Agregar Foto</h3>
+        <form id="uploadPhotoForm" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" id="uploadTicketCode" name="ticket_code" value="">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #94a3b8; margin-bottom: 10px;">Seleccionar foto:</label>
+                <input type="file" id="photoFile" name="photo" accept="image/*" required 
+                       style="padding: 10px; width: 100%; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; background: #0f172a; color: #e8e8e8;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeUploadPhotoModal()" 
+                        style="padding: 10px 20px; background: #64748b; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                        style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    Subir Foto
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para agregar seguimiento -->
+<div id="trackingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10001; align-items: center; justify-content: center;">
+    <div style="background: #1e293b; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;">
+        <h3 style="color: #667eea; margin-bottom: 20px;">📝 Agregar Seguimiento</h3>
+        <form id="trackingForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" id="trackingTicketCode" name="ticket_code" value="">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #94a3b8; margin-bottom: 10px;">Nota de seguimiento:</label>
+                <textarea id="trackingNote" name="tracking_note" rows="4" required
+                          style="padding: 10px; width: 100%; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; background: #0f172a; color: #e8e8e8; resize: vertical;"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeTrackingModal()" 
+                        style="padding: 10px 20px; background: #64748b; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                        style="padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    Agregar Seguimiento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showPhotoModal(photoPath, ticketCode) {
+    document.getElementById('modalPhoto').src = photoPath;
+    document.getElementById('modalTicketCode').textContent = 'Ticket: ' + ticketCode;
+    document.getElementById('photoModal').style.display = 'flex';
+}
+
+function closePhotoModal() {
+    document.getElementById('photoModal').style.display = 'none';
+}
+
+function showUploadPhotoModal(ticketCode) {
+    document.getElementById('uploadTicketCode').value = ticketCode;
+    document.getElementById('uploadPhotoModal').style.display = 'flex';
+}
+
+function closeUploadPhotoModal() {
+    document.getElementById('uploadPhotoModal').style.display = 'none';
+    document.getElementById('uploadPhotoForm').reset();
+}
+
+function showTrackingModal(ticketCode) {
+    document.getElementById('trackingTicketCode').value = ticketCode;
+    document.getElementById('trackingModal').style.display = 'flex';
+}
+
+function closeTrackingModal() {
+    document.getElementById('trackingModal').style.display = 'none';
+    document.getElementById('trackingForm').reset();
+}
+
+// Cerrar modales al hacer clic fuera
+document.getElementById('photoModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closePhotoModal();
+});
+
+document.getElementById('uploadPhotoModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeUploadPhotoModal();
+});
+
+document.getElementById('trackingModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeTrackingModal();
+});
+
+// Manejar envío de foto
+document.getElementById('uploadPhotoForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const ticketCode = document.getElementById('uploadTicketCode').value;
+    
+    try {
+        const response = await fetch(`{{ url_for('guardarropia_admin.agregar_foto', ticket_code='') }}${ticketCode}`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Foto agregada correctamente');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        alert('Error al subir foto: ' + error.message);
+    }
+});
+
+// Manejar envío de seguimiento
+document.getElementById('trackingForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const ticketCode = document.getElementById('trackingTicketCode').value;
+    
+    try {
+        const response = await fetch(`{{ url_for('guardarropia_admin.agregar_seguimiento', ticket_code='') }}${ticketCode}`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Seguimiento agregado correctamente');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        alert('Error al agregar seguimiento: ' + error.message);
+    }
+});
+</script>
+{% endblock %}
+
+

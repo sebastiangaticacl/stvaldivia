@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voucher - Bimba</title>
+    <style>
+        /**
+         * Estilos para impresión térmica
+         * Diseñado para impresoras térmicas de 80mm de ancho
+         */
+        
+        @media print {
+            @page {
+                size: 80mm auto;
+                margin: 0;
+            }
+            
+            body {
+                margin: 0;
+                padding: 5mm;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1.2;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        @media screen {
+            body {
+                max-width: 80mm;
+                margin: 20px auto;
+                padding: 10px;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                background: #f5f5f5;
+            }
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.2;
+            color: #000;
+            background: #fff;
+        }
+        
+        .voucher {
+            width: 100%;
+            max-width: 80mm;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
+        }
+        
+        .logo {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .logo-placeholder {
+            width: 60px;
+            height: 60px;
+            background: #000;
+            margin: 0 auto 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 10px;
+        }
+        
+        .info {
+            font-size: 10px;
+            margin-top: 5px;
+        }
+        
+        .fecha-hora {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 11px;
+        }
+        
+        .ticket-code {
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+            font-size: 13px;
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
+            padding: 8px 0;
+        }
+        
+        .items {
+            margin: 10px 0;
+        }
+        
+        .item {
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted #ccc;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+        
+        .item-nombre {
+            font-weight: bold;
+            flex: 1;
+        }
+        
+        .item-cantidad {
+            margin: 0 5px;
+        }
+        
+        .item-precio {
+            text-align: right;
+            min-width: 60px;
+        }
+        
+        .item-subtotal {
+            text-align: right;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .totales {
+            margin-top: 15px;
+            border-top: 2px solid #000;
+            padding-top: 10px;
+        }
+        
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .total-final {
+            font-size: 16px;
+            font-weight: bold;
+            border-top: 1px dashed #000;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px dashed #000;
+            font-size: 9px;
+            color: #666;
+        }
+        
+        .medio-pago {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #000;
+            font-size: 10px;
+        }
+        
+        .medio-pago-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+        
+        .no-print {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .btn-imprimir {
+            padding: 10px 20px;
+            font-size: 14px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-imprimir:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="voucher">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-placeholder">BIMBA</div>
+            <div class="logo">BIMBA</div>
+            <div class="info">stvaldivia.cl</div>
+        </div>
+        
+        <!-- Fecha y Hora -->
+        <div class="fecha-hora" id="fecha-hora">
+            <!-- Se llena con JavaScript -->
+        </div>
+        
+        <!-- Ticket Code -->
+        <div class="ticket-code" id="ticket-code">
+            <!-- Se llena con JavaScript -->
+        </div>
+        
+        <!-- Items -->
+        <div class="items" id="items">
+            <!-- Se llena con JavaScript -->
+        </div>
+        
+        <!-- Totales -->
+        <div class="totales">
+            <div class="total-line">
+                <span>Subtotal:</span>
+                <span id="subtotal">$0</span>
+            </div>
+            <div class="total-line">
+                <span>Total:</span>
+                <span class="total-final" id="total">$0</span>
+            </div>
+        </div>
+        
+        <!-- Medio de Pago -->
+        <div class="medio-pago" id="medio-pago">
+            <!-- Se llena con JavaScript -->
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div>Gracias por su compra</div>
+            <div style="margin-top: 5px;">www.stvaldivia.cl</div>
+        </div>
+    </div>
+    
+    <!-- Botón de impresión (solo en pantalla) -->
+    <div class="no-print">
+        <button class="btn-imprimir" onclick="window.print()">Imprimir Voucher</button>
+    </div>
+    
+    <script>
+        /**
+         * Carga los datos del voucher desde la URL o parámetros
+         */
+        async function cargarDatosVoucher() {
+            // Obtener venta_id de la URL
+            const pathParts = window.location.pathname.split('/');
+            const ventaId = pathParts[pathParts.length - 1];
+            
+            if (!ventaId || isNaN(ventaId)) {
+                console.error('Venta ID inválido');
+                mostrarError('Voucher no encontrado');
+                return;
+            }
+            
+            try {
+                // Llamar al backend para obtener datos de la venta
+                const response = await fetch(`/api/caja/venta/${ventaId}/voucher`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}`);
+                }
+                
+                const datos = await response.json();
+                renderizarVoucher(datos);
+                
+            } catch (error) {
+                console.error('Error al cargar datos del voucher:', error);
+                // Fallback: usar datos de ejemplo para desarrollo
+                renderizarVoucher({
+                    fecha: new Date().toLocaleString('es-CL'),
+                    ticket_code: 'TOTEM-' + ventaId,
+                    items: [
+                        { nombre: 'Producto Ejemplo', cantidad: 1, precio_unitario: 5000 }
+                    ],
+                    total: 5000,
+                    medio_pago: 'TARJETA_GETNET'
+                });
+            }
+        }
+        
+        /**
+         * Renderiza el voucher con los datos recibidos
+         */
+        function renderizarVoucher(datos) {
+            // Fecha y hora
+            const fechaHoraElement = document.getElementById('fecha-hora');
+            fechaHoraElement.textContent = datos.fecha || new Date().toLocaleString('es-CL');
+            
+            // Ticket code
+            const ticketCodeElement = document.getElementById('ticket-code');
+            ticketCodeElement.textContent = datos.ticket_code || 'N/A';
+            
+            // Items
+            const itemsElement = document.getElementById('items');
+            if (datos.items && datos.items.length > 0) {
+                itemsElement.innerHTML = datos.items.map(item => {
+                    const subtotal = item.precio_unitario * item.cantidad;
+                    return `
+                        <div class="item">
+                            <div class="item-header">
+                                <span class="item-nombre">${item.nombre || item.sku}</span>
+                                <span class="item-cantidad">x${item.cantidad}</span>
+                                <span class="item-precio">$${(item.precio_unitario).toLocaleString('es-CL')}</span>
+                            </div>
+                            <div class="item-subtotal">Subtotal: $${subtotal.toLocaleString('es-CL')}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                itemsElement.innerHTML = '<div class="item">Sin items</div>';
+            }
+            
+            // Totales
+            const subtotal = datos.subtotal || datos.total || 0;
+            const total = datos.total || 0;
+            
+            document.getElementById('subtotal').textContent = `$${subtotal.toLocaleString('es-CL')}`;
+            document.getElementById('total').textContent = `$${total.toLocaleString('es-CL')}`;
+            
+            // Medio de pago
+            const medioPagoElement = document.getElementById('medio-pago');
+            if (datos.medio_pago) {
+                medioPagoElement.innerHTML = `
+                    <div class="medio-pago-line">
+                        <span>Medio de pago:</span>
+                        <span>${datos.medio_pago}</span>
+                    </div>
+                    ${datos.getnet && datos.getnet.authorizationCode ? `
+                        <div class="medio-pago-line">
+                            <span>Código autorización:</span>
+                            <span>${datos.getnet.authorizationCode}</span>
+                        </div>
+                    ` : ''}
+                `;
+            }
+        }
+        
+        /**
+         * Muestra un mensaje de error
+         */
+        function mostrarError(mensaje) {
+            document.body.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <h2>Error</h2>
+                    <p>${mensaje}</p>
+                </div>
+            `;
+        }
+        
+        // Cargar datos cuando se carga la página
+        cargarDatosVoucher();
+        
+        // Imprimir automáticamente al cargar (solo si no es vista previa)
+        window.addEventListener('load', () => {
+            // Pequeño delay para asegurar que el contenido esté renderizado
+            setTimeout(() => {
+                // Solo imprimir si no estamos en modo vista previa
+                if (!window.matchMedia('print').matches) {
+                    window.print();
+                }
+            }, 500);
+        });
+        
+        // Cerrar ventana después de imprimir (opcional)
+        window.addEventListener('afterprint', () => {
+            // Descomentar si quieres cerrar automáticamente:
+            // window.close();
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

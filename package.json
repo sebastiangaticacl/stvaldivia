@@ -1,0 +1,24 @@
+{
+  "name": "stvaldivia-1",
+  "version": "1.0.0",
+  "description": "Sistema de gestión BIMBA.",
+  "main": "test_deploy.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stvaldivia/stvaldivia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/stvaldivia/stvaldivia/issues"
+  },
+  "homepage": "https://github.com/stvaldivia/stvaldivia#readme"
+}

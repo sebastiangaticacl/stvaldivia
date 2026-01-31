@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Venta de Entradas{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 2rem auto; padding: 2rem;">
+    <h1 style="text-align: center; margin-bottom: 2rem;">🎫 Checkout Express</h1>
+    
+    <div class="card" style="padding: 2rem;">
+        <h2 style="margin-bottom: 1rem;">{{ producto_nombre }}</h2>
+        <p><strong>Tipo de entrada:</strong> {{ producto_nombre }}</p>
+        <p><strong>Lugar:</strong> BIMBA</p>
+        <p><strong>Cantidad:</strong> {{ cantidad }} entrada(s)</p>
+        <p><strong>Precio unitario:</strong> ${{ "{:,.0f}".format(precio_unitario) }}</p>
+        <p style="font-size: 1.5rem; font-weight: bold; margin-top: 1rem;">
+            <strong>Total: ${{ "{:,.0f}".format(precio_total) }}</strong>
+        </p>
+        
+        <hr style="margin: 2rem 0;">
+        
+        <form method="POST" action="{{ url_for('ecommerce.checkout') }}">
+            {% if csrf_token() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>{% endif %}
+            <input type="hidden" name="producto_id" value="{{ producto_id }}">
+            <input type="hidden" name="cantidad" value="{{ cantidad }}">
+            <input type="hidden" name="precio_unitario" value="{{ precio_unitario }}">
+            <input type="hidden" name="precio_total" value="{{ precio_total }}">
+            
+            <div style="margin-bottom: 1rem;">
+                <label for="nombre" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Nombre completo (opcional)</label>
+                <input type="text" id="nombre" name="nombre"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label for="email" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Email (opcional)</label>
+                <input type="email" id="email" name="email"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label for="rut" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">RUT (opcional)</label>
+                <input type="text" id="rut" name="rut" placeholder="Ingresa tu RUT"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label for="telefono" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Teléfono (opcional)</label>
+                <input type="tel" id="telefono" name="telefono" 
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            </div>
+            
+            <button type="submit" class="btn btn-primary" 
+                    style="width: 100%; padding: 1rem; font-size: 1.1rem; font-weight: 600; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                Continuar al Pago
+            </button>
+        </form>
+    </div>
+    
+    <div style="text-align: center; margin-top: 1rem; color: #666; font-size: 0.9rem;">
+        <p>🔒 Pago seguro procesado por GetNet</p>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}{% if product %}Editar{% else %}Crear{% endif %} Producto - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: var(--spacing-sm, 0.75rem);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 768px) {
+        .form-container {
+            padding: var(--spacing-md, 1rem);
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .form-container {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .form-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    
+    @media (min-width: 768px) {
+        .form-card {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .form-card h2 {
+        color: #00ff00;
+        margin-bottom: var(--spacing-md, 1rem);
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        text-align: center;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        color: #ccc;
+        margin-bottom: var(--spacing-xs, 0.5rem);
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1.1rem));
+        font-weight: bold;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: var(--spacing-sm, 0.75rem);
+        min-height: 44px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .form-group .help-text {
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+    }
+
+    .form-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.75rem);
+        justify-content: center;
+        margin-top: var(--spacing-md, 1rem);
+    }
+    
+    @media (min-width: 768px) {
+        .form-actions {
+            flex-direction: row;
+            gap: var(--spacing-md, 1rem);
+            margin-top: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .btn {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        min-height: 44px;
+        border: none;
+        border-radius: 10px;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.2rem));
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    @media (min-width: 768px) {
+        .btn {
+            width: auto;
+            padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 2rem);
+        }
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: #444;
+        color: #e8e8e8;
+    }
+
+    .btn-secondary:hover {
+        background: #555;
+    }
+    
+    @media (min-width: 768px) {
+        .category-input-group {
+            flex-direction: row;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <h2>{% if product %}✏️ Editar{% else %}➕ Crear{% endif %} Producto</h2>
+
+        <form method="POST" action="{% if product %}{{ url_for('products.edit_product', product_id=product.id) }}{% else %}{{ url_for('products.create_product') }}{% endif %}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-group">
+                <label for="name">
+                    Nombre del Producto <span style="color: #ff4444;">*</span>
+                </label>
+                <input type="text" id="name" name="name" 
+                       value="{{ product.name if product else '' }}" 
+                       required 
+                       placeholder="Ej: Royal Guard 470cc">
+            </div>
+
+            <div class="form-group">
+                <label for="category">Categoría</label>
+                <div class="category-input-group" style="display: flex; flex-direction: column; gap: var(--spacing-xs, 0.5rem);">
+                    <select id="category" name="category" style="width: 100%;" onchange="handleCategoryChange()">
+                        <option value="">Sin Categoría</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat }}" {% if product and product.category == cat %}selected{% endif %}>
+                            {{ cat }}
+                        </option>
+                        {% endfor %}
+                        <option value="__new__">➕ Crear Nueva Categoría</option>
+                    </select>
+                    <input type="text" 
+                           id="new-category" 
+                           name="new_category" 
+                           placeholder="Nombre de nueva categoría"
+                           style="width: 100%; display: none;"
+                           onblur="syncNewCategory()">
+                </div>
+                <div class="help-text">
+                    Selecciona una categoría existente o crea una nueva escribiéndola.
+                    <br>
+                    <strong>Ejemplos:</strong> ENTRADAS, CERVEZA, COCTELERÍA, PUERTA, BARRA, etc.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="price">
+                    Precio <span style="color: #ff4444;">*</span>
+                </label>
+                <input type="number" id="price" name="price" 
+                       value="{{ product.price if product else '' }}" 
+                       required 
+                       min="0" 
+                       step="100"
+                       placeholder="Ej: 3500">
+                <div class="help-text">Precio de venta en pesos chilenos (sin puntos ni comas)</div>
+                {% if product and product.cost_price %}
+                <div class="help-text" style="color: #00ff00; margin-top: 5px;">
+                    💰 Ganancia: ${{ (product.price - product.cost_price) | currency }} 
+                    ({{ ((product.price - product.cost_price) / product.cost_price * 100) | round(1) }}%)
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="cost_price">Precio de Costo</label>
+                <input type="number" id="cost_price" name="cost_price" 
+                       value="{{ product.cost_price if product else '' }}" 
+                       min="0" 
+                       step="100"
+                       placeholder="Ej: 2000">
+                <div class="help-text">Costo de compra del producto (opcional)</div>
+            </div>
+
+            <div class="form-group">
+                <label for="stock_quantity">Stock Actual</label>
+                <input type="number" id="stock_quantity" name="stock_quantity" 
+                       value="{{ product.stock_quantity if product else '0' }}" 
+                       min="0" 
+                       step="1"
+                       placeholder="Ej: 50">
+                <div class="help-text">Cantidad actual en inventario</div>
+            </div>
+
+            <div class="form-group">
+                <label for="stock_minimum">Stock Mínimo</label>
+                <input type="number" id="stock_minimum" name="stock_minimum" 
+                       value="{{ product.stock_minimum if product else '0' }}" 
+                       min="0" 
+                       step="1"
+                       placeholder="Ej: 10">
+                <div class="help-text">Cantidad mínima antes de alertar (opcional)</div>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_active" name="is_active" 
+                           {% if not product or product.is_active %}checked{% endif %}>
+                    <label for="is_active" style="margin: 0;">Producto activo</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_kit" name="is_kit" 
+                           {% if product and product.is_kit %}checked{% endif %}>
+                    <label for="is_kit" style="margin: 0;">Usa receta (consume ingredientes)</label>
+                </div>
+                <div class="help-text">Marca esta opción si el producto consume ingredientes del inventario (ej: cocteles)</div>
+                {% if product and product.is_kit %}
+                <div style="margin-top: 15px; padding: 15px; background: rgba(102, 126, 234, 0.1); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 8px;">
+                    <p style="color: #667eea; margin: 0 0 10px 0; font-weight: bold;">📝 Este producto usa receta</p>
+                    {% if not has_recipe %}
+                        <p style="color: #ffaa00; margin: 0 0 10px 0; font-weight: bold;">⚠️ IMPORTANTE: Debes configurar la receta para que el sistema consuma ingredientes</p>
+                    {% endif %}
+                    <a href="{{ url_for('ingredients.manage_recipe', product_id=product.id) }}" 
+                       class="btn btn-primary" 
+                       style="padding: 10px 20px; font-size: 1rem; display: inline-block;">
+                        🥤 {% if has_recipe %}Editar{% else %}Configurar{% endif %} Ingredientes de la Receta
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('routes.view_inventory') }}" class="btn btn-secondary">
+                    ← Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    💾 {% if product %}Actualizar{% else %}Crear{% endif %} Producto
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function handleCategoryChange() {
+    const select = document.getElementById('category');
+    const newCategoryInput = document.getElementById('new-category');
+    
+    if (select.value === '__new__') {
+        newCategoryInput.style.display = 'block';
+        newCategoryInput.focus();
+        newCategoryInput.required = true;
+    } else {
+        newCategoryInput.style.display = 'none';
+        newCategoryInput.required = false;
+        newCategoryInput.value = '';
+    }
+}
+
+function syncNewCategory() {
+    const select = document.getElementById('category');
+    const newCategoryInput = document.getElementById('new-category');
+    
+    if (select.value === '__new__' && newCategoryInput.value.trim()) {
+        // Si hay una nueva categoría escrita, actualizar el select
+        const newCategory = newCategoryInput.value.trim();
+        if (newCategory) {
+            // Crear una opción temporal para mostrar
+            const option = document.createElement('option');
+            option.value = newCategory;
+            option.textContent = newCategory;
+            option.selected = true;
+            select.insertBefore(option, select.lastElementChild);
+            select.value = newCategory;
+        }
+    }
+}
+
+// Al enviar el formulario, si hay nueva categoría, usar ese valor
+document.querySelector('form').addEventListener('submit', function(e) {
+    const select = document.getElementById('category');
+    const newCategoryInput = document.getElementById('new-category');
+    
+    if (select.value === '__new__' && newCategoryInput.value.trim()) {
+        // Crear un campo oculto con la nueva categoría
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'category';
+        hiddenInput.value = newCategoryInput.value.trim();
+        this.appendChild(hiddenInput);
+        
+        // Deshabilitar el select para que no se envíe
+        select.disabled = true;
+    }
+});
+</script>
+{% endblock %}

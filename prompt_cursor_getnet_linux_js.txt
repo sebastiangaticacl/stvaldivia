@@ -1,0 +1,183 @@
+Quiero que implementes la integración de pago con Getnet para el TÓTEM en **Linux**, usando la librería JavaScript oficial y la comunicación **vía navegador (Web Serial)** según la "Documentacion Javascript 1.0.pdf" y el "Manual de Integración Getnet".
+
+⚠️ REGLAS IMPORTANTES (NO ROMPER):
+
+- El tótem corre Linux (Debian/Ubuntu) con **Chromium en modo kiosko**.
+- La conexión con el POS Getnet es por USB/COM, pero se accede **solo desde el navegador** usando Web Serial a través de la librería Getnet.
+- NO usar "Serial Communication Server" de Windows.
+- NO implementar comunicación serial manual ni armar frames a mano.
+- No se debe llamar `Getnet.establecerWebSerialCommunication()`, porque eso fuerza el modo Serial Communication Server para Windows. La "Comunicación vía Navegador" es el modo por defecto.  [oai_citation:1‡Documentacion Javascript 1.0.pdf](sediment://file_00000000423871f5a11d50da666cff48)
+
+────────────────────────────────────────────
+CONTEXTO SEGÚN LA DOCUMENTACIÓN
+────────────────────────────────────────────
+
+- La librería se importa así:
+  import Getnet from "./getnet/getnet.min.js";  [oai_citation:2‡Documentacion Javascript 1.0.pdf](sediment://file_00000000423871f5a11d50da666cff48)
+
+- Comunicación vía navegador (modo que queremos):
+  - Es la opción por defecto; basta NO llamar al método que habilita Serial Communication Server.  [oai_citation:3‡Documentacion Javascript 1.0.pdf](sediment://file_00000000423871f5a11d50da666cff48)
+  - El navegador (Chrome/Chromium) pedirá seleccionar el puerto COM la primera vez que se llame a Poll o a otro comando.  [oai_citation:4‡Documentacion Javascript 1.0.pdf](sediment://file_00000000423871f5a11d50da666cff48)
+
+- Callbacks según doc:
+  Getnet.SetCallback(mostrarResponse);
+  Getnet.SetLogCallback(logCallbackBackend);
+  Getnet.SetTimeErrorCallback(timeOutCallback);  [oai_citation:5‡Documentacion Javascript 1.0.pdf](sediment://file_00000000423871f5a11d50da666cff48)
+
+- Envío de comandos (ejemplos reales):
+  - Poll: Getnet.Poll();
+  - Venta: Getnet.Sale(1000, 1, true, Getnet.POSCommands.SaleType.Sale, true, 1);  [oai_citation:6‡Documentacion Javascript 1.0.pdf](sediment://file_00000000423871f5a11d50da666cff48)
+
+- El callback recibe un objeto `datos` que contiene `JsonSerialized`, que a su vez se parsea con JSON.parse para obtener la respuesta del POS, incluyendo `ResponseCode`.  [oai_citation:7‡Documentacion Javascript 1.0.pdf](sediment://file_00000000423871f5a11d50da666cff48)
+
+────────────────────────────────────────────
+OBJETIVO EN EL FRONT DEL TÓTEM (LINUX)
+────────────────────────────────────────────
+
+Implementar un módulo JS que:
+
+1. Inicialice la librería Getnet en modo navegador:
+   - importe getnet.min.js
+   - registre callbacks (`SetCallback`, `SetLogCallback`, `SetTimeErrorCallback`)
+   - haga Poll cuando el usuario presione "Conectar POS" o al primer intento de pago, para que Chrome muestre el diálogo de selección de puerto.
+
+2. Ejecute una venta con tarjeta desde el tótem:
+   - función `pagarGetnet(total, carritoActual, metaCaja)` que:
+     - asegure que ya se hizo Poll al menos una vez (si no, lo hace).
+     - llame `Getnet.Sale(total, ticketNumber, true, Getnet.POSCommands.SaleType.Sale, true, employeeId);`
+     - controle errores de JS (try/catch).
+
+3. Procese la respuesta del POS en el callback:
+   - función callback(datos):
+     - si `datos.Received` es true, ignorar (según el ejemplo del simulador).
+     - hacer `const resp = JSON.parse(datos.JsonSerialized);`
+     - si `resp.FunctionCode` corresponde a venta:
+       - si `resp.ResponseCode == "0"` → venta aprobada
+       - si distinto de "0" → venta rechazada
+
+4. En caso de **aprobación**:
+   - llamar a backend `POST /api/caja/venta-ok` con JSON:
+
+     {
+       "total": total,
+       "canal": "TOTEM",
+       "venta": {
+         "caja_codigo": metaCaja.caja_codigo,      // ej "caja1"
+         "cajero": metaCaja.cajero,                // ej "TOTEM_AUTO_1"
+         "items": carritoActual                    // [{ sku, nombre, cantidad, precio_unitario }]
+       },
+       "medio_pago": "TARJETA_GETNET",
+       "getnet": {
+         "responseCode": resp.ResponseCode,
+         "responseMessage": resp.ResponseMessage,
+         "authorizationCode": resp.AuthorizationCode,
+         "ticketNumber": resp.Ticket,              // si viene
+         "json": datos.JsonSerialized
+       }
+     }
+
+   - esperar respuesta `{ ok: true, venta_id, ticket_code }`.
+   - abrir `/voucher/{venta_id}` en nueva ventana o pestaña para impresión automática (window.print()).
+   - limpiar el carrito en el front.
+
+5. En caso de **rechazo**:
+   - llamar `POST /api/caja/venta-fallida-log` con:
+
+     {
+       "total": total,
+       "venta": {
+         "caja_codigo": metaCaja.caja_codigo,
+         "cajero": metaCaja.cajero,
+         "items": carritoActual
+       },
+       "motivo": resp.ResponseMessage || "No se pudo completar la operación",
+       "getnet": {
+         "responseCode": resp.ResponseCode,
+         "responseMessage": resp.ResponseMessage,
+         "json": datos.JsonSerialized
+       }
+     }
+
+   - mantener el carrito en pantalla.
+   - mostrar mensaje neutro (no humillante):
+
+     "No se pudo completar la operación. ¿Quieres volver a intentarlo?"
+
+   - mostrar solo 2 botones:
+     [Volver a intentar] → vuelve a llamar `pagarGetnet` con el mismo carrito.
+     [Cancelar compra]  → limpia carrito y vuelve a pantalla inicial.
+
+   - NO mostrar texto tipo "tarjeta rechazada", "falta saldo", etc.
+
+────────────────────────────────────────────
+ESTRUCTURA DE ARCHIVOS QUE QUIERO
+────────────────────────────────────────────
+
+1) `/public/js/getnet_linux.js`
+   - Se encarga de:
+     - importar `getnet.min.js`
+     - exponer funciones:
+       - `initGetnetLinux(metaCaja)`  // registra callbacks, configura logs, etc.
+       - `conectarPos()`             // llama Poll y maneja el diálogo de puerto
+       - `pagarGetnet(total, carritoActual)` // ejecuta Sale y confía en el callback
+     - manejar internamente:
+       - estado: si ya hay puerto seleccionado / conexión estable
+       - `SetCallback`, `SetLogCallback`, `SetTimeErrorCallback`
+       - función callback principal que decide OK vs FAIL y llama a funciones externas que el módulo exporta o recibe por parámetros.
+
+2) `/public/js/caja_totem.js`
+   - Controla:
+     - el carrito (agregar/eliminar ítems),
+     - el botón "Pagar con tarjeta",
+     - el botón "Cancelar compra".
+   - Usa `getnet_linux.js`:
+     - llama `initGetnetLinux({ caja_codigo: "caja1", cajero: "TOTEM_AUTO_1" })` al cargar.
+     - cuando usuario toca "Pagar con tarjeta":
+       - si no se ha conectado, primero `conectarPos()`.
+       - luego `pagarGetnet(total, carritoActual)`.
+
+   - Define funciones a las que el módulo getnet pueda llamar en caso de:
+     - `onVentaAprobada(resp, ventaBackend)` → muestra ticket / limpia carrito.
+     - `onVentaRechazada(resp)` → muestra mensaje neutro + botones.
+
+3) `/public/html/voucher.html`
+   - Página simple para mostrar el voucher térmico:
+     - recibe datos de la venta desde backend (ya lo tienes o lo simulas).
+     - llama `window.print()` en `onload`.
+     - opcional: cierra la ventana después de imprimir.
+
+Solo necesito que crees una versión básica de `voucher.html` que funcione bien para impresión en impresora térmica (tipografía monoespaciada simple está bien), con:
+
+   - logo Bimba (placeholder),
+   - fecha/hora,
+   - lista de productos,
+   - total,
+   - ticket_code.
+
+────────────────────────────────────────────
+OTROS DETALLES / NOTAS
+────────────────────────────────────────────
+
+- Asegúrate de no usar cosas específicas de Windows.
+- Recuerda que en Linux usaremos Chromium en modo kiosko, así que:
+  - todo debe correr con JS plano (ES6) y fetch.
+  - nada de require() de Node.
+- Maneja errores de Web Serial:
+  - si el usuario cancela el diálogo de puerto, mostrar mensaje suave:
+    "No se seleccionó el POS. Intenta nuevamente o pide ayuda al staff."
+
+- Comenta el código con claridad:
+  - dónde se conecta con Getnet,
+  - dónde se llama al backend,
+  - dónde se maneja el flujo de UI (mensajes, botones, etc.).
+
+
+
+
+
+
+
+
+
+
+

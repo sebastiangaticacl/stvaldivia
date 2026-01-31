@@ -1,0 +1,711 @@
+{% extends "base.html" %}
+{% block title %}{% if register %}Editar{% else %}Crear{% endif %} Caja - Administración BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: var(--spacing-sm, 0.75rem);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 768px) {
+        .form-container {
+            padding: var(--spacing-md, 1rem);
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .form-container {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .form-header {
+        margin-bottom: var(--spacing-md, 1rem);
+        padding-bottom: var(--spacing-md, 1rem);
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    @media (min-width: 768px) {
+        .form-header {
+            margin-bottom: var(--spacing-lg, 1.5rem);
+            padding-bottom: var(--spacing-md, 1rem);
+        }
+    }
+    
+    .form-header h1 {
+        color: #e8e8e8;
+        margin: 0;
+        font-size: clamp(1.5rem, 4vw, 2rem);
+    }
+    
+    .form-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: var(--spacing-md, 1rem);
+    }
+    
+    @media (min-width: 768px) {
+        .form-card {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        color: #e8e8e8;
+        margin-bottom: var(--spacing-xs, 0.5rem);
+        font-weight: bold;
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+    }
+    
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select {
+        width: 100%;
+        padding: var(--spacing-sm, 0.75rem);
+        min-height: 44px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #e8e8e8;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .form-group input[type="text"]:focus,
+    .form-group input[type="number"]:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-group input[type="text"]::placeholder,
+    .form-group input[type="number"]::placeholder {
+        color: #666;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+    
+    .checkbox-group label {
+        margin: 0;
+        cursor: pointer;
+        color: #e8e8e8;
+    }
+    
+    .help-text {
+        color: #aaa;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+    
+    .form-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.75rem);
+        margin-top: var(--spacing-md, 1rem);
+        padding-top: var(--spacing-md, 1rem);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    @media (min-width: 768px) {
+        .form-actions {
+            flex-direction: row;
+            gap: var(--spacing-md, 1rem);
+            margin-top: var(--spacing-lg, 1.5rem);
+            padding-top: var(--spacing-md, 1rem);
+        }
+    }
+    
+    .btn {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        min-height: 44px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    @media (min-width: 768px) {
+        .btn {
+            width: auto;
+            padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .btn-primary {
+        background: rgba(102, 126, 234, 0.3);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+    }
+    
+    .btn-primary:hover {
+        background: rgba(102, 126, 234, 0.5);
+        border-color: rgba(102, 126, 234, 0.7);
+        color: #fff;
+    }
+    
+    .btn-secondary {
+        background: rgba(158, 158, 158, 0.3);
+        border: 1px solid rgba(158, 158, 158, 0.5);
+        color: #9e9e9e;
+    }
+    
+    .btn-secondary:hover {
+        background: rgba(158, 158, 158, 0.5);
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <a href="{{ url_for('register_admin.list_registers') }}" 
+           style="color: #667eea; text-decoration: none; font-size: 0.9rem; margin-bottom: 10px; display: block;">
+            ← Volver a Cajas
+        </a>
+        <h1>{% if register %}✏️ Editar Punto de Venta{% else %}➕ Crear Nuevo Punto de Venta{% endif %}</h1>
+    </div>
+    
+    <div class="form-card">
+        <form method="POST" action="{% if register %}{{ url_for('register_admin.edit_register', register_id=register.id) }}{% else %}{{ url_for('register_admin.create_register') }}{% endif %}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="form-group">
+                <label for="name">Nombre del TPV *</label>
+                <input type="text" 
+                       id="name" 
+                       name="name" 
+                       value="{{ register.name if register else '' }}" 
+                       placeholder="Ej: Barra Principal, Puerta, Terraza, Kiosko"
+                       required>
+                <div class="help-text">Nombre descriptivo del punto de venta (TPV)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="code">Código Único *</label>
+                <input type="text" 
+                       id="code" 
+                       name="code" 
+                       value="{{ register.code if register else '' }}" 
+                       placeholder="Ej: CAJA-01, BARRA-01, CORTESIAS"
+                       required>
+                <div class="help-text">Código único para identificar el TPV (sin espacios, preferiblemente mayúsculas)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Ubicación Física</label>
+                <input type="text" 
+                       id="location" 
+                       name="location" 
+                       value="{{ register.location if register else '' }}" 
+                       placeholder="Ej: Barra Principal, Terraza, Puerta de Entrada">
+                <div class="help-text">Ubicación física donde se encuentra este punto de venta</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="tpv_type">Tipo de TPV (Legacy)</label>
+                <select id="tpv_type" name="tpv_type" style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                    <option value="">-- Seleccionar tipo --</option>
+                    <option value="barra" {% if register and register.tpv_type == 'barra' %}selected{% endif %}>🍺 Barra</option>
+                    <option value="puerta" {% if register and register.tpv_type == 'puerta' %}selected{% endif %}>🚪 Puerta</option>
+                    <option value="terraza" {% if register and register.tpv_type == 'terraza' %}selected{% endif %}>🏖️ Terraza</option>
+                    <option value="kiosko" {% if register and register.tpv_type == 'kiosko' %}selected{% endif %}>📱 Kiosko</option>
+                    <option value="movil" {% if register and register.tpv_type == 'movil' %}selected{% endif %}>📲 Móvil</option>
+                    <option value="vip" {% if register and register.tpv_type == 'vip' %}selected{% endif %}>💎 VIP</option>
+                </select>
+                <div class="help-text">Tipo de terminal punto de venta (legacy, usar register_type para nuevas cajas)</div>
+            </div>
+            
+            <!-- MVP1: Nueva sección de configuración de caja -->
+            <div class="form-group" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid rgba(102, 126, 234, 0.3);">
+                <label style="font-size: 1.1rem; color: #667eea; margin-bottom: 15px; display: block;">
+                    ⚙️ Configuración de Caja (MVP1)
+                </label>
+                
+                <div class="form-group">
+                    <label for="register_type">Tipo de Caja *</label>
+                    <select id="register_type" name="register_type" required style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                        <option value="">-- Seleccionar tipo --</option>
+                        <option value="TOTEM" {% if register and register.register_type == 'TOTEM' %}selected{% endif %}>🤖 TOTEM (Autoatención)</option>
+                        <option value="HUMANA" {% if register and register.register_type == 'HUMANA' %}selected{% endif %}>👤 HUMANA (Cajero)</option>
+                        <option value="OFICINA" {% if register and register.register_type == 'OFICINA' %}selected{% endif %}>🏢 OFICINA (Cortesías)</option>
+                        <option value="VIRTUAL" {% if register and register.register_type == 'VIRTUAL' %}selected{% endif %}>💻 VIRTUAL (Precompra/QR)</option>
+                    </select>
+                    <div class="help-text">Tipo de caja según operación BIMBA</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operational_status">Estado Operativo</label>
+                    <select id="operational_status" name="operational_status" style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                        <option value="active" {% if not register or register.operational_status == 'active' %}selected{% endif %}>✅ Activa</option>
+                        <option value="maintenance" {% if register and register.operational_status == 'maintenance' %}selected{% endif %}>🔧 Mantenimiento</option>
+                        <option value="offline" {% if register and register.operational_status == 'offline' %}selected{% endif %}>📴 Offline</option>
+                        <option value="error" {% if register and register.operational_status == 'error' %}selected{% endif %}>❌ Error</option>
+                    </select>
+                    <div class="help-text">Estado operativo de la caja</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="devices">Dispositivos (JSON)</label>
+                    <textarea id="devices" name="devices" rows="4" placeholder='{"pos": "modelo", "printer": "modelo", "drawer": true}' style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; font-family: monospace; box-sizing: border-box; resize: vertical;">{% if register and register.devices %}{{ register.devices }}{% endif %}</textarea>
+                    <div class="help-text">JSON con dispositivos asociados: POS, impresora, gaveta. Ej: {"pos": "GETNET-123", "printer": "Epson-TM20", "drawer": true}</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operation_mode">Modo de Operación (JSON)</label>
+                    <textarea id="operation_mode" name="operation_mode" rows="3" placeholder='{"mode": "normal"}' style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; font-family: monospace; box-sizing: border-box; resize: vertical;">{% if register and register.operation_mode %}{{ register.operation_mode }}{% endif %}</textarea>
+                    <div class="help-text">JSON con modo de operación. Ej: {"mode": "normal"} o {"mode": "courtesy"} o {"mode": "prepurchase"}</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Métodos de Pago Habilitados</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 15px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        {% if not payment_methods_list %}
+                            {% set payment_methods_list = [] %}
+                        {% endif %}
+                        <div class="checkbox-group" style="margin: 0;">
+                            <input type="checkbox" id="pm_cash" name="payment_methods" value="cash" {% if 'cash' in payment_methods_list %}checked{% endif %}>
+                            <label for="pm_cash" style="margin: 0; cursor: pointer;">💵 Efectivo</label>
+                        </div>
+                        <div class="checkbox-group" style="margin: 0;">
+                            <input type="checkbox" id="pm_debit" name="payment_methods" value="debit" {% if 'debit' in payment_methods_list %}checked{% endif %}>
+                            <label for="pm_debit" style="margin: 0; cursor: pointer;">💳 Débito</label>
+                        </div>
+                        <div class="checkbox-group" style="margin: 0;">
+                            <input type="checkbox" id="pm_credit" name="payment_methods" value="credit" {% if 'credit' in payment_methods_list %}checked{% endif %}>
+                            <label for="pm_credit" style="margin: 0; cursor: pointer;">💳 Crédito</label>
+                        </div>
+                        <div class="checkbox-group" style="margin: 0;">
+                            <input type="checkbox" id="pm_qr" name="payment_methods" value="qr" {% if 'qr' in payment_methods_list %}checked{% endif %}>
+                            <label for="pm_qr" style="margin: 0; cursor: pointer;">📱 QR</label>
+                        </div>
+                    </div>
+                    <div class="help-text">Selecciona los métodos de pago habilitados para esta caja</div>
+                </div>
+            </div>
+            
+            <!-- Payment Stack BIMBA: GETNET + KLAP -->
+            <div class="form-group" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid rgba(102, 126, 234, 0.3);">
+                <label style="font-size: 1.1rem; color: #667eea; margin-bottom: 15px; display: block;">
+                    💳 Procesadores de Pago (GETNET + KLAP)
+                </label>
+                <div class="help-text" style="margin-bottom: 15px; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+                    <strong>⚠️ IMPORTANTE:</strong> Esta configuración es solo para <strong>procesamiento de pagos</strong> (GETNET/KLAP).<br>
+                    <strong>NO crea ventas.</strong> Las ventas se registran en nuestro POS propio (BIMBAVERSO) que maneja inventario.<br>
+                    GETNET/KLAP solo procesan el pago y se registran en la venta para conciliación y fallback.
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment_provider_primary">Provider Principal *</label>
+                    <select id="payment_provider_primary" name="payment_provider_primary" required style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                        <option value="GETNET" {% if not register or register.payment_provider_primary == 'GETNET' %}selected{% endif %}>🏦 GETNET (Banco Santander) - Recomendado</option>
+                        <option value="KLAP" {% if register and register.payment_provider_primary == 'KLAP' %}selected{% endif %}>📱 KLAP (Tap On Phone)</option>
+                        <option value="SUMUP" {% if register and register.payment_provider_primary == 'SUMUP' %}selected{% endif %}>💳 SUMUP (No recomendado)</option>
+                    </select>
+                    <div class="help-text">Provider principal de pagos. GETNET es el recomendado por estabilidad y soporte.</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment_provider_backup">Provider Backup</label>
+                    <select id="payment_provider_backup" name="payment_provider_backup" style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                        <option value="">-- Sin backup --</option>
+                        <option value="KLAP" {% if register and register.payment_provider_backup == 'KLAP' %}selected{% endif %}>📱 KLAP (Tap On Phone) - Recomendado</option>
+                        <option value="GETNET" {% if register and register.payment_provider_backup == 'GETNET' %}selected{% endif %}>🏦 GETNET</option>
+                    </select>
+                    <div class="help-text">Provider de backup cuando falla el principal. KLAP es recomendado porque usa celulares existentes.</div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" 
+                               id="fallback_enabled" 
+                               name="fallback_enabled"
+                               {% if register and fallback_policy %}
+                                   {% if fallback_policy.get('enabled') %}checked{% endif %}
+                               {% else %}
+                                   checked
+                               {% endif %}>
+                        <label for="fallback_enabled">Fallback habilitado</label>
+                    </div>
+                    <div class="help-text">Permite cambiar automáticamente al provider backup cuando falla el principal</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Requisitos Fallback (Checklist)</label>
+                    <div style="padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.2);">
+                        <div class="checkbox-group" style="margin-bottom: 10px;">
+                            <input type="checkbox" id="req_nfc" name="fallback_requirements" value="nfc" checked disabled>
+                            <label for="req_nfc" style="margin: 0; cursor: default;">📱 Celulares con NFC habilitado</label>
+                        </div>
+                        <div class="checkbox-group" style="margin-bottom: 10px;">
+                            <input type="checkbox" id="req_chargers" name="fallback_requirements" value="chargers" checked disabled>
+                            <label for="req_chargers" style="margin: 0; cursor: default;">🔌 Cargadores disponibles</label>
+                        </div>
+                        <div class="checkbox-group" style="margin-bottom: 10px;">
+                            <input type="checkbox" id="req_mobile_data" name="fallback_requirements" value="mobile_data" checked disabled>
+                            <label for="req_mobile_data" style="margin: 0; cursor: default;">📶 Datos móviles activos (WiFi backup)</label>
+                        </div>
+                        <div class="help-text" style="margin-top: 10px; color: #667eea;">
+                            <strong>Nota:</strong> Estos requisitos son obligatorios para operar con KLAP como backup. Verificar al inicio de cada turno.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="max_switch_time">Tiempo Máximo de Cambio (segundos)</label>
+                    <input type="number" 
+                           id="max_switch_time" 
+                           name="max_switch_time" 
+                           min="30" 
+                           max="300" 
+                           step="10"
+                           value="{% if register and fallback_policy %}{{ fallback_policy.get('max_switch_time_seconds', 60) }}{% else %}60{% endif %}"
+                           style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                    <div class="help-text">Tiempo máximo para cambiar de provider principal a backup cuando falla (default: 60 segundos)</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="backup_devices_required">Cantidad Mínima de Celulares Backup</label>
+                    <input type="number" 
+                           id="backup_devices_required" 
+                           name="backup_devices_required" 
+                           min="1" 
+                           max="10" 
+                           step="1"
+                           value="{% if register and fallback_policy %}{{ fallback_policy.get('backup_devices_required', 2) }}{% else %}2{% endif %}"
+                           style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                    <div class="help-text">Número mínimo de celulares con app KLAP instalada requeridos para operar backup (default: 2)</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="provider_config">Configuración de Providers (JSON)</label>
+                    <textarea id="provider_config" name="provider_config" rows="8" placeholder='{"GETNET": {"mode": "serial", "port": "COM3", "baudrate": 115200, "timeout_ms": 30000}, "KLAP": {"merchant_id": "KLAP-789", "api_key": "..."}}' style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; font-family: monospace; box-sizing: border-box; resize: vertical;">{% if register and register.provider_config %}{{ register.provider_config }}{% endif %}</textarea>
+                    <div class="help-text">
+                        JSON con configuración por proveedor.<br>
+                        <strong>GETNET Serial (Windows):</strong> {"GETNET": {"mode": "serial", "port": "COM3", "baudrate": 115200, "timeout_ms": 30000}}<br>
+                        <strong>GETNET API:</strong> {"GETNET": {"terminal_id": "GETNET-123", "merchant_id": "MERCHANT-456"}}<br>
+                        <strong>KLAP:</strong> {"KLAP": {"merchant_id": "KLAP-789", "api_key": "..."}}<br>
+                        <strong>Nota:</strong> Si mode=serial y provider=GETNET, el campo "port" es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fallback_policy">Política de Fallback (JSON)</label>
+                    <textarea id="fallback_policy" name="fallback_policy" rows="5" placeholder='{"enabled": true, "trigger_events": ["pos_offline", "pos_error", "printer_error_optional"], "max_switch_time_seconds": 60, "backup_devices_required": 2}' style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; font-family: monospace; box-sizing: border-box; resize: vertical;">{% if register and register.fallback_policy %}{{ register.fallback_policy }}{% endif %}</textarea>
+                    <div class="help-text">JSON con reglas de cuándo activar fallback. trigger_events: ["pos_offline", "pos_error", "printer_error_optional", "network_error"]</div>
+                </div>
+                
+                <div style="padding: 15px; background: rgba(255, 152, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 152, 0, 0.3); margin-top: 15px;">
+                    <p style="color: #ff9800; font-size: 0.9rem; margin: 0;">
+                        <strong>⚠️ Validaciones por Tipo de Caja:</strong><br>
+                        • <strong>TOTEM:</strong> Backup permitido pero operativo manual (no integrado aún)<br>
+                        • <strong>HUMANA/OFICINA:</strong> Backup KLAP recomendado<br>
+                        • <strong>VIRTUAL:</strong> Provider principal GETNET (integración real en fase posterior)
+                    </p>
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid rgba(102, 126, 234, 0.3);">
+                <label style="font-size: 1.1rem; color: #667eea; margin-bottom: 15px; display: block;">
+                    👤 Responsabilidad
+                </label>
+                
+                <div class="form-group">
+                    <label for="responsible_user_id">Usuario Responsable (ID)</label>
+                    <input type="text" id="responsible_user_id" name="responsible_user_id" value="{{ register.responsible_user_id if register else '' }}" placeholder="Ej: user123">
+                    <div class="help-text">ID del usuario responsable de esta caja</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="responsible_role">Rol del Responsable</label>
+                    <input type="text" id="responsible_role" name="responsible_role" value="{{ register.responsible_role if register else '' }}" placeholder="Ej: cajero, supervisor, admin">
+                    <div class="help-text">Rol del usuario responsable</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fallback_config">Configuración de Fallback (JSON)</label>
+                    <textarea id="fallback_config" name="fallback_config" rows="3" placeholder='{"enabled": false}' style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; font-family: monospace; box-sizing: border-box; resize: vertical;">{% if register and register.fallback_config %}{{ register.fallback_config }}{% endif %}</textarea>
+                    <div class="help-text">JSON con configuración de fallback (MVP3)</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fast_lane_config">Configuración de Fast Lane (JSON)</label>
+                    <textarea id="fast_lane_config" name="fast_lane_config" rows="3" placeholder='{"enabled": false}' style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; font-family: monospace; box-sizing: border-box; resize: vertical;">{% if register and register.fast_lane_config %}{{ register.fast_lane_config }}{% endif %}</textarea>
+                    <div class="help-text">JSON con configuración de fast lane (MVP3)</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="default_location">Ubicación para Inventario</label>
+                <input type="text" 
+                       id="default_location" 
+                       name="default_location" 
+                       value="{{ register.default_location if register else '' }}" 
+                       placeholder="Ej: barra_principal, bodega, terraza">
+                <div class="help-text">Ubicación por defecto para descontar inventario cuando se vende desde este TPV</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="max_concurrent_sessions">Sesiones Simultáneas Máximas</label>
+                <input type="number" 
+                       id="max_concurrent_sessions" 
+                       name="max_concurrent_sessions" 
+                       value="{{ register.max_concurrent_sessions if register else 1 }}" 
+                       min="1" 
+                       max="10"
+                       style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                <div class="help-text">Número máximo de sesiones que pueden estar abiertas simultáneamente en este TPV (por defecto: 1)</div>
+            </div>
+            
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" 
+                           id="is_active" 
+                           name="is_active"
+                           {% if not register or register.is_active %}checked{% endif %}>
+                    <label for="is_active">Caja activa</label>
+                </div>
+                <div class="help-text">Los TPV inactivos no aparecerán en el sistema POS</div>
+            </div>
+            
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" 
+                           id="superadmin_only" 
+                           name="superadmin_only"
+                           {% if register and register.superadmin_only %}checked{% endif %}>
+                    <label for="superadmin_only">Solo para Superadmin</label>
+                </div>
+                <div class="help-text">Este TPV solo será visible para usuarios superadmin (ej: cortesías, pruebas)</div>
+            </div>
+            
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" 
+                           id="requires_cash_count" 
+                           name="requires_cash_count"
+                           {% if not register or register.requires_cash_count %}checked{% endif %}>
+                    <label for="requires_cash_count">Requiere conteo de efectivo al abrir</label>
+                </div>
+                <div class="help-text">Si está marcado, se solicitará el conteo de efectivo inicial al abrir una sesión</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Categorías de Productos Permitidas</label>
+                <div class="help-text" style="margin-bottom: 15px;">
+                    Selecciona las categorías de productos que este TPV puede vender. Si no seleccionas ninguna, el TPV podrá vender productos de todas las categorías.
+                </div>
+                {% if available_categories %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 300px; overflow-y: auto; padding: 15px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    {% for category in available_categories %}
+                    <div class="checkbox-group" style="margin: 0;">
+                        <input type="checkbox" 
+                               id="cat_{{ loop.index }}" 
+                               name="allowed_categories" 
+                               value="{{ category }}"
+                               {% if selected_categories and category in selected_categories %}checked{% endif %}>
+                        <label for="cat_{{ loop.index }}" style="margin: 0; cursor: pointer;">{{ category }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="margin-top: 10px; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                    <p style="color: #667eea; font-size: 0.85rem; margin: 0;">
+                        📦 <strong>{{ available_categories|length }}</strong> categoría(s) disponible(s). 
+                        Si no seleccionas ninguna, el TPV podrá vender productos de todas las categorías.
+                    </p>
+                </div>
+                {% else %}
+                <div style="padding: 20px; background: rgba(255, 152, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 152, 0, 0.3); text-align: center;">
+                    <p style="color: #ff9800; font-size: 0.9rem; margin: 0 0 10px 0;">
+                        ⚠️ No hay categorías disponibles aún.
+                    </p>
+                    <p style="color: #aaa; font-size: 0.85rem; margin: 0 0 15px 0;">
+                        Crea productos con categorías primero para poder restringir por categoría.
+                    </p>
+                    <a href="{{ url_for('inventory_admin.products_view') }}" 
+                       style="display: inline-block; padding: 8px 16px; background: rgba(102, 126, 234, 0.3); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 6px; text-decoration: none; font-size: 0.85rem;">
+                        ➕ Ir a Productos
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid rgba(102, 126, 234, 0.3);">
+                <label style="font-size: 1.1rem; color: #667eea; margin-bottom: 15px; display: block;">
+                    🖨️ Configuración de Impresora
+                </label>
+                <div class="help-text" style="margin-bottom: 15px;">
+                    Configura la impresora que usará este TPV para imprimir tickets de venta
+                </div>
+                
+                <div style="padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="printer_name" style="font-size: 0.95rem;">Impresora</label>
+                        <select id="printer_name" name="printer_name" 
+                                style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                            <option value="">-- Usar impresora por defecto del sistema --</option>
+                            {% if available_printers %}
+                                {% for printer in available_printers %}
+                                <option value="{{ printer }}" 
+                                        {% if register and register.printer_config %}
+                                            {% set printer_config = register.printer_config|from_json if register.printer_config else {} %}
+                                            {% if printer_config.get('printer_name') == printer %}selected{% endif %}
+                                        {% endif %}>
+                                    {{ printer }}
+                                </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                        <div class="help-text">
+                            Selecciona la impresora específica para este TPV, o deja en blanco para usar la impresora por defecto
+                        </div>
+                        <button type="button" onclick="refreshPrinters()" 
+                                style="margin-top: 10px; padding: 8px 16px; background: rgba(102, 126, 234, 0.3); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                            🔄 Actualizar Lista de Impresoras
+                        </button>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="printer_type" style="font-size: 0.95rem;">Tipo de Impresora</label>
+                        <select id="printer_type" name="printer_type" 
+                                style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                            {% set printer_config = {} %}
+                            {% if register and register.printer_config %}
+                                {% set printer_config = register.printer_config|from_json %}
+                            {% endif %}
+                            <option value="thermal" {% if not printer_config or printer_config.get('printer_type') == 'thermal' %}selected{% endif %}>Térmica (80mm)</option>
+                            <option value="inkjet" {% if printer_config and printer_config.get('printer_type') == 'inkjet' %}selected{% endif %}>Inyección de Tinta</option>
+                            <option value="laser" {% if printer_config and printer_config.get('printer_type') == 'laser' %}selected{% endif %}>Láser</option>
+                            <option value="default" {% if printer_config and printer_config.get('printer_type') == 'default' %}selected{% endif %}>Por Defecto</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="paper_width" style="font-size: 0.95rem;">Ancho de Papel (mm)</label>
+                        <select id="paper_width" name="paper_width" 
+                                style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 1rem; box-sizing: border-box;">
+                            <option value="58" {% if printer_config and printer_config.get('paper_width') == 58 %}selected{% endif %}>58mm (Térmica pequeña)</option>
+                            <option value="80" {% if not printer_config or printer_config.get('paper_width') == 80 %}selected{% endif %}>80mm (Térmica estándar)</option>
+                            <option value="110" {% if printer_config and printer_config.get('paper_width') == 110 %}selected{% endif %}>110mm (Térmica grande)</option>
+                            <option value="210" {% if printer_config and printer_config.get('paper_width') == 210 %}selected{% endif %}>210mm (A4)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="checkbox-group" style="margin-bottom: 15px;">
+                        <input type="checkbox" 
+                               id="auto_print" 
+                               name="auto_print"
+                               {% if not printer_config or printer_config.get('auto_print', True) %}checked{% endif %}>
+                        <label for="auto_print">Imprimir automáticamente al crear venta</label>
+                    </div>
+                    
+                    <div class="checkbox-group" style="margin-bottom: 15px;">
+                        <input type="checkbox" 
+                               id="print_items" 
+                               name="print_items"
+                               {% if not printer_config or printer_config.get('print_items', True) %}checked{% endif %}>
+                        <label for="print_items">Imprimir lista de productos</label>
+                    </div>
+                    
+                    <div class="checkbox-group" style="margin-bottom: 15px;">
+                        <input type="checkbox" 
+                               id="print_total" 
+                               name="print_total"
+                               {% if not printer_config or printer_config.get('print_total', True) %}checked{% endif %}>
+                        <label for="print_total">Imprimir total</label>
+                    </div>
+                    
+                    <div class="checkbox-group" style="margin-bottom: 15px;">
+                        <input type="checkbox" 
+                               id="open_drawer" 
+                               name="open_drawer"
+                               {% if not printer_config or printer_config.get('open_drawer', True) %}checked{% endif %}>
+                        <label for="open_drawer">Abrir cajón de dinero al imprimir</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if register %}💾 Guardar Cambios{% else %}➕ Crear TPV{% endif %}
+                </button>
+                <a href="{{ url_for('register_admin.list_registers') }}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function refreshPrinters() {
+    fetch('/admin/cajas/api/printers')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('printer_name');
+                const currentValue = select.value;
+                
+                // Limpiar opciones excepto la primera
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+                
+                // Agregar nuevas impresoras
+                data.printers.forEach(printer => {
+                    const option = document.createElement('option');
+                    option.value = printer;
+                    option.textContent = printer;
+                    if (printer === currentValue) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+                
+                alert(`✅ Lista actualizada: ${data.printers.length} impresora(s) encontrada(s)`);
+            } else {
+                alert('Error al obtener impresoras: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al actualizar lista de impresoras');
+        });
+}
+</script>
+{% endblock %}
+

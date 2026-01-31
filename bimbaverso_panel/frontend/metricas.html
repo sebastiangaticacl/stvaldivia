@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Métricas BIMBA</title>
+<script>
+async function loadMetricas(){
+  const res = await fetch("http://localhost:5002/api/panel/metricas");
+  const data = await res.json();
+  document.getElementById("metricas").innerText = JSON.stringify(data,null,2);
+}
+</script>
+</head>
+<body onload="loadMetricas()">
+<h1>Métricas</h1>
+<pre id="metricas"></pre>
+</body>
+</html>

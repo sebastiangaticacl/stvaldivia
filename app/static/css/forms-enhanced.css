@@ -1,0 +1,537 @@
+/* 
+   📝 Formularios Mejorados BIMBA - Mobile-First
+   Estilos avanzados para mejor UX en formularios
+   Responsive y táctil (mínimo 44px)
+*/
+
+/* --- INPUT GROUPS (Mobile-First) --- */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 0.5rem);
+  margin-bottom: var(--spacing-md, 1rem);
+  width: 100%;
+}
+
+/* Horizontal solo en desktop */
+.input-group-horizontal {
+  flex-direction: column; /* Mobile: siempre vertical */
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .input-group-horizontal {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+  
+  .input-group-horizontal .form-label {
+    margin-bottom: 0;
+    margin-right: var(--spacing-md, 1rem);
+    white-space: nowrap;
+    min-width: 150px;
+  }
+  
+  .input-group-horizontal .form-control {
+    flex: 1;
+  }
+}
+
+/* --- INPUT CON ICONOS --- */
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon .input-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  font-size: var(--text-lg);
+  z-index: 1;
+}
+
+.input-with-icon input,
+.input-with-icon textarea {
+  padding-left: calc(var(--space-3) * 2 + 24px);
+}
+
+.input-with-icon.input-icon-right .input-icon {
+  left: auto;
+  right: var(--space-3);
+}
+
+.input-with-icon.input-icon-right input,
+.input-with-icon.input-icon-right textarea {
+  padding-left: var(--space-3);
+  padding-right: calc(var(--space-3) * 2 + 24px);
+}
+
+/* --- INPUT CON BOTÓN --- */
+.input-with-button {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.input-with-button .form-control {
+  flex: 1;
+}
+
+.input-with-button .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* --- CHECKBOX Y RADIO MEJORADOS --- */
+.checkbox-group,
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.checkbox-item,
+.radio-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.checkbox-item:hover,
+.radio-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-item input[type="checkbox"],
+.radio-item input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checkbox-item label,
+.radio-item label {
+  cursor: pointer;
+  margin: 0;
+  flex: 1;
+  user-select: none;
+}
+
+.checkbox-item input[type="checkbox"]:checked + label,
+.radio-item input[type="radio"]:checked + label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* --- SWITCH TOGGLE --- */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: var(--transition-normal);
+  border-radius: var(--radius-full);
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: var(--transition-normal);
+  border-radius: 50%;
+  box-shadow: var(--elevation-1);
+}
+
+.switch input:checked + .switch-slider {
+  background-color: var(--primary);
+}
+
+.switch input:checked + .switch-slider:before {
+  transform: translateX(24px);
+}
+
+.switch input:focus + .switch-slider {
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* --- RANGE SLIDER --- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  outline: none;
+  transition: background var(--transition-fast);
+}
+
+input[type="range"]:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: var(--elevation-2);
+  transition: all var(--transition-fast);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: var(--elevation-3);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: var(--elevation-2);
+  transition: all var(--transition-fast);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: var(--elevation-3);
+}
+
+/* --- FILE UPLOAD MEJORADO --- */
+.file-upload {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.file-upload input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-surface);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-align: center;
+  min-height: 120px;
+  flex-direction: column;
+}
+
+.file-upload-label:hover {
+  border-color: var(--primary);
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.file-upload-label.has-file {
+  border-style: solid;
+  border-color: var(--success);
+  background: var(--success-light);
+}
+
+.file-upload-icon {
+  font-size: var(--text-3xl);
+  color: var(--text-secondary);
+}
+
+.file-upload-text {
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+}
+
+.file-upload-filename {
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-top: var(--space-2);
+}
+
+/* --- SELECT MEJORADO --- */
+select.form-control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e8e8e8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  background-size: 12px;
+  padding-right: calc(var(--space-3) * 2 + 12px);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+select.form-control:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+/* --- FORM ACTIONS --- */
+.form-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-color);
+  justify-content: flex-end;
+}
+
+.form-actions .btn {
+  min-width: 120px;
+}
+
+.form-actions-left {
+  justify-content: flex-start;
+}
+
+.form-actions-center {
+  justify-content: center;
+}
+
+.form-actions-space-between {
+  justify-content: space-between;
+}
+
+/* --- INPUTS TÁCTILES (Mobile-First) --- */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  width: 100%;
+  min-height: 44px; /* Mínimo táctil */
+  padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+  font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-primary, #e8e8e8);
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+.form-control:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(102, 126, 234, 0.6);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.form-control:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Labels siempre arriba en móvil */
+.form-label,
+label {
+  display: block;
+  font-weight: 600;
+  font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+  color: var(--text-secondary, #aaaaaa);
+  margin-bottom: var(--spacing-xs, 0.5rem);
+  width: 100%;
+}
+
+/* Textarea más alto en móvil */
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+@media (min-width: 768px) {
+  textarea {
+    min-height: 100px;
+  }
+}
+
+/* Checkbox y radio más grandes en móvil */
+.checkbox-item input[type="checkbox"],
+.radio-item input[type="radio"] {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary, #00ff00);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+@media (min-width: 768px) {
+  .checkbox-item input[type="checkbox"],
+  .radio-item input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+  }
+}
+
+/* Switch más grande en móvil */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 32px;
+  min-width: 56px;
+  min-height: 32px;
+}
+
+@media (min-width: 768px) {
+  .switch {
+    width: 50px;
+    height: 26px;
+    min-width: 50px;
+    min-height: 26px;
+  }
+}
+
+.switch-slider:before {
+  height: 24px;
+  width: 24px;
+}
+
+@media (min-width: 768px) {
+  .switch-slider:before {
+    height: 20px;
+    width: 20px;
+  }
+}
+
+/* --- RESPONSIVE FORMS (Mobile-First mejorado) --- */
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm, 0.75rem);
+  margin-top: var(--spacing-lg, 1.5rem);
+  padding-top: var(--spacing-md, 1rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+}
+
+.form-actions .btn {
+  width: 100%;
+  min-height: 44px;
+  min-width: auto;
+}
+
+.input-with-button {
+  flex-direction: column;
+  gap: var(--spacing-sm, 0.75rem);
+}
+
+.input-with-button .btn {
+  width: 100%;
+  min-height: 44px;
+}
+
+@media (min-width: 768px) {
+  .form-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  
+  .form-actions .btn {
+    width: auto;
+    min-width: 120px;
+  }
+  
+  .input-with-button {
+    flex-direction: row;
+  }
+  
+  .input-with-button .btn {
+    width: auto;
+    flex-shrink: 0;
+  }
+}
+
+/* Grid de formularios responsive */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md, 1rem);
+}
+
+@media (min-width: 768px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Formulario de una columna completa */
+.form-grid-full {
+  grid-column: 1 / -1;
+}
+
+
+
+
+

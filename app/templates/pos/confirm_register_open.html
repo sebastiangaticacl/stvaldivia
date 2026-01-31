@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Caja - Confirmar Apertura{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Ocultar footer */
+    .footer-desarrollador,
+    .footer-bar {
+        display: none !important;
+    }
+    
+    .confirm-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 30px;
+        background: var(--card-bg, #1a1a2e);
+        border-radius: 12px;
+        box-shadow: var(--shadow-lg, 0 10px 40px rgba(0,0,0,0.3));
+    }
+    
+    .confirm-header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid var(--primary-color, #667eea);
+        padding-bottom: 20px;
+    }
+    
+    .confirm-header h1 {
+        color: var(--primary-color, #667eea);
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    
+    .status-box {
+        background: var(--card-bg-secondary, #2a2a3e);
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-left: 4px solid;
+    }
+    
+    .status-box.zero {
+        border-left-color: #00ff00;
+        background: rgba(0, 255, 0, 0.1);
+    }
+    
+    .status-box.with-sales {
+        border-left-color: #ffaa00;
+        background: rgba(255, 170, 0, 0.1);
+    }
+    
+    .status-icon {
+        font-size: 3rem;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .status-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .status-info {
+        text-align: center;
+        color: var(--text-secondary, #aaa);
+        margin-bottom: 10px;
+    }
+    
+    .status-details {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-label {
+        color: var(--text-secondary, #aaa);
+    }
+    
+    .detail-value {
+        color: var(--text-primary, #fff);
+        font-weight: bold;
+    }
+    
+    .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-confirm {
+        background: var(--primary-color, #667eea);
+        color: white;
+    }
+    
+    .btn-confirm:hover {
+        background: var(--primary-hover, #5568d3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-cancel {
+        background: #666;
+        color: white;
+    }
+    
+    .btn-cancel:hover {
+        background: #777;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <div class="confirm-header">
+        <h1>💰 Estado de la Caja</h1>
+        <p style="color: var(--text-secondary, #aaa);">{{ register_name }}</p>
+    </div>
+    
+    {% if is_zero %}
+    <div class="status-box zero">
+        <div class="status-icon">✅</div>
+        <div class="status-title" style="color: #00ff00;">Caja en Cero</div>
+        <div class="status-info">
+            Esta caja no tiene ventas previas en el turno actual.
+        </div>
+        <div class="status-details">
+            <div class="detail-row">
+                <span class="detail-label">Ventas previas:</span>
+                <span class="detail-value" style="color: #00ff00;">0 ventas</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total acumulado:</span>
+                <span class="detail-value" style="color: #00ff00;">$0</span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="status-box with-sales">
+        <div class="status-icon">✅</div>
+        <div class="status-title" style="color: #00ff00;">Caja con Tus Ventas Previas</div>
+        <div class="status-info">
+            Esta caja tiene ventas previas tuyas en el turno actual. Puedes continuar trabajando en esta caja.
+        </div>
+        <div class="status-details">
+            <div class="detail-row">
+                <span class="detail-label">Ventas previas:</span>
+                <span class="detail-value" style="color: #00ff00;">{{ previous_sales_count }} ventas</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total acumulado:</span>
+                <span class="detail-value" style="color: #00ff00;">${{ "{:,.0f}".format(previous_sales_total) }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('caja.register') }}">
+        <input type="hidden" name="register_id" value="{{ register_id }}">
+        <input type="hidden" name="confirmed" value="true">
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-confirm">
+                CONFIRMAR APERTURA
+            </button>
+            <a href="{{ url_for('caja.register') }}" class="btn btn-cancel">
+                ❌ Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,34 @@
+<html>
+<body style="background:#111;color:white;font-family:Arial;padding:20px;">
+<h1>Activar Prompt BIMBA</h1>
+
+<select id="agente">
+  <option value="rrss">RRSS</option>
+  <option value="optimizacion">Optimización</option>
+  <option value="mixologia">Mixología</option>
+  <option value="cerebro">Cerebro Nuclear</option>
+</select>
+
+<input id="prompt_id" placeholder="ID del prompt"><br/><br/>
+
+<button onclick="activar()">Activar Prompt</button>
+
+<pre id="resultado"></pre>
+
+<script>
+async function activar(){
+  const agente=document.getElementById("agente").value;
+  const prompt_id=document.getElementById("prompt_id").value;
+
+  const res = await fetch("http://localhost:5002/api/prompt/activar",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({agente,prompt_id})
+  });
+  
+  const d = await res.json();
+  document.getElementById("resultado").innerText = JSON.stringify(d,null,2);
+}
+</script>
+</body>
+</html>

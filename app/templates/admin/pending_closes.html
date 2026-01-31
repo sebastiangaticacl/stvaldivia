@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+{% block title %}Cierres de Caja Pendientes - Revisión Administrativa BIMBA{% endblock %}
+{% block meta_description %}Revisión y aprobación de cierres de caja pendientes. Verificación de diferencias, montos y conciliación de cajas en el sistema BIMBA.{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>💰 Cierres de Caja Pendientes</h1>
+        <p class="admin-subtitle">Recibe y acepta los cierres de caja realizados por los cajeros</p>
+    </div>
+
+    <div id="pending-closes-container" class="pending-closes-container">
+        {% if pending_closes %}
+            <div class="pending-closes-list">
+                {% for close in pending_closes %}
+                <div class="close-card" data-close-id="{{ close.id }}">
+                    <div class="close-card-header">
+                        <div class="close-card-title">
+                            <h3>{{ close.register_name or 'Caja ' + close.register_id }}</h3>
+                            <span class="close-status pending">⏳ Pendiente</span>
+                        </div>
+                        <div class="close-card-meta">
+                            <span class="close-employee">👤 {{ close.employee_name }}</span>
+                            <span class="close-date">📅 {{ close.closed_at_formatted or close.closed_at }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="close-card-body">
+                        <div class="close-summary">
+                            <div class="summary-row">
+                                <div class="summary-item">
+                                    <label>Ventas:</label>
+                                    <span class="value">{{ close.total_sales or 0 }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <label>Total Esperado:</label>
+                                    <span class="value">${{ "{:,.0f}".format(close.total_amount or 0) }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="close-amounts">
+                                <div class="amount-section">
+                                    <h4>Efectivo</h4>
+                                    <div class="amount-row">
+                                        <span>Esperado:</span>
+                                        <span>${{ "{:,.0f}".format(close.expected_cash or 0) }}</span>
+                                    </div>
+                                    <div class="amount-row">
+                                        <span>Real:</span>
+                                        <span class="actual-amount">${{ "{:,.0f}".format(close.actual_cash or 0) }}</span>
+                                    </div>
+                                    <div class="amount-row difference">
+                                        <span>Diferencia:</span>
+                                        <span class="{% if (close.diff_cash or 0) == 0 %}balanced{% else %}unbalanced{% endif %}">
+                                            ${{ "{:,.0f}".format(close.diff_cash or 0) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="amount-section">
+                                    <h4>Débito</h4>
+                                    <div class="amount-row">
+                                        <span>Esperado:</span>
+                                        <span>${{ "{:,.0f}".format(close.expected_debit or 0) }}</span>
+                                    </div>
+                                    <div class="amount-row">
+                                        <span>Real:</span>
+                                        <span class="actual-amount">${{ "{:,.0f}".format(close.actual_debit or 0) }}</span>
+                                    </div>
+                                    <div class="amount-row difference">
+                                        <span>Diferencia:</span>
+                                        <span class="{% if (close.diff_debit or 0) == 0 %}balanced{% else %}unbalanced{% endif %}">
+                                            ${{ "{:,.0f}".format(close.diff_debit or 0) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="amount-section">
+                                    <h4>Crédito</h4>
+                                    <div class="amount-row">
+                                        <span>Esperado:</span>
+                                        <span>${{ "{:,.0f}".format(close.expected_credit or 0) }}</span>
+                                    </div>
+                                    <div class="amount-row">
+                                        <span>Real:</span>
+                                        <span class="actual-amount">${{ "{:,.0f}".format(close.actual_credit or 0) }}</span>
+                                    </div>
+                                    <div class="amount-row difference">
+                                        <span>Diferencia:</span>
+                                        <span class="{% if (close.diff_credit or 0) == 0 %}balanced{% else %}unbalanced{% endif %}">
+                                            ${{ "{:,.0f}".format(close.diff_credit or 0) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="total-difference">
+                                <strong>Diferencia Total:</strong>
+                                <span class="{% if abs(close.difference_total or 0) < 100 %}balanced{% else %}unbalanced{% endif %}">
+                                    ${{ "{:,.0f}".format(close.difference_total or 0) }}
+                                </span>
+                            </div>
+                            
+                            {% if close.notes %}
+                            <div class="close-notes">
+                                <strong>Notas:</strong>
+                                <p>{{ close.notes }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if close.opened_at_formatted %}
+                            <div class="close-timing">
+                                <small>Apertura: {{ close.opened_at_formatted }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="close-card-actions">
+                        <button class="btn-accept" onclick="acceptClose({{ close.id }})">
+                            ✅ Aceptar Cierre
+                        </button>
+                        <button class="btn-reject" onclick="rejectClose({{ close.id }})">
+                            ❌ Rechazar
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-pending-closes">
+                <p>✅ No hay cierres de caja pendientes</p>
+                <p class="subtitle">Todos los cierres han sido procesados</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.pending-closes-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.pending-closes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.close-card {
+    background: #1a1a2e;
+    border: 1px solid #2a2a3e;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.close-card:hover {
+    border-color: #4a4a6e;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.close-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #2a2a3e;
+}
+
+.close-card-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.close-card-title h3 {
+    margin: 0;
+    color: #e8e8e8;
+    font-size: 1.3rem;
+}
+
+.close-status {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.close-status.pending {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+}
+
+.close-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    text-align: right;
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+.close-card-body {
+    margin-bottom: 20px;
+}
+
+.close-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.summary-row {
+    display: flex;
+    gap: 30px;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.summary-item label {
+    color: #aaa;
+    font-size: 0.85rem;
+}
+
+.summary-item .value {
+    color: #e8e8e8;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.close-amounts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 20px;
+    background: #0f0f1e;
+    border-radius: 8px;
+}
+
+.amount-section h4 {
+    margin: 0 0 15px 0;
+    color: #e8e8e8;
+    font-size: 1rem;
+    border-bottom: 1px solid #2a2a3e;
+    padding-bottom: 10px;
+}
+
+.amount-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.amount-row.difference {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #2a2a3e;
+    font-weight: 600;
+}
+
+.actual-amount {
+    color: #4caf50;
+    font-weight: 600;
+}
+
+.balanced {
+    color: #4caf50;
+}
+
+.unbalanced {
+    color: #f44336;
+}
+
+.total-difference {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #0f0f1e;
+    border-radius: 8px;
+    font-size: 1.1rem;
+}
+
+.total-difference strong {
+    color: #e8e8e8;
+}
+
+.close-notes {
+    padding: 15px;
+    background: #0f0f1e;
+    border-radius: 8px;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.close-notes strong {
+    color: #e8e8e8;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.close-timing {
+    color: #888;
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.close-card-actions {
+    display: flex;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #2a2a3e;
+}
+
+.btn-accept, .btn-reject {
+    flex: 1;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-accept {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-accept:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-reject {
+    background: #f44336;
+    color: white;
+}
+
+.btn-reject:hover {
+    background: #da190b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.no-pending-closes {
+    text-align: center;
+    padding: 60px 20px;
+    color: #aaa;
+}
+
+.no-pending-closes p {
+    font-size: 1.2rem;
+    margin: 10px 0;
+}
+
+.no-pending-closes .subtitle {
+    font-size: 0.9rem;
+    color: #666;
+}
+</style>
+
+<script>
+async function acceptClose(closeId) {
+    if (!confirm('¿Estás seguro de que quieres aceptar este cierre? La caja será desbloqueada.')) {
+        return;
+    }
+    
+    const notes = prompt('Notas adicionales (opcional):', '');
+    
+    try {
+        const response = await fetch('/admin/api/accept-close', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                close_id: closeId,
+                notes: notes || ''
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Cierre aceptado correctamente. La caja ha sido desbloqueada.');
+            // Recargar la página para actualizar la lista
+            location.reload();
+        } else {
+            alert('❌ Error: ' + (result.error || 'No se pudo aceptar el cierre'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error al aceptar el cierre: ' + error.message);
+    }
+}
+
+function rejectClose(closeId) {
+    alert('Funcionalidad de rechazo aún no implementada. Por ahora, puedes dejar el cierre pendiente.');
+}
+</script>
+{% endblock %}
+

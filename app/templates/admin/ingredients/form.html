@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}{% if ingredient %}Editar{% else %}Crear{% endif %} Ingrediente - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-card h2 {
+        color: #00ff00;
+        margin-bottom: 30px;
+        font-size: 2rem;
+        text-align: center;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        color: #ccc;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .form-group .help-text {
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 15px 40px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #444;
+        color: #e8e8e8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <h2>{% if ingredient %}✏️ Editar{% else %}➕ Crear{% endif %} Ingrediente</h2>
+
+        <form method="POST" action="{% if ingredient %}{{ url_for('ingredients.edit_ingredient', ingredient_id=ingredient.id) }}{% else %}{{ url_for('ingredients.create_ingredient') }}{% endif %}">
+            <div class="form-group">
+                <label for="name">
+                    Nombre del Ingrediente <span style="color: #ff4444;">*</span>
+                </label>
+                <input type="text" id="name" name="name" 
+                       value="{{ ingredient.name if ingredient else '' }}" 
+                       required 
+                       placeholder="Ej: Pisco, Vodka, Coca-Cola, etc.">
+            </div>
+
+            <div class="form-group">
+                <label for="category_id">Categoría</label>
+                <select id="category_id" name="category_id">
+                    <option value="">Sin Categoría</option>
+                    {% for cat in categorias %}
+                    <option value="{{ cat.id }}" {% if ingredient and ingredient.category_id == cat.id %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="help-text">Crea categorías desde la página de categorías</div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="base_unit">Unidad Base <span style="color: #ff4444;">*</span></label>
+                    <select id="base_unit" name="base_unit" required>
+                        <option value="ml" {% if not ingredient or ingredient.base_unit == 'ml' %}selected{% endif %}>ml (mililitros)</option>
+                        <option value="gr" {% if ingredient and ingredient.base_unit == 'gr' %}selected{% endif %}>gr (gramos)</option>
+                        <option value="unidad" {% if ingredient and ingredient.base_unit == 'unidad' %}selected{% endif %}>unidad</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cost_per_unit">Costo por Unidad</label>
+                    <input type="number" id="cost_per_unit" name="cost_per_unit" 
+                           value="{{ ingredient.cost_per_unit if ingredient else '' }}" 
+                           min="0" 
+                           step="0.01"
+                           placeholder="Ej: 0.05">
+                    <div class="help-text">Costo por unidad base (ej: $0.05 por ml)</div>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="package_size">Tamaño del Empaque</label>
+                    <input type="number" id="package_size" name="package_size" 
+                           value="{{ ingredient.package_size if ingredient and ingredient.package_size else '' }}" 
+                           min="0" 
+                           step="0.001"
+                           placeholder="Ej: 1000">
+                    <div class="help-text">Tamaño en unidad base (ej: 1000 ml)</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="package_unit">Unidad del Empaque</label>
+                    <input type="text" id="package_unit" name="package_unit" 
+                           value="{{ ingredient.package_unit if ingredient else '' }}" 
+                           placeholder="Ej: botella, caja, etc.">
+                    <div class="help-text">Tipo de empaque (ej: "botella", "caja")</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Descripción</label>
+                <textarea id="description" name="description" rows="3" 
+                          placeholder="Información adicional sobre el ingrediente">{{ ingredient.description if ingredient else '' }}</textarea>
+            </div>
+
+            {% if ingredient %}
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_active" name="is_active" 
+                           {% if ingredient.is_active %}checked{% endif %}>
+                    <label for="is_active" style="margin: 0;">Ingrediente activo</label>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <a href="{{ url_for('ingredients.list_ingredients') }}" class="btn btn-secondary">
+                    ← Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    💾 {% if ingredient %}Actualizar{% else %}Crear{% endif %} Ingrediente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+

@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+{% block title %}Configuración del Agente BIMBA - Encargado Oficial de RRSS{% endblock %}
+{% block meta_description %}Configura y gestiona BIMBA, el agente de IA oficial encargado de redes sociales del Club BIMBA. Ajusta parámetros de OpenAI, modelos y comportamiento del agente.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .bot-config-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .section-title {
+        color: #667eea;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .config-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .config-section h3 {
+        color: #e8e8e8;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .config-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .config-item label {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .config-item .value {
+        color: #fff;
+        font-size: 1rem;
+        padding: 10px;
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+    }
+    
+    .config-item .value.info {
+        color: #10b981;
+    }
+    
+    .config-item .value.warning {
+        color: #f59e0b;
+    }
+    
+    .config-item .value.error {
+        color: #ef4444;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-badge.success {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .status-badge.warning {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    
+    .status-badge.error {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .intents-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .intent-item {
+        padding: 10px;
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    
+    .info-box {
+        background: rgba(102, 126, 234, 0.1);
+        border-left: 4px solid #667eea;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+    
+    .info-box p {
+        color: #cbd5e1;
+        margin: 5px 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    
+    .note {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        font-style: italic;
+        margin-top: 5px;
+    }
+    
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        border-radius: 8px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+    
+    .btn-back:hover {
+        background: rgba(102, 126, 234, 0.3);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bot-config-container">
+    <a href="{{ url_for('admin.bot_logs') }}" class="btn-back">
+        ← Volver a Logs
+    </a>
+    
+    <h1 class="section-title">
+        ⚙️ Configuración del Agente BIMBA
+    </h1>
+    
+    <!-- Rol y Función Principal -->
+    <div class="config-section" style="border-color: rgba(236, 72, 153, 0.5); background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%);">
+        <h3 style="color: #ec4899;">🎯 Rol y Función Principal</h3>
+        <div class="info-box" style="background: rgba(236, 72, 153, 0.15); border-left-color: #ec4899;">
+            <p style="font-size: 1.1rem; font-weight: 700; color: #ec4899; margin-bottom: 10px;">
+                🤖 BIMBA es el Agente Oficial Encargado de Redes Sociales del Club BIMBA
+            </p>
+            <p style="color: #e8e8e8; margin: 10px 0;">
+                BIMBA es el agente de inteligencia artificial oficial del Club BIMBA. Su <strong>primera y principal labor</strong> es atender las redes sociales del club, incluyendo:
+            </p>
+            <ul style="color: #cbd5e1; margin: 10px 0; padding-left: 25px; line-height: 1.8;">
+                <li>📱 <strong>Instagram</strong> - Gestión de mensajes directos y comentarios</li>
+                <li>💬 <strong>WhatsApp</strong> - Atención al cliente y consultas</li>
+                <li>🌐 <strong>Web</strong> - Chat en vivo en el sitio web</li>
+                <li>📧 <strong>Otros canales digitales</strong> - Atención en todas las plataformas de comunicación</li>
+            </ul>
+            <p style="color: #e8e8e8; margin: 10px 0;">
+                BIMBA es la <strong>voz digital oficial</strong> que representa todo el universo BIMBA. Además de su función principal en redes sociales, también actúa como ayudante que entiende cómo funciona el sistema completo del club.
+            </p>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 15px; font-style: italic;">
+                💡 BIMBA está diseñado para responder de forma rápida, acogedora y que refleje los valores de inclusividad, diversidad y calidez que caracterizan al Club BIMBA.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Estado General -->
+    <div class="config-section">
+        <h3>📊 Estado General</h3>
+        <div class="config-grid">
+            <div class="config-item">
+                <label>OpenAI</label>
+                <div class="value {{ 'info' if config.openai.available else 'error' }}">
+                    <span class="status-badge {{ 'success' if config.openai.available else 'error' }}">
+                        {{ config.openai.status }}
+                    </span>
+                </div>
+            </div>
+            <div class="config-item">
+                <label>API Operacional</label>
+                <div class="value {{ 'info' if config.operational.enabled else 'warning' }}">
+                    <span class="status-badge {{ 'success' if config.operational.enabled else 'warning' }}">
+                        {{ '✅ Habilitada' if config.operational.enabled else '⚠️ No configurada' }}
+                    </span>
+                </div>
+            </div>
+            <div class="config-item">
+                <label>Intenciones Disponibles</label>
+                <div class="value info">
+                    {{ config.intents.count }} intenciones configuradas
+                </div>
+            </div>
+            <div class="config-item">
+                <label>Sistema de Reglas</label>
+                <div class="value info">
+                    <span class="status-badge success">✅ Activo</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Configuración de OpenAI -->
+    <div class="config-section">
+        <h3>🤖 Configuración de OpenAI</h3>
+        <div class="config-grid">
+            <div class="config-item">
+                <label>Estado</label>
+                <div class="value {{ 'info' if config.openai.available else 'error' }}">
+                    {{ config.openai.status }}
+                </div>
+            </div>
+            <div class="config-item">
+                <label>API Key</label>
+                <div class="value">
+                    {% if config.openai.api_key_configured %}
+                        {% if is_superadmin %}
+                            {{ config.openai.api_key_preview }}
+                        {% else %}
+                            **********
+                        {% endif %}
+                        <span class="note">(Configurada)</span>
+                    {% else %}
+                        <span class="status-badge error">No configurada</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="config-item">
+                <label>Modelo por Defecto</label>
+                <div class="value info">{{ config.openai.model }}</div>
+            </div>
+            <div class="config-item">
+                <label>Temperatura</label>
+                <div class="value info">{{ config.openai.temperature }}</div>
+                <span class="note">Controla la creatividad (0.0-1.0)</span>
+            </div>
+            <div class="config-item">
+                <label>Timeout</label>
+                <div class="value info">{{ config.openai.timeout }}s</div>
+                <span class="note">Tiempo máximo de espera por respuesta</span>
+            </div>
+            {% if is_superadmin and config.openai.org_id %}
+            <div class="config-item">
+                <label>Organization ID</label>
+                <div class="value">{{ config.openai.org_id }}</div>
+            </div>
+            {% endif %}
+            {% if is_superadmin and config.openai.project_id %}
+            <div class="config-item">
+                <label>Project ID</label>
+                <div class="value">{{ config.openai.project_id }}</div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="info-box">
+            <p><strong>📝 Nota:</strong> La API Key de OpenAI se configura mediante variables de entorno del sistema. Para modificarla, contacta al administrador del servidor.</p>
+        </div>
+    </div>
+    
+    <!-- Configuración Operacional -->
+    <div class="config-section">
+        <h3>📈 Configuración Operacional</h3>
+        <div class="config-grid">
+            <div class="config-item">
+                <label>Estado</label>
+                <div class="value {{ 'info' if config.operational.enabled else 'warning' }}">
+                    <span class="status-badge {{ 'success' if config.operational.enabled else 'warning' }}">
+                        {{ '✅ Habilitada' if config.operational.enabled else '⚠️ No configurada' }}
+                    </span>
+                </div>
+            </div>
+            <div class="config-item">
+                <label>API Key</label>
+                <div class="value">
+                    {% if config.operational.api_key_configured %}
+                        {% if is_superadmin %}
+                            ********** (Configurada)
+                        {% else %}
+                            **********
+                        {% endif %}
+                    {% else %}
+                        <span class="status-badge error">No configurada</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="config-item">
+                <label>Timeout</label>
+                <div class="value info">{{ config.operational.timeout }}s</div>
+                <span class="note">Tiempo máximo para obtener datos operativos</span>
+            </div>
+            {% if is_superadmin and config.operational.api_base %}
+            <div class="config-item">
+                <label>API Base URL</label>
+                <div class="value">{{ config.operational.api_base }}</div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="info-box">
+            <p><strong>ℹ️ Información:</strong> La API operacional proporciona contexto adicional sobre el estado del día (ventas, ambiente, etc.) para enriquecer las respuestas del agente.</p>
+        </div>
+    </div>
+    
+    <!-- Canales de Atención -->
+    <div class="config-section">
+        <h3>📱 Canales de Atención</h3>
+        <div class="info-box">
+            <p><strong>🎯 Función Principal:</strong> BIMBA está configurado como el agente oficial encargado de redes sociales del Club BIMBA.</p>
+            <p style="margin-top: 10px;"><strong>Canales que atiende:</strong></p>
+            <ul style="color: #cbd5e1; margin: 10px 0; padding-left: 25px; line-height: 1.8;">
+                <li>📱 <strong>Instagram</strong> - Mensajes directos, comentarios y consultas</li>
+                <li>💬 <strong>WhatsApp</strong> - Atención al cliente en tiempo real</li>
+                <li>🌐 <strong>Sitio Web (stvaldivia.cl/bimba)</strong> - Chat público disponible 24/7</li>
+                <li>📧 <strong>Panel de Control</strong> - Pruebas y monitoreo interno</li>
+            </ul>
+            <p style="margin-top: 15px; color: #94a3b8; font-size: 0.9rem;">
+                BIMBA representa la voz oficial del Club BIMBA en todas las plataformas digitales, manteniendo un tono cálido, inclusivo y acogedor que refleja los valores del club.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Intenciones Disponibles -->
+    <div class="config-section">
+        <h3>🎯 Intenciones Disponibles</h3>
+        <p style="color: #cbd5e1; margin-bottom: 15px;">El sistema puede detectar y responder a las siguientes intenciones:</p>
+        <div class="intents-list">
+            {% for intent in config.intents.available %}
+            <div class="intent-item">{{ intent }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Sistema de Respuestas -->
+    <div class="config-section">
+        <h3>🧠 Sistema de Respuestas</h3>
+        <div class="config-grid">
+            <div class="config-item">
+                <label>Reglas Basadas en Patrones</label>
+                <div class="value info">
+                    <span class="status-badge success">✅ {{ 'Activo' if config.system.rules_enabled else 'Inactivo' }}</span>
+                </div>
+                <span class="note">Primera capa: respuestas rápidas por intención</span>
+            </div>
+            <div class="config-item">
+                <label>IA Generativa (OpenAI)</label>
+                <div class="value {{ 'info' if config.system.openai_enabled else 'warning' }}">
+                    <span class="status-badge {{ 'success' if config.system.openai_enabled else 'warning' }}">
+                        {{ '✅ Activo' if config.system.openai_enabled else '⚠️ No disponible' }}
+                    </span>
+                </div>
+                <span class="note">Segunda capa: respuestas creativas cuando no hay regla</span>
+            </div>
+            <div class="config-item">
+                <label>Fallback Contextual</label>
+                <div class="value info">
+                    <span class="status-badge success">✅ Activo</span>
+                </div>
+                <span class="note">Tercera capa: respuestas seguras cuando todo falla</span>
+            </div>
+        </div>
+        <div class="info-box">
+            <p><strong>🔄 Flujo de Respuestas:</strong></p>
+            <p>1. El sistema detecta la intención del mensaje</p>
+            <p>2. Si hay una regla para esa intención, la usa (rápido y eficiente)</p>
+            <p>3. Si no hay regla, intenta generar respuesta con OpenAI (creativo e inteligente)</p>
+            <p>4. Si OpenAI falla o no está disponible, usa fallback contextual (siempre responde)</p>
+        </div>
+    </div>
+    
+    <!-- Información Adicional -->
+    {% if is_superadmin %}
+    <div class="config-section">
+        <h3>🔐 Información de Superadmin</h3>
+        <div class="info-box">
+            <p><strong>Variables de Entorno Requeridas:</strong></p>
+            <p><code>OPENAI_API_KEY</code> - Clave de API de OpenAI (obligatoria para IA generativa)</p>
+            <p><code>OPENAI_ORGANIZATION_ID</code> - ID de organización (opcional)</p>
+            <p><code>OPENAI_PROJECT_ID</code> - ID de proyecto (opcional, requerido para Admin Keys)</p>
+            <p><code>BIMBA_INTERNAL_API_BASE_URL</code> - URL base de API operacional (opcional)</p>
+            <p><code>BIMBA_INTERNAL_API_KEY</code> - Clave de API operacional (opcional)</p>
+            <p style="margin-top: 15px;">
+                <a href="{{ url_for('admin.bot_env_vars') }}" 
+                   style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 10px;">
+                    ⚙️ Gestionar Variables de Entorno
+                </a>
+            </p>
+            <p style="margin-top: 15px; color: #94a3b8; font-size: 0.9rem;">
+                💡 Puedes modificar las variables de entorno directamente desde la interfaz web. Se creará un backup automático antes de cualquier cambio.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

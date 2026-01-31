@@ -1,0 +1,59 @@
+{% extends "kiosk/base.html" %}
+
+{% block title %}Pago Aprobado - Club Bimba{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='vendor/qrcode.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="success-screen">
+    <div class="success-content">
+        <div class="success-icon">✓</div>
+        <h1>¡PAGO APROBADO!</h1>
+        
+        <div class="ticket-section">
+            <p class="ticket-label">Tu código de ticket:</p>
+            <div class="ticket-code" id="ticket-code">{{ pago.ticket_code or 'Generando...' }}</div>
+        </div>
+        
+        <div class="qr-section">
+            <div id="qr-code"></div>
+            <p class="qr-instructions">Escanea el QR o código de barras en la barra</p>
+        </div>
+        
+        <div class="barcode-section">
+            <p class="barcode-label">Código de barras:</p>
+            <div class="barcode-container">
+                <img src="{{ url_for('kiosk.get_ticket_barcode', ticket_code=pago.ticket_code) }}" 
+                     alt="Código de barras {{ pago.ticket_code }}" 
+                     class="barcode-image"
+                     id="barcode-img">
+            </div>
+            <p class="barcode-instructions">También puedes mostrar este código de barras</p>
+        </div>
+    </div>
+</div>
+
+<script>
+const ticketCode = '{{ pago.ticket_code or "" }}';
+
+// Generar QR code
+if (ticketCode) {
+    new QRCode(document.getElementById("qr-code"), {
+        text: ticketCode,
+        width: 300,
+        height: 300,
+        colorDark: "#ffffff",
+        colorLight: "#1a1a1a",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
+
+// Volver al inicio después de 15 segundos
+setTimeout(() => {
+    window.location.href = '{{ url_for("kiosk.kiosk_home") }}';
+}, 15000);
+</script>
+{% endblock %}
+

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Compra Confirmada{% endblock %}
+
+{% block head_extra %}
+{% set CSS_VERSION = current_app.config.get('CSS_VERSION', '20250115-01') if current_app else '20250115-01' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/confirmation.css') }}?v={{ CSS_VERSION }}">
+{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+        background-attachment: fixed;
+        overflow-x: hidden;
+    }
+    
+    .container {
+        background: transparent !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+</style>
+
+<div class="confirmation-page">
+    <!-- Canvas para fuegos artificiales -->
+    <canvas id="fireworks-canvas"></canvas>
+    
+    <div class="confirmation-content">
+        <div class="success-icon-animated">🎉</div>
+        <h1 class="confirmation-title">Compra Confirmada</h1>
+        <p class="confirmation-message">
+            Pronto recibirás un correo con el link de pago y los QR
+        </p>
+    </div>
+</div>
+
+<script>
+// Animación de fuegos artificiales
+(function() {
+    const canvas = document.getElementById('fireworks-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Ajustar tamaño del canvas
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    const fireworks = [];
+    const particles = [];
+    
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.vx = (Math.random() - 0.5) * 8;
+            this.vy = (Math.random() - 0.5) * 8;
+            this.life = 1.0;
+            this.decay = Math.random() * 0.02 + 0.015;
+            this.size = Math.random() * 3 + 2;
+        }
+        
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += 0.1; // gravedad
+            this.life -= this.decay;
+        }
+        
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+    }
+    
+    class Firework {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height;
+            this.targetY = Math.random() * (canvas.height * 0.5) + canvas.height * 0.2;
+            this.speed = Math.random() * 3 + 2;
+            this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+            this.exploded = false;
+        }
+        
+        update() {
+            if (!this.exploded) {
+                this.y -= this.speed;
+                if (this.y <= this.targetY) {
+                    this.explode();
+                }
+            }
+        }
+        
+        explode() {
+            this.exploded = true;
+            const particleCount = 30;
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle(this.x, this.y, this.color));
+            }
+        }
+        
+        draw() {
+            if (!this.exploded) {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+    
+    function animate() {
+        ctx.fillStyle = 'rgba(15, 23, 59, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Crear nuevos fuegos artificiales
+        if (Math.random() < 0.05) {
+            fireworks.push(new Firework());
+        }
+        
+        // Actualizar y dibujar fuegos artificiales
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+            fireworks[i].update();
+            fireworks[i].draw();
+            if (fireworks[i].exploded && particles.filter(p => p.life > 0).length === 0) {
+                fireworks.splice(i, 1);
+            }
+        }
+        
+        // Actualizar y dibujar partículas
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update();
+            particles[i].draw();
+            if (particles[i].life <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+        
+        requestAnimationFrame(animate);
+    }
+    
+    // Iniciar animación después de un breve delay
+    setTimeout(() => {
+        // Crear varios fuegos artificiales iniciales
+        for (let i = 0; i < 5; i++) {
+            setTimeout(() => {
+                fireworks.push(new Firework());
+            }, i * 200);
+        }
+        animate();
+    }, 500);
+})();
+</script>
+{% endblock %}

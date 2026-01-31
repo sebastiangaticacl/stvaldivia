@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4o-mini",
+  "temperature": 0.3,
+  "timeout_seconds": 5,
+  "max_words": 12,
+  "max_lines": 2,
+  "allow_emoji_first_message_only": true
+}

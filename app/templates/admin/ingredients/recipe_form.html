@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Gestionar Receta - {{ product.name }} - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .recipe-form-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-card h2 {
+        color: #00ff00;
+        margin-bottom: 30px;
+        font-size: 2rem;
+    }
+
+    .product-info {
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+
+    .product-info h3 {
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+
+    .ingredient-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr auto;
+        gap: 15px;
+        margin-bottom: 15px;
+        align-items: center;
+    }
+
+    .ingredient-row select,
+    .ingredient-row input {
+        padding: 10px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    .btn-remove {
+        background: #ff4444;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .btn-add {
+        background: #00ff00;
+        color: #000;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 15px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 15px 40px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #444;
+        color: #e8e8e8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="recipe-form-container">
+    <div class="form-card">
+        <h2>📝 Receta: {{ product.name }}</h2>
+        
+        <div class="product-info">
+            <h3>Producto Final</h3>
+            <p><strong>Nombre:</strong> {{ product.name }}</p>
+            <p><strong>Categoría:</strong> {{ product.category or 'Sin categoría' }}</p>
+            <p><strong>Precio:</strong> ${{ product.price | currency }}</p>
+        </div>
+
+        <form method="POST" id="recipeForm">
+            <h3 style="color: #ccc; margin-bottom: 15px;">Ingredientes de la Receta</h3>
+            <div id="ingredients-container">
+                {% if recipe_ingredients %}
+                    {% for ri in recipe_ingredients %}
+                    <div class="ingredient-row">
+                        <select name="ingredient_id[]" required>
+                            <option value="">Selecciona ingrediente</option>
+                            {% for ing in ingredients %}
+                            <option value="{{ ing.id }}" {% if ri.ingredient_id == ing.id %}selected{% endif %}>
+                                {{ ing.name }} ({{ ing.base_unit }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <input type="number" name="quantity_per_portion[]" 
+                               value="{{ ri.quantity_per_portion }}" 
+                               min="0" 
+                               step="0.1" 
+                               placeholder="Cantidad"
+                               required>
+                        <button type="button" class="btn-remove" onclick="removeIngredientRow(this)">✕</button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="ingredient-row">
+                        <select name="ingredient_id[]" required>
+                            <option value="">Selecciona ingrediente</option>
+                            {% for ing in ingredients %}
+                            <option value="{{ ing.id }}">{{ ing.name }} ({{ ing.base_unit }})</option>
+                            {% endfor %}
+                        </select>
+                        <input type="number" name="quantity_per_portion[]" 
+                               min="0" 
+                               step="0.1" 
+                               placeholder="Cantidad"
+                               required>
+                        <button type="button" class="btn-remove" onclick="removeIngredientRow(this)">✕</button>
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="button" class="btn-add" onclick="addIngredientRow()">➕ Agregar Ingrediente</button>
+
+            <div class="form-actions">
+                <a href="{{ url_for('ingredients.list_recipes') }}" class="btn btn-secondary">
+                    ← Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    💾 Guardar Receta
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const ingredients = [
+    {% for ing in ingredients %}
+    {id: {{ ing.id }}, name: '{{ ing.name }}', unit: '{{ ing.base_unit }}'}{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+function addIngredientRow() {
+    const container = document.getElementById('ingredients-container');
+    const row = document.createElement('div');
+    row.className = 'ingredient-row';
+    
+    let selectHtml = '<select name="ingredient_id[]" required><option value="">Selecciona ingrediente</option>';
+    ingredients.forEach(ing => {
+        selectHtml += `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`;
+    });
+    selectHtml += '</select>';
+    
+    row.innerHTML = `
+        ${selectHtml}
+        <input type="number" name="quantity_per_portion[]" min="0" step="0.1" placeholder="Cantidad" required>
+        <button type="button" class="btn-remove" onclick="removeIngredientRow(this)">✕</button>
+    `;
+    
+    container.appendChild(row);
+}
+
+function removeIngredientRow(button) {
+    const rows = document.querySelectorAll('.ingredient-row');
+    if (rows.length > 1) {
+        button.closest('.ingredient-row').remove();
+    } else {
+        showError('Debe haber al menos un ingrediente en la receta');
+    }
+}
+</script>
+{% endblock %}
+
+
+
+
+

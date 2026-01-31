@@ -1,0 +1,617 @@
+{% extends "base.html" %}
+{% block title %}BIMBA - Sistema de Gestión de Entregas y POS{% endblock %}
+{% block meta_description %}Sistema integral de gestión para bares y restaurantes. Control de entregas, punto de venta, inventario y gestión de turnos.{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Evitar scroll horizontal y vertical en el menú */
+    html, body {
+        overflow-x: hidden !important;
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+    
+    * {
+        box-sizing: border-box;
+    }
+
+    /* Asegurar que el main-container permita el centrado y el footer sea visible */
+    .main-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 200px);
+        padding: 20px;
+        overflow: hidden;
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+
+    /* Contenedor principal centrado - estilo login */
+    .home-wrapper {
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .home-menu {
+        width: 100%;
+        max-width: 1200px;
+        padding: 25px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-radius: 20px;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        box-sizing: border-box;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        overflow: hidden;
+        margin: 0 auto;
+    }
+
+    /* Scrollbar personalizado */
+    .home-menu::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .home-menu::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+
+    .home-menu::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.5);
+        border-radius: 10px;
+    }
+
+    .home-menu::-webkit-scrollbar-thumb:hover {
+        background: rgba(102, 126, 234, 0.7);
+    }
+    
+    .home-logo {
+        margin-bottom: 15px;
+        text-align: center;
+        animation: fadeInUp 0.6s ease-out;
+        flex-shrink: 0;
+    }
+    
+    .home-logo img {
+        max-width: 150px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.3));
+        transition: transform 0.3s ease;
+    }
+    
+    .home-logo img:hover {
+        transform: scale(1.05);
+    }
+    
+    .status-banner {
+        width: 100%;
+        max-width: 800px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        text-align: center;
+        animation: fadeInUp 0.8s ease-out;
+        flex-shrink: 0;
+    }
+    
+    .status-banner.warning {
+        background: rgba(255, 152, 0, 0.15);
+        border: 2px solid rgba(255, 152, 0, 0.5);
+    }
+    
+    .status-banner.success {
+        background: rgba(76, 175, 80, 0.15);
+        border: 2px solid rgba(76, 175, 80, 0.5);
+    }
+    
+    .status-banner h2 {
+        color: #ff9800;
+        margin: 0 0 10px 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+    
+    .status-banner.success h2 {
+        color: #4caf50;
+    }
+    
+    .status-banner .icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .status-banner p {
+        color: #e8e8e8;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin: 5px 0;
+    }
+    
+    .menu-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 18px;
+        width: 100%;
+        max-width: 100%;
+        animation: fadeInUp 1s ease-out;
+        box-sizing: border-box;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+    }
+    
+    .menu-option {
+        background: rgba(24, 24, 26, 0.8);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px 15px;
+        text-align: center;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 180px;
+        position: relative;
+        overflow: visible;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .menu-option > * {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .menu-option::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 0;
+    }
+    
+    .menu-option > * {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .menu-option:hover {
+        transform: translateY(-4px);
+        border-color: rgba(102, 126, 234, 0.6);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .menu-option:hover::before {
+        opacity: 0.1;
+    }
+    
+    .menu-option.caja {
+        border-color: rgba(76, 175, 80, 0.4);
+    }
+    
+    .menu-option.caja::before {
+        background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    }
+    
+    .menu-option.caja:hover {
+        border-color: rgba(76, 175, 80, 0.8);
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+    }
+    
+    .menu-option.barra {
+        border-color: rgba(255, 152, 0, 0.4);
+    }
+    
+    .menu-option.barra::before {
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    }
+    
+    .menu-option.barra:hover {
+        border-color: rgba(255, 152, 0, 0.8);
+        box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+    }
+    
+    .menu-option.admin {
+        border-color: rgba(102, 126, 234, 0.4);
+    }
+    
+    .menu-option.admin::before {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .menu-option.disabled {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+    }
+    
+    .menu-option.disabled:hover {
+        transform: none !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    .menu-option.admin:hover {
+        border-color: rgba(102, 126, 234, 0.8);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .menu-option.bimba {
+        border-color: rgba(236, 72, 153, 0.4);
+    }
+    
+    .menu-option.bimba::before {
+        background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+    }
+    
+    .menu-option.bimba:hover {
+        border-color: rgba(236, 72, 153, 0.8);
+        box-shadow: 0 8px 25px rgba(236, 72, 153, 0.4);
+    }
+    
+    .menu-option .icon {
+        font-size: 3.2rem;
+        margin-bottom: 12px;
+        display: block;
+        filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.3));
+        transition: transform 0.3s ease;
+    }
+    
+    .menu-option:hover .icon {
+        transform: scale(1.1);
+    }
+    
+    .menu-option h2 {
+        color: #e8e8e8;
+        font-size: 1.2rem;
+        margin: 0 0 10px 0;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 0 5px;
+    }
+    
+    .menu-option p {
+        color: #cbd5e1;
+        font-size: 0.85rem;
+        margin: 0;
+        line-height: 1.4;
+        max-width: 100%;
+        width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        box-sizing: border-box;
+        padding: 0 5px;
+    }
+    
+    /* Mejorar espaciado y alineación */
+    .menu-options {
+        justify-items: stretch;
+        align-items: stretch;
+    }
+    
+    /* Asegurar que las tarjetas tengan el mismo tamaño y no se desborden */
+    .menu-option {
+        word-break: break-word;
+        overflow: visible;
+    }
+    
+    /* Forzar que el contenido interno no se corte */
+    .menu-option .icon,
+    .menu-option h2,
+    .menu-option p {
+        flex-shrink: 0;
+        min-width: 0;
+    }
+    
+    /* Mejorar el contenedor principal */
+    .main-container .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+    
+    /* Asegurar que no haya scroll en ningún contenedor */
+    .container {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+    }
+    
+    /* Forzar que el body y html no tengan scroll horizontal */
+    body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+    }
+    
+    /* Asegurar que el home-menu no se desborde */
+    .home-menu * {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Prevenir desbordamiento en el header admin */
+    .admin-top-nav,
+    .admin-top-nav * {
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+    
+    /* Asegurar que el menú móvil no cause desbordamiento */
+    @media (max-width: 991px) {
+        .admin-top-nav {
+            overflow-x: hidden;
+        }
+        
+        .admin-nav-container {
+            overflow-x: hidden;
+        }
+    }
+    
+    /* Animaciones */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .main-container {
+            padding: 15px 0 80px 0;
+        }
+
+        .home-wrapper {
+            padding: 15px;
+        }
+
+        .home-menu {
+            max-width: 100%;
+            padding: 25px 20px;
+            border-radius: 16px;
+        }
+
+        .home-logo img {
+            max-width: 150px;
+        }
+
+        .home-logo {
+            margin-bottom: 20px;
+        }
+
+        .status-banner {
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-banner h2 {
+            font-size: 1.2rem;
+        }
+
+        .status-banner .icon {
+            font-size: 2.5rem;
+        }
+
+        .menu-options {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .menu-option {
+            min-height: 200px;
+            padding: 25px;
+        }
+
+        .menu-option .icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .menu-option h2 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+        }
+
+        .menu-option p {
+            font-size: 0.9rem;
+        }
+
+        .status-banner {
+            padding: 25px 20px;
+        }
+
+        .status-banner h2 {
+            font-size: 1.3rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .main-container {
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .home-wrapper {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .home-menu {
+            padding: 15px 10px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .menu-options {
+            gap: 10px;
+        }
+        
+        .menu-option {
+            padding: 15px;
+            min-height: 150px;
+        }
+
+        .home-logo img {
+            max-width: 120px;
+        }
+
+        .home-logo {
+            margin-bottom: 15px;
+        }
+
+        .status-banner {
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .status-banner h2 {
+            font-size: 1.1rem;
+        }
+
+        .status-banner .icon {
+            font-size: 2rem;
+        }
+
+        .status-banner p {
+            font-size: 0.9rem;
+        }
+
+        .menu-option {
+            min-height: 180px;
+            padding: 20px;
+        }
+
+        .menu-option .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .menu-option h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .menu-option p {
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="home-wrapper">
+    <div class="home-menu">
+        <div class="home-logo">
+            <img src="{{ url_for('static', filename='img/bimba-logo.png') }}" alt="BIMBA - Sistema de Gestión" onerror="this.style.display='none';">
+        </div>
+        
+        {% if not jornada_abierta %}
+        <div class="status-banner warning">
+            <div class="icon">⏰</div>
+            <h2>El admin aún no abre el turno.</h2>
+        </div>
+        {% else %}
+        <div class="status-banner success">
+            <div class="icon">🎉</div>
+            <h2>Bienvenido a Bimba</h2>
+            <div>
+                <p><strong>Hoy:</strong> {{ jornada_abierta.nombre_fiesta or 'Sin nombre' }}</p>
+                {% if jornada_abierta.djs %}
+                <p><strong>DJ:</strong> {{ jornada_abierta.djs }}</p>
+                {% endif %}
+                <p><strong>Horario:</strong> {{ jornada_abierta.horario_apertura_programado or 'N/A' }} - {{ jornada_abierta.horario_cierre_programado or 'N/A' }}</p>
+            </div>
+        </div>
+        {% endif %}
+    
+    <div class="menu-options">
+        {% if jornada_abierta %}
+        <a href="/caja/login" class="menu-option caja" aria-label="Abrir sistema de caja">
+            <span class="icon" aria-hidden="true">💳</span>
+            <h2>Abrir Caja</h2>
+            <p>Gestión completa de cajas registradoras y operaciones de venta</p>
+        </a>
+        
+        <a href="/bartender" class="menu-option barra" aria-label="Abrir sistema de barra">
+            <span class="icon" aria-hidden="true">🍺</span>
+            <h2>Abrir Barra</h2>
+            <p>Control de entregas y registro de tickets escaneados en tiempo real</p>
+        </a>
+        {% else %}
+        <div class="menu-option caja" style="opacity: 0.5; cursor: not-allowed; pointer-events: none;" aria-label="Abrir sistema de caja (deshabilitado - no hay turno abierto)">
+            <span class="icon" aria-hidden="true">💳</span>
+            <h2>Abrir Caja</h2>
+            <p style="color: #ff9800; font-weight: 600;">⚠️ Requiere turno abierto</p>
+        </div>
+        
+        <div class="menu-option barra" style="opacity: 0.5; cursor: not-allowed; pointer-events: none;" aria-label="Abrir sistema de barra (deshabilitado - no hay turno abierto)">
+            <span class="icon" aria-hidden="true">🍺</span>
+            <h2>Abrir Barra</h2>
+            <p style="color: #ff9800; font-weight: 600;">⚠️ Requiere turno abierto</p>
+        </div>
+        {% endif %}
+        
+        <a href="/login_admin" class="menu-option admin" aria-label="Acceder al panel de administración">
+            <span class="icon" aria-hidden="true">⚙️</span>
+            <h2>Panel Administrativo</h2>
+            <p>Gestión completa del sistema, reportes y configuración avanzada</p>
+        </a>
+        
+        <a href="/bimba" class="menu-option bimba" aria-label="Hablar con BIMBA, el agente de IA">
+            <span class="icon" aria-hidden="true">🤖</span>
+            <h2>¡Habla con BIMBA!</h2>
+            <p>Conoce más sobre eventos, precios y el local con nuestra agente de IA</p>
+        </a>
+    </div>
+    </div>
+</div>
+
+{% endblock %}

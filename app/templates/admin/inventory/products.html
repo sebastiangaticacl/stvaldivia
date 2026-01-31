@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+{% block title %}📦 Dashboard de Inventario - Productos - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .products-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-section h1 {
+        color: #00ff00;
+        margin-bottom: 10px;
+        font-size: 2.5rem;
+    }
+
+    .header-section p {
+        color: #aaa;
+        margin-bottom: 20px;
+    }
+
+    .filters-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+        background: #2a2a3e;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .filter-group label {
+        color: #ccc;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .filter-group select,
+    .filter-group input {
+        padding: 10px;
+        background: #1a1a2e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    .filter-group input[type="text"] {
+        min-width: 200px;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: #2a2a3e;
+        color: #ccc;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: #3a3a4e;
+        color: white;
+    }
+
+    .actions-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .categories-section {
+        margin-bottom: 30px;
+    }
+
+    .category-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .category-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .category-header h2 {
+        color: #667eea;
+        font-size: 1.8rem;
+        margin: 0;
+    }
+
+    .category-count {
+        color: #aaa;
+        font-size: 1rem;
+    }
+
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .product-card {
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        border-radius: 10px;
+        padding: 20px;
+        transition: all 0.3s;
+    }
+
+    .product-card:hover {
+        border-color: rgba(102, 126, 234, 0.5);
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .product-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+
+    .product-name {
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .product-badges {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+
+    .badge-active {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+        border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+
+    .badge-inactive {
+        background: rgba(255, 0, 0, 0.2);
+        color: #ff4444;
+        border: 1px solid rgba(255, 0, 0, 0.3);
+    }
+
+    .badge-kit {
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .badge-recipe {
+        background: rgba(255, 165, 0, 0.2);
+        color: #ffaa00;
+        border: 1px solid rgba(255, 165, 0, 0.3);
+    }
+
+    .product-details {
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+
+    .product-details .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .product-details .label {
+        color: #888;
+    }
+
+    .product-details .value {
+        color: #fff;
+        font-weight: bold;
+    }
+
+    .product-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+
+    .btn-edit {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background: #5568d3;
+    }
+
+    .btn-view {
+        background: #2a2a3e;
+        color: #ccc;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-view:hover {
+        background: #3a3a4e;
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #aaa;
+    }
+
+    .empty-state h3 {
+        color: #667eea;
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .stock-low {
+        color: #ffaa00;
+    }
+
+    .stock-out {
+        color: #ff4444;
+    }
+
+    .stock-ok {
+        color: #00ff00;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="products-container">
+    <div class="header-section">
+        <h1>📦 Dashboard de Inventario - Productos</h1>
+        <p>Total: {{ total_productos }} productos</p>
+        
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label>Categoría:</label>
+                <select id="categoria-filter" onchange="applyFilters()">
+                    <option value="">Todas</option>
+                    {% for cat in categorias %}
+                    <option value="{{ cat }}" {% if categoria_actual == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Buscar:</label>
+                <input type="text" id="search-filter" placeholder="Nombre del producto..." value="{{ search }}" onkeyup="applyFilters()">
+            </div>
+            
+            <div class="filter-group">
+                <label>Stock:</label>
+                <select id="stock-filter" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    <option value="ok" {% if stock_filter == 'ok' %}selected{% endif %}>OK</option>
+                    <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>Bajo</option>
+                    <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>Sin Stock</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Receta:</label>
+                <select id="has-recipe-filter" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    <option value="yes" {% if has_recipe == 'yes' %}selected{% endif %}>Con Receta</option>
+                    <option value="no" {% if has_recipe == 'no' %}selected{% endif %}>Sin Receta</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Estado:</label>
+                <select id="is-active-filter" onchange="applyFilters()">
+                    <option value="true" {% if is_active == 'true' %}selected{% endif %}>Activos</option>
+                    <option value="false" {% if is_active == 'false' %}selected{% endif %}>Inactivos</option>
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-secondary" onclick="clearFilters()">Limpiar Filtros</button>
+        </div>
+        
+        <div class="actions-bar">
+            <a href="{{ url_for('inventory_admin.dashboard') }}" class="btn btn-secondary">
+                ← Volver al Dashboard de Inventario
+            </a>
+            <a href="{{ url_for('products.create_product') }}" class="btn btn-primary">
+                ➕ Agregar Producto
+            </a>
+            <button onclick="autoDisableLowStock()" class="btn" style="background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 2px solid rgba(255, 68, 68, 0.3);">
+                🚫 Desactivar Productos Sin Stock
+            </button>
+        </div>
+    </div>
+
+    {% if productos_por_categoria %}
+        <div class="categories-section">
+            {% for categoria, productos in productos_por_categoria.items() %}
+            <div class="category-card">
+                <div class="category-header">
+                    <h2>{{ categoria }}</h2>
+                    <span class="category-count">{{ productos|length }} producto(s)</span>
+                </div>
+                
+                <div class="products-grid">
+                    {% for producto in productos %}
+                    <div class="product-card">
+                        <div class="product-header">
+                            <h3 class="product-name">{{ producto.name }}</h3>
+                            <div class="product-badges">
+                                {% if producto.is_active %}
+                                <span class="badge badge-active">Activo</span>
+                                {% else %}
+                                <span class="badge badge-inactive">Inactivo</span>
+                                {% endif %}
+                                {% if producto.is_kit %}
+                                <span class="badge badge-kit">Kit</span>
+                                {% endif %}
+                                {% if recipe_exists(producto.id) %}
+                                <span class="badge badge-recipe">📝 Receta</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="product-details">
+                            <div class="detail-row">
+                                <span class="label">Precio:</span>
+                                <span class="value">${{ "{:,.0f}".format(producto.price or 0) }}</span>
+                            </div>
+                            {% if producto.stock_minimum is not none and producto.stock_minimum > 0 %}
+                            <div class="detail-row">
+                                <span class="label">Stock:</span>
+                                {% set stock_qty = producto.stock_quantity if producto.stock_quantity is not none else 0 %}
+                                {% set stock_min = producto.stock_minimum if producto.stock_minimum is not none else 0 %}
+                                <span class="value {% if stock_qty <= 0 %}stock-out{% elif stock_qty <= stock_min %}stock-low{% else %}stock-ok{% endif %}">
+                                    {{ stock_qty }} / {{ stock_min }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            {% if producto.cost_price %}
+                            <div class="detail-row">
+                                <span class="label">Costo:</span>
+                                <span class="value">${{ "{:,.0f}".format(producto.cost_price) }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="product-actions">
+                            <a href="{{ url_for('products.edit_product', product_id=producto.id) }}" class="btn btn-sm btn-edit">
+                                ✏️ Editar
+                            </a>
+                            {% if recipe_exists(producto.id) %}
+                            <a href="{{ url_for('ingredients.view_recipe', product_id=producto.id) }}" class="btn btn-sm btn-view">
+                                📝 Ver Receta
+                            </a>
+                            {% endif %}
+                            {% if producto.stock_quantity <= 0 and producto.is_active %}
+                            <button 
+                                class="btn btn-sm" 
+                                style="background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3);"
+                                onclick="toggleProductActive({{ producto.id }}, false)"
+                                title="Desactivar por falta de stock">
+                                🚫 Desactivar
+                            </button>
+                            {% elif not producto.is_active %}
+                            <button 
+                                class="btn btn-sm" 
+                                style="background: rgba(0, 255, 0, 0.2); color: #00ff00; border: 1px solid rgba(0, 255, 0, 0.3);"
+                                onclick="toggleProductActive({{ producto.id }}, true)"
+                                title="Activar producto">
+                                ✅ Activar
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h3>No se encontraron productos</h3>
+            <p>No hay productos que coincidan con los filtros seleccionados.</p>
+            <a href="{{ url_for('products.create_product') }}" class="btn btn-primary" style="margin-top: 20px;">
+                ➕ Crear Primer Producto
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function applyFilters() {
+    const categoria = document.getElementById('categoria-filter').value;
+    const search = document.getElementById('search-filter').value;
+    const stock = document.getElementById('stock-filter').value;
+    const hasRecipe = document.getElementById('has-recipe-filter').value;
+    const isActive = document.getElementById('is-active-filter').value;
+    
+    const params = new URLSearchParams();
+    if (categoria) params.append('categoria', categoria);
+    if (search) params.append('search', search);
+    if (stock) params.append('stock', stock);
+    if (hasRecipe) params.append('has_recipe', hasRecipe);
+    if (isActive) params.append('is_active', isActive);
+    
+    window.location.href = '{{ url_for("inventory_admin.products_view") }}?' + params.toString();
+}
+
+function clearFilters() {
+    window.location.href = '{{ url_for("inventory_admin.products_view") }}';
+}
+
+// MEJORA: Función para activar/desactivar productos
+async function toggleProductActive(productId, isActive) {
+    if (!confirm(`¿Estás seguro de que deseas ${isActive ? 'activar' : 'desactivar'} este producto?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/inventario/api/toggle-product-active', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                is_active: isActive
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error al cambiar estado del producto: ' + error.message);
+    }
+}
+
+// MEJORA: Función para desactivar automáticamente productos sin stock
+async function autoDisableLowStock() {
+    if (!confirm('¿Deseas desactivar automáticamente todos los productos sin stock? Esto afectará a todos los productos activos sin inventario.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/inventario/api/auto-disable-low-stock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                solo_sin_stock: true
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            let message = `✅ ${data.count} producto(s) desactivado(s):\n\n`;
+            data.productos_desactivados.forEach(p => {
+                message += `• ${p.name} (${p.reason})\n`;
+            });
+            alert(message);
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error al desactivar productos: ' + error.message);
+    }
+}
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block title %}Caja - Iniciar Sesión{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Ocultar footer solo en login de caja */
+    .footer-desarrollador,
+    .footer-bar {
+        display: none !important;
+    }
+    
+    .pos-login-container {
+        max-width: 700px;
+        margin: 20px auto;
+        padding: 20px;
+        background: var(--card-bg, #1a1a2e);
+        border-radius: 12px;
+        box-shadow: var(--shadow-lg, 0 10px 40px rgba(0,0,0,0.3));
+    }
+    
+    .pos-login-container h1 {
+        text-align: center;
+        color: var(--primary-color, #667eea);
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+    
+    .employee-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .employee-btn {
+        padding: 20px;
+        background: var(--primary-color, #667eea);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .employee-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .pin-entry {
+        margin-top: 20px;
+    }
+    
+    .pin-display {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.3rem;
+        text-align: center;
+        border-radius: 8px;
+        border: 2px solid #444;
+        background: #18181a;
+        color: #00ff00;
+        font-weight: bold;
+        letter-spacing: 0.2em;
+        margin-bottom: 12px;
+        min-height: 45px;
+        box-sizing: border-box;
+    }
+    
+    .numeric-keyboard {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        margin-bottom: 12px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .keyboard-btn {
+        padding: 10px 5px;
+        background: #4a4a4a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        aspect-ratio: 2.5 / 1;
+        min-height: 45px;
+        max-height: 55px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .keyboard-btn:hover {
+        background: #5a5a5a;
+        transform: scale(1.05);
+    }
+    
+    .keyboard-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .keyboard-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        max-width: 100%;
+        width: 100%;
+        margin: 0 auto;
+    }
+    
+    .btn-submit {
+        padding: 10px;
+        background: #00ff00;
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-height: 45px;
+    }
+    
+    .btn-submit:hover {
+        background: #00cc00;
+        transform: scale(1.02);
+    }
+    
+    .btn-clear {
+        padding: 10px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-height: 45px;
+    }
+    
+    .btn-clear:hover {
+        background: #c82333;
+        transform: scale(1.02);
+    }
+</style>
+
+<script>
+let selectedEmployeeId = null;
+
+function selectEmployee(employeeId, employeeName) {
+    selectedEmployeeId = employeeId;
+    document.getElementById('employee_id').value = employeeId;
+    document.getElementById('selected-employee').textContent = `Seleccionado: ${employeeName}`;
+    document.getElementById('pin-section').style.display = 'block';
+}
+
+function appendDigit(digit) {
+    const pinInput = document.getElementById('pin');
+    if (pinInput.value.length < 10) {
+        pinInput.value += digit;
+        updatePinDisplay();
+    }
+}
+
+function clearPin() {
+    document.getElementById('pin').value = '';
+    updatePinDisplay();
+}
+
+function updatePinDisplay() {
+    const pin = document.getElementById('pin').value;
+    const display = document.getElementById('pin-display');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    if (pin.length === 0) {
+        display.textContent = 'Ingresa tu PIN';
+        display.style.color = '#666';
+        submitBtn.disabled = true;
+    } else {
+        display.textContent = '*'.repeat(pin.length);
+        display.style.color = '#00ff00';
+        submitBtn.disabled = false;
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="pos-login-container">
+    {% set puesto = puesto or ('caja' if register_id else 'guardarropia') %}
+    {% set form_action = form_action or (url_for('guardarropia.login') if puesto == 'guardarropia' else url_for('caja.login')) %}
+    <h1 style="font-size: 3rem; margin-bottom: 30px;">
+        {% if puesto == 'caja' %}
+            💰 Caja{% if register_name %}: {{ register_name }}{% endif %}
+        {% else %}
+            🧥 Guardarropía
+        {% endif %}
+    </h1>
+    <p style="text-align: center; color: #aaa; margin-bottom: 30px; font-size: 1.1rem;">
+        Selecciona tu nombre para comenzar
+    </p>
+    
+    {% set previous_employee_id = request.form.get('employee_id') or '' %}
+    {% if not previous_employee_id %}
+    <div class="employee-list">
+        {% for emp in employees %}
+            {% set emp_id = emp.get('person_id') or emp.get('employee_id') or emp.get('id') %}
+            {% set emp_name = (emp.get('first_name', '') + " " + emp.get('last_name', '')).strip() or emp.get('name', 'Empleado') %}
+            
+            {% if emp_id and emp_name %}
+            <button 
+                type="button" 
+                class="employee-btn"
+                onclick="selectEmployee('{{ emp_id }}', '{{ emp_name }}')">
+                {{ emp_name }}
+            </button>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <p id="selected-employee" style="text-align: center; color: #aaa; margin: 20px 0;">
+        {% if previous_employee_id %}
+            {% for emp in employees %}
+                {% set emp_id = emp.get('person_id') or emp.get('employee_id') or emp.get('id') %}
+                {% if emp_id == previous_employee_id %}
+                    {% set emp_name = (emp.get('first_name', '') + " " + emp.get('last_name', '')).strip() or emp.get('name', 'Empleado') %}
+                    Seleccionado: {{ emp_name }}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </p>
+    
+    <div id="pin-section" style="display: {% if previous_employee_id %}block{% else %}none{% endif %};">
+        <form method="POST" action="{{ form_action }}">
+            {% if register_id %}<input type="hidden" name="register_id" value="{{ register_id }}">{% endif %}
+            {% if register_name %}<input type="hidden" name="register_name" value="{{ register_name }}">{% endif %}
+            <input type="hidden" name="employee_id" id="employee_id" value="{{ previous_employee_id }}">
+            
+            <div class="pin-entry">
+                <div class="pin-display" id="pin-display">Ingresa tu PIN</div>
+                <input type="hidden" name="pin" id="pin" required>
+                
+                <div class="numeric-keyboard">
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('1')">1</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('2')">2</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('3')">3</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('4')">4</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('5')">5</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('6')">6</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('7')">7</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('8')">8</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('9')">9</button>
+                    <button type="button" class="keyboard-btn" onclick="clearPin()">C</button>
+                    <button type="button" class="keyboard-btn" onclick="appendDigit('0')">0</button>
+                    <button type="button" class="keyboard-btn" onclick="clearPin()">⌫</button>
+                </div>
+                
+                <div class="keyboard-actions">
+                    <button type="button" class="btn-clear" onclick="clearPin()">Limpiar</button>
+                    <button type="submit" class="btn-submit" id="submit-btn" disabled>Ingresar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    {% if previous_employee_id %}
+    <div style="text-align: center; margin-top: 20px;">
+        <button type="button" class="btn-clear" onclick="window.location.reload()" style="max-width: 200px; margin: 0 auto;">
+            Seleccionar otro empleado
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Si hay un employee_id previo, inicializar el estado
+{% if previous_employee_id %}
+    selectedEmployeeId = '{{ previous_employee_id }}';
+    document.getElementById('employee_id').value = '{{ previous_employee_id }}';
+    document.getElementById('pin-section').style.display = 'block';
+    updatePinDisplay();
+{% endif %}
+</script>
+{% endblock %}
+

@@ -1,0 +1,156 @@
+{% extends "kiosk/base.html" %}
+
+{% block title %}Seleccionar Productos - Club Bimba{% endblock %}
+
+{% block content %}
+<div class="products-screen">
+    <div class="screen-header">
+        <h1>Elige tus productos</h1>
+        <button class="btn-secondary btn-small" onclick="window.location.href='{{ url_for('kiosk.kiosk_home') }}'">
+            ← Inicio
+        </button>
+    </div>
+    
+    <div class="products-layout">
+        <div class="products-main">
+            {% for categoria, productos_cat in categorias.items() %}
+            <div class="categoria-section">
+                <h2 class="categoria-title">{{ categoria }}</h2>
+                <div class="productos-grid">
+                    {% for producto in productos_cat %}
+                    <div class="producto-card" data-producto-id="{{ producto.id }}">
+                        <div class="producto-info">
+                            <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+                            <p class="producto-precio">${{ "{:,.0f}".format(producto.precio) }}</p>
+                        </div>
+                        <div class="producto-controls">
+                            <button class="btn-quantity btn-minus" onclick="cambiarCantidad('{{ producto.id }}', -1)">−</button>
+                            <span class="producto-cantidad" id="cantidad-{{ producto.id }}">0</span>
+                            <button class="btn-quantity btn-plus" onclick="cambiarCantidad('{{ producto.id }}', 1)">+</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="carrito-sidebar">
+            <div class="carrito-header">
+                <h2>Tu Pedido</h2>
+            </div>
+            <div class="carrito-items" id="carrito-items">
+                <p class="carrito-vacio">No hay productos seleccionados</p>
+            </div>
+            <div class="carrito-footer">
+                <div class="carrito-total">
+                    <span>Total:</span>
+                    <span id="carrito-total">$0</span>
+                </div>
+                <button class="btn-primary btn-large" id="btn-ir-pagar" onclick="irAPagar()" disabled>
+                    IR A PAGAR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Datos de productos desde el servidor
+const productos = {{ productos | tojson }};
+let carrito = {};
+
+function cambiarCantidad(productoId, delta) {
+    if (!carrito[productoId]) {
+        carrito[productoId] = 0;
+    }
+    carrito[productoId] = Math.max(0, carrito[productoId] + delta);
+    
+    if (carrito[productoId] === 0) {
+        delete carrito[productoId];
+    }
+    
+    actualizarUI();
+}
+
+function actualizarUI() {
+    // Actualizar cantidades en las tarjetas
+    Object.keys(carrito).forEach(productoId => {
+        const cantidadEl = document.getElementById(`cantidad-${productoId}`);
+        if (cantidadEl) {
+            cantidadEl.textContent = carrito[productoId];
+        }
+    });
+    
+    // Actualizar carrito
+    const carritoItemsEl = document.getElementById('carrito-items');
+    const carritoTotalEl = document.getElementById('carrito-total');
+    const btnIrPagar = document.getElementById('btn-ir-pagar');
+    
+    const items = Object.keys(carrito).filter(id => carrito[id] > 0);
+    
+    if (items.length === 0) {
+        carritoItemsEl.innerHTML = '<p class="carrito-vacio">No hay productos seleccionados</p>';
+        carritoTotalEl.textContent = '$0';
+        btnIrPagar.disabled = true;
+    } else {
+        let html = '';
+        let total = 0;
+        
+        items.forEach(productoId => {
+            const producto = productos.find(p => p.id === productoId);
+            if (producto) {
+                const cantidad = carrito[productoId];
+                const subtotal = producto.precio * cantidad;
+                total += subtotal;
+                
+                html += `
+                    <div class="carrito-item">
+                        <div class="carrito-item-info">
+                            <span class="carrito-item-nombre">${producto.nombre}</span>
+                            <span class="carrito-item-detalle">${cantidad} x $${producto.precio.toLocaleString()}</span>
+                        </div>
+                        <span class="carrito-item-subtotal">$${subtotal.toLocaleString()}</span>
+                    </div>
+                `;
+            }
+        });
+        
+        carritoItemsEl.innerHTML = html;
+        carritoTotalEl.textContent = `$${total.toLocaleString()}`;
+        btnIrPagar.disabled = false;
+    }
+}
+
+function irAPagar() {
+    // Preparar datos del carrito
+    const items = [];
+    Object.keys(carrito).forEach(productoId => {
+        if (carrito[productoId] > 0) {
+            const producto = productos.find(p => p.id === productoId);
+            if (producto) {
+                items.push({
+                    item_id: producto.id,
+                    nombre: producto.nombre,
+                    cantidad: carrito[productoId],
+                    precio: producto.precio,
+                    total: producto.precio * carrito[productoId]
+                });
+            }
+        }
+    });
+    
+    // Guardar en localStorage temporalmente
+    localStorage.setItem('carrito_pendiente', JSON.stringify(items));
+    
+    // Redirigir a checkout
+    window.location.href = '{{ url_for("kiosk.kiosk_checkout") }}';
+}
+</script>
+{% endblock %}
+
+
+
+
+
+

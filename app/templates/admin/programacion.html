@@ -1,0 +1,567 @@
+{% extends "base.html" %}
+{% block title %}Programación de Eventos - Administración BIMBA{% endblock %}
+{% block meta_description %}Gestiona la programación de eventos, información pública e interna de los eventos del local.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .programacion-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .programacion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .programacion-title {
+        color: #fff;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .mes-selector {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .mes-selector select,
+    .mes-selector input {
+        padding: 10px;
+        background: #1e293b;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+    }
+    
+    .mes-selector button {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .mes-selector button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .calendario-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+        margin-bottom: 30px;
+    }
+    
+    .calendario-dia-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        padding: 15px;
+        text-align: center;
+        font-weight: 700;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .calendario-dia {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 15px;
+        min-height: 120px;
+        transition: all 0.3s;
+    }
+    
+    .calendario-dia:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+    
+    .calendario-dia.hoy {
+        border: 2px solid #4caf50;
+        background: linear-gradient(135deg, #1e3a1e 0%, #0f1a0f 100%);
+    }
+    
+    .calendario-dia-numero {
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .calendario-evento {
+        background: rgba(102, 126, 234, 0.2);
+        border-left: 3px solid #667eea;
+        padding: 8px;
+        margin-top: 8px;
+        border-radius: 4px;
+    }
+    
+    .calendario-evento-nombre {
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .calendario-evento-horario {
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+    
+    .evento-hoy-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 2px solid #4caf50;
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .evento-hoy-title {
+        color: #4caf50;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+    
+    .evento-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    
+    .evento-info-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .evento-info-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .evento-info-value {
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .btn-nuevo-evento {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+    }
+    
+    .btn-nuevo-evento:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="programacion-container">
+    <div class="programacion-header">
+        <h1 class="programacion-title">📅 Programación de Eventos</h1>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <a href="{{ url_for('routes.admin_programacion_crear') }}" class="btn-nuevo-evento">
+                ➕ Nuevo Evento
+            </a>
+            <div class="mes-selector">
+                <form method="GET" action="{{ url_for('routes.admin_programacion') }}" style="display: flex; gap: 10px; align-items: center;">
+                    <select name="mes" onchange="this.form.submit()">
+                        {% for i in range(1, 13) %}
+                        <option value="{{ i }}" {% if i == mes %}selected{% endif %}>
+                            {% set meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'] %}
+                            {{ meses[i-1] }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <input type="number" name="año" value="{{ año }}" min="2024" max="2030" style="width: 80px;" onchange="this.form.submit()">
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Evento de Hoy -->
+    {% if evento_hoy %}
+    <div class="evento-hoy-card">
+        <h2 class="evento-hoy-title">🎯 Evento de Hoy</h2>
+        <div class="evento-info-grid">
+            <div class="evento-info-item">
+                <div class="evento-info-label">Nombre del Evento</div>
+                <div class="evento-info-value">{{ evento_hoy.nombre_evento }}</div>
+            </div>
+            <div class="evento-info-item">
+                <div class="evento-info-label">Tipo de Noche</div>
+                <div class="evento-info-value">{{ evento_hoy.tipo_noche or 'N/A' }}</div>
+            </div>
+            <div class="evento-info-item">
+                <div class="evento-info-label">DJ Principal</div>
+                <div class="evento-info-value">{{ evento_hoy.dj_principal or 'N/A' }}</div>
+            </div>
+            <div class="evento-info-item">
+                <div class="evento-info-label">Horario</div>
+                <div class="evento-info-value">
+                    {% if evento_hoy.horario_apertura_publico and evento_hoy.horario_cierre_publico %}
+                        {{ evento_hoy.horario_apertura_publico.strftime('%H:%M') }} - {{ evento_hoy.horario_cierre_publico.strftime('%H:%M') }}
+                    {% elif evento_hoy.horario_apertura_publico %}
+                        {{ evento_hoy.horario_apertura_publico.strftime('%H:%M') }} (cierre por confirmar)
+                    {% else %}
+                        Por confirmar
+                    {% endif %}
+                </div>
+            </div>
+            <div class="evento-info-item">
+                <div class="evento-info-label">Estado Público</div>
+                <div class="evento-info-value">
+                    {% if evento_hoy.estado_publico == 'publicado' %}
+                        <span style="color: #4caf50;">✅ Publicado</span>
+                    {% elif evento_hoy.estado_publico == 'borrador' %}
+                        <span style="color: #ff9800;">📝 Borrador</span>
+                    {% else %}
+                        <span style="color: #f44336;">❌ Cancelado</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="evento-info-item">
+                <div class="evento-info-label">Estado Producción</div>
+                <div class="evento-info-value">
+                    {% if evento_hoy.estado_produccion == 'confirmado' %}
+                        <span style="color: #4caf50;">✅ Confirmado</span>
+                    {% elif evento_hoy.estado_produccion == 'en_gestion' %}
+                        <span style="color: #2196f3;">🔄 En Gestión</span>
+                    {% elif evento_hoy.estado_produccion == 'idea' %}
+                        <span style="color: #94a3b8;">💡 Idea</span>
+                    {% else %}
+                        <span style="color: #f44336;">❌ {{ evento_hoy.estado_produccion }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Calendario Mensual -->
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #fff; margin-bottom: 20px; font-size: 1.5rem;">{{ nombre_mes }} {{ año }}</h2>
+        <div class="calendario-grid">
+            <!-- Headers de días -->
+            <div class="calendario-dia-header">Lun</div>
+            <div class="calendario-dia-header">Mar</div>
+            <div class="calendario-dia-header">Mié</div>
+            <div class="calendario-dia-header">Jue</div>
+            <div class="calendario-dia-header">Vie</div>
+            <div class="calendario-dia-header">Sáb</div>
+            <div class="calendario-dia-header">Dom</div>
+            
+            <!-- Días del mes -->
+            {% for item in calendario %}
+            {% if item.dia %}
+            {% set fecha = item.fecha %}
+            {% set es_hoy = (fecha == fecha_hoy) if fecha_hoy else False %}
+            <div class="calendario-dia {% if es_hoy %}hoy{% endif %}">
+                <div class="calendario-dia-numero">{{ item.dia }}</div>
+                {% if item.evento %}
+                <div class="calendario-evento" style="cursor: pointer;" onclick="window.location.href='{{ url_for('routes.admin_programacion_editar', evento_id=item.evento.id) }}'">
+                    <div class="calendario-evento-nombre">{{ item.evento.nombre_evento }}</div>
+                    <div class="calendario-evento-horario">
+                        {% if item.evento.horario_apertura_publico %}
+                            {{ item.evento.horario_apertura_publico.strftime('%H:%M') }}
+                            {% if item.evento.horario_cierre_publico %}
+                                - {{ item.evento.horario_cierre_publico.strftime('%H:%M') }}
+                            {% endif %}
+                        {% else %}
+                            Sin horario
+                        {% endif %}
+                    </div>
+                    <div style="margin-top: 5px; font-size: 0.7rem; color: #94a3b8;">
+                        {% if item.evento.estado_publico == 'publicado' %}
+                            <span style="color: #4caf50;">✅ Publicado</span>
+                        {% elif item.evento.estado_publico == 'borrador' %}
+                            <span style="color: #ff9800;">📝 Borrador</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div style="margin-top: 8px;">
+                    <a href="{{ url_for('routes.admin_programacion_crear', fecha=item.fecha.isoformat()) }}" 
+                       style="color: #667eea; font-size: 0.75rem; text-decoration: none;">
+                        + Agregar evento
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div style="background: transparent; border: none;"></div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% if eventos|length == 0 %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📅</div>
+        <h3 style="color: #e8e8e8; margin-bottom: 10px;">No hay eventos programados</h3>
+        <p style="color: #94a3b8;">Crea un nuevo evento para comenzar a programar</p>
+    </div>
+    {% endif %}
+    
+    <!-- Sección: Importación Masiva de Personal -->
+    <div class="section" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 12px; padding: 30px; margin-top: 40px;">
+        <h2 class="section-title" style="color: #fff; margin-bottom: 20px; font-size: 1.8rem; display: flex; align-items: center; gap: 10px;">
+            <span>📋</span>
+            <span>Importación Masiva de Personal</span>
+        </h2>
+        
+        <p style="color: #94a3b8; margin-bottom: 25px; line-height: 1.6;">
+            Copia y pega una tabla desde Excel/Sheets con el formato:<br>
+            <code style="background: rgba(0, 0, 0, 0.3); padding: 2px 6px; border-radius: 4px; color: #667eea;">
+                SERVICIO | VIERNES 12 | SABADO 13<br>
+                BARRA | Zafiro/Niko/Ignacio | Javi/Fefy/Niko<br>
+                CAJA 1 | David |
+            </code>
+        </p>
+        
+        <form id="form-import-personal" style="display: flex; flex-direction: column; gap: 20px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: 600;">Fecha Viernes:</label>
+                    <input type="date" id="fecha-viernes" name="fecha_viernes" required
+                           style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff; font-size: 1rem;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: 600;">Fecha Sábado:</label>
+                    <input type="date" id="fecha-sabado" name="fecha_sabado" required
+                           style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff; font-size: 1rem;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: 600;">Tipo Turno:</label>
+                    <select id="tipo-turno" name="tipo_turno" required
+                            style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff; font-size: 1rem;">
+                        <option value="NOCHE">NOCHE</option>
+                        <option value="DIA">DIA</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #fff; font-weight: 600;">Pegar Tabla:</label>
+                <textarea id="texto-tabla" name="texto" rows="8" required
+                          placeholder="Copia y pega aquí la tabla desde Excel/Sheets..."
+                          style="width: 100%; padding: 15px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff; font-family: 'Courier New', monospace; font-size: 0.9rem; resize: vertical;"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" onclick="previsualizarImportacion()" 
+                        style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                    👁️ Previsualizar
+                </button>
+                <button type="button" onclick="importarAsignaciones()" 
+                        style="padding: 12px 24px; background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                    ✅ Importar
+                </button>
+                <label style="display: flex; align-items: center; gap: 8px; color: #94a3b8; cursor: pointer;">
+                    <input type="checkbox" id="crear-placeholders" name="crear_placeholders">
+                    <span>Crear trabajadores faltantes como placeholder</span>
+                </label>
+            </div>
+        </form>
+        
+        <!-- Resultados de Previsualización/Importación -->
+        <div id="resultados-importacion" style="display: none; margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3);">
+            <h3 style="color: #fff; margin-bottom: 15px;">📊 Resultados:</h3>
+            <div id="resultados-contenido"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function previsualizarImportacion() {
+    const texto = document.getElementById('texto-tabla').value.trim();
+    const fechaViernes = document.getElementById('fecha-viernes').value;
+    const fechaSabado = document.getElementById('fecha-sabado').value;
+    const tipoTurno = document.getElementById('tipo-turno').value;
+    
+    if (!texto || !fechaViernes || !fechaSabado) {
+        alert('⚠️ Por favor, completa todos los campos');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/programacion/preview', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+            },
+            body: JSON.stringify({
+                texto: texto,
+                fecha_viernes: fechaViernes,
+                fecha_sabado: fechaSabado,
+                tipo_turno: tipoTurno
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarResultados(data.resultados, false);
+        } else {
+            alert('❌ Error: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error al previsualizar: ' + error.message);
+    }
+}
+
+async function importarAsignaciones() {
+    const texto = document.getElementById('texto-tabla').value.trim();
+    const fechaViernes = document.getElementById('fecha-viernes').value;
+    const fechaSabado = document.getElementById('fecha-sabado').value;
+    const tipoTurno = document.getElementById('tipo-turno').value;
+    const crearPlaceholders = document.getElementById('crear-placeholders').checked;
+    
+    if (!texto || !fechaViernes || !fechaSabado) {
+        alert('⚠️ Por favor, completa todos los campos');
+        return;
+    }
+    
+    if (!confirm('¿Estás seguro de importar estas asignaciones?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/programacion/import', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+            },
+            body: JSON.stringify({
+                texto: texto,
+                fecha_viernes: fechaViernes,
+                fecha_sabado: fechaSabado,
+                tipo_turno: tipoTurno,
+                crear_placeholders: crearPlaceholders
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarResultados(data.resultados, true);
+            alert(`✅ Importación completada:\n- Insertados: ${data.resumen.insertados}\n- Duplicados: ${data.resumen.duplicados}\n- Errores: ${data.resumen.errores}`);
+        } else {
+            alert('❌ Error: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error al importar: ' + error.message);
+    }
+}
+
+function mostrarResultados(resultados, esImportacion) {
+    const contenedor = document.getElementById('resultados-importacion');
+    const contenido = document.getElementById('resultados-contenido');
+    
+    let html = '';
+    
+    if (esImportacion) {
+        html += `<div style="margin-bottom: 15px;">
+            <span style="color: #4caf50; font-weight: 600;">✅ Insertados: ${resultados.insertados || 0}</span> | 
+            <span style="color: #ff9800; font-weight: 600;">⏭️ Duplicados: ${resultados.duplicados || 0}</span> | 
+            <span style="color: #f44336; font-weight: 600;">❌ Errores: ${resultados.errores?.length || 0}</span>
+        </div>`;
+    } else {
+        html += `<div style="margin-bottom: 15px;">
+            <span style="color: #4caf50; font-weight: 600;">✅ Válidos: ${resultados.validos?.length || 0}</span> | 
+            <span style="color: #f44336; font-weight: 600;">❌ Errores: ${resultados.errores?.length || 0}</span> | 
+            <span style="color: #ff9800; font-weight: 600;">⚠️ Advertencias: ${resultados.advertencias?.length || 0}</span>
+        </div>`;
+    }
+    
+    if (resultados.errores && resultados.errores.length > 0) {
+        html += `<div style="margin-top: 15px;">
+            <h4 style="color: #f44336; margin-bottom: 10px;">Errores:</h4>
+            <ul style="color: #ffcdd2; padding-left: 20px;">
+                ${resultados.errores.slice(0, 10).map(e => `<li>${e.mensaje || e.error || JSON.stringify(e)}</li>`).join('')}
+            </ul>
+        </div>`;
+    }
+    
+    if (resultados.advertencias && resultados.advertencias.length > 0) {
+        html += `<div style="margin-top: 15px;">
+            <h4 style="color: #ff9800; margin-bottom: 10px;">Advertencias:</h4>
+            <ul style="color: #ffe0b2; padding-left: 20px;">
+                ${resultados.advertencias.slice(0, 10).map(a => `<li>${a.mensaje || JSON.stringify(a)}</li>`).join('')}
+            </ul>
+        </div>`;
+    }
+    
+    if (!esImportacion && resultados.validos && resultados.validos.length > 0) {
+        html += `<div style="margin-top: 15px;">
+            <h4 style="color: #4caf50; margin-bottom: 10px;">Asignaciones válidas (${resultados.validos.length}):</h4>
+            <div style="max-height: 300px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse; color: #fff; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: rgba(102, 126, 234, 0.2);">
+                            <th style="padding: 8px; text-align: left; border-bottom: 1px solid rgba(102, 126, 234, 0.3);">Fecha</th>
+                            <th style="padding: 8px; text-align: left; border-bottom: 1px solid rgba(102, 126, 234, 0.3);">Cargo</th>
+                            <th style="padding: 8px; text-align: left; border-bottom: 1px solid rgba(102, 126, 234, 0.3);">Trabajador</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${resultados.validos.slice(0, 50).map(v => `
+                            <tr>
+                                <td style="padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${v.fecha}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${v.cargo}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${v.trabajador}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+    
+    contenido.innerHTML = html;
+    contenedor.style.display = 'block';
+}
+</script>
+{% endblock %}
+
+

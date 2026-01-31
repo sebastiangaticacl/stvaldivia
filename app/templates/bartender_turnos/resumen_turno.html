@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen Turno - {{ turno.bartender_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .info-item strong {
+            display: block;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-item .value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .info-item.venta {
+            border-left-color: #27ae60;
+        }
+        
+        .info-item.costo {
+            border-left-color: #e74c3c;
+        }
+        
+        .info-item.merma {
+            border-left-color: #f39c12;
+        }
+        
+        .info-item.perdida {
+            border-left-color: #c0392b;
+        }
+        
+        .alert-banner {
+            background: #e74c3c;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            font-weight: 600;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .alert-banner.hidden {
+            display: none;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin: 30px 0 15px 0;
+            font-size: 20px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge.alta {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .badge.media {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .badge.baja {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .badge.atendida {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .number {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+        
+        .positive {
+            color: #27ae60;
+        }
+        
+        .negative {
+            color: #e74c3c;
+        }
+        
+        .actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #95a5a6;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Resumen de Turno</h1>
+        <div class="subtitle">
+            {{ turno.bartender_name }} - {{ turno.ubicacion.replace('_', ' ').title() }} | 
+            {{ turno.fecha_hora_apertura.strftime('%d/%m/%Y %H:%M') if turno.fecha_hora_apertura else 'N/A' }}
+            {% if turno.fecha_hora_cierre %}
+                - {{ turno.fecha_hora_cierre.strftime('%H:%M') }}
+            {% endif %}
+        </div>
+        
+        {% if turno.flag_fuga_critica %}
+        <div class="alert-banner">
+            ⚠️ ALERTA DE FUGA CRÍTICA DETECTADA
+        </div>
+        {% endif %}
+        
+        <h2>Totales del Turno</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Valor Inicial Barra (Costo)</strong>
+                <div class="value number">${{ "{:,.0f}".format(turno.valor_inicial_barra_costo or 0) }}</div>
+            </div>
+            
+            <div class="info-item">
+                <strong>Valor Final Barra (Costo)</strong>
+                <div class="value number">${{ "{:,.0f}".format(turno.valor_final_barra_costo or 0) }}</div>
+            </div>
+            
+            <div class="info-item venta">
+                <strong>Valor Vendido (Venta)</strong>
+                <div class="value number positive">${{ "{:,.0f}".format(turno.valor_vendido_venta or 0) }}</div>
+            </div>
+            
+            <div class="info-item costo">
+                <strong>Valor Vendido (Costo)</strong>
+                <div class="value number">${{ "{:,.0f}".format(turno.valor_vendido_costo or 0) }}</div>
+            </div>
+            
+            <div class="info-item merma">
+                <strong>Valor Merma (Costo)</strong>
+                <div class="value number">${{ "{:,.0f}".format(turno.valor_merma_costo or 0) }}</div>
+            </div>
+            
+            <div class="info-item perdida">
+                <strong>Pérdida No Justificada</strong>
+                <div class="value number negative">${{ "{:,.0f}".format(turno.valor_perdida_no_justificada_costo or 0) }}</div>
+            </div>
+        </div>
+        
+        {% if turno.get_margen_bruto() %}
+        <div class="info-grid" style="margin-top: 20px;">
+            <div class="info-item venta">
+                <strong>Margen Bruto</strong>
+                <div class="value number positive">${{ "{:,.0f}".format(turno.get_margen_bruto()) }}</div>
+            </div>
+            
+            {% if turno.get_margen_bruto_porcentual() %}
+            <div class="info-item venta">
+                <strong>Margen Bruto (%)</strong>
+                <div class="value number positive">{{ "{:.1f}".format(turno.get_margen_bruto_porcentual()) }}%</div>
+            </div>
+            {% endif %}
+            
+            {% if turno.get_eficiencia_porcentual() %}
+            <div class="info-item">
+                <strong>Eficiencia del Turno</strong>
+                <div class="value number">{{ "{:.1f}".format(turno.get_eficiencia_porcentual()) }}%</div>
+            </div>
+            {% endif %}
+            
+            {% if turno.get_duracion_minutos() %}
+            <div class="info-item">
+                <strong>Duración del Turno</strong>
+                <div class="value number">{{ turno.get_duracion_minutos() }} minutos</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if alertas %}
+        <h2>Alertas de Fuga</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Insumo</th>
+                    <th>Ubicación</th>
+                    <th>Diferencia</th>
+                    <th>Diferencia (%)</th>
+                    <th>Costo Diferencia</th>
+                    <th>Criticidad</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in alertas %}
+                <tr>
+                    <td><strong>{{ item.insumo_nombre }}</strong></td>
+                    <td>{{ item.alerta.ubicacion.replace('_', ' ').title() }}</td>
+                    <td class="number negative">{{ "{:,.2f}".format(item.alerta.diferencia_turno) }}</td>
+                    <td class="number negative">{{ "{:.2f}".format(item.alerta.diferencia_porcentual_turno) }}%</td>
+                    <td class="number negative">${{ "{:,.0f}".format(abs(item.alerta.costo_diferencia)) }}</td>
+                    <td>
+                        <span class="badge {{ item.alerta.criticidad }}">
+                            {{ item.alerta.criticidad }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.alerta.atendida %}
+                        <span class="badge atendida">Atendida</span>
+                        {% else %}
+                        <span class="badge alta">Pendiente</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-data">
+            <p>No hay alertas de fuga para este turno.</p>
+        </div>
+        {% endif %}
+        
+        <div class="actions">
+            <a href="{{ url_for('bartender_turnos.resumen_turno_json', turno_id=turno.id) }}" class="btn" target="_blank">
+                Ver JSON
+            </a>
+            <a href="{{ url_for('bartender_turnos.ver_turno', turno_id=turno.id) }}" class="btn btn-secondary">
+                Ver Detalles Completos
+            </a>
+            <a href="{{ url_for('bartender_turnos.mis_turnos') }}" class="btn btn-secondary">
+                Volver a Mis Turnos
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+
+

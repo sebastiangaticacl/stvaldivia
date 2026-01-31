@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+{% block title %}Monitor de Base de Datos - Panel de Control BIMBA{% endblock %}
+{% block meta_description %}Monitoreo detallado de la base de datos PostgreSQL: tamaño, conexiones, tablas, índices y estadísticas de rendimiento{% endblock %}
+
+{% block head_extra %}
+<style>
+    .db-monitor-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .db-monitor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .db-monitor-header h1 {
+        color: #e8e8e8;
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    .stat-card h3 {
+        color: #667eea;
+        margin: 0 0 10px 0;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        color: #e8e8e8;
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+
+    .stat-label {
+        color: #aaa;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+
+    .info-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .info-section h2 {
+        color: #e8e8e8;
+        margin: 0 0 20px 0;
+        font-size: 1.5rem;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        padding-bottom: 10px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-item-label {
+        color: #aaa;
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+    }
+
+    .info-item-value {
+        color: #e8e8e8;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    thead {
+        background: rgba(102, 126, 234, 0.2);
+    }
+
+    th {
+        color: #667eea;
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    td {
+        color: #e8e8e8;
+        padding: 12px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.9rem;
+    }
+
+    tbody tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .size-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        background: rgba(102, 126, 234, 0.2);
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        color: #667eea;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transition: width 0.3s ease;
+    }
+
+    .progress-fill.warning {
+        background: linear-gradient(90deg, #ff9800, #ff6f00);
+    }
+
+    .progress-fill.danger {
+        background: linear-gradient(90deg, #f44336, #d32f2f);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge.success {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+    }
+
+    .badge.warning {
+        background: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+    }
+
+    .badge.danger {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+    }
+
+    .refresh-btn {
+        padding: 10px 20px;
+        background: rgba(102, 126, 234, 0.3);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+        background: rgba(102, 126, 234, 0.5);
+        border-color: rgba(102, 126, 234, 0.7);
+        color: #fff;
+    }
+
+    .error-message {
+        background: rgba(244, 67, 54, 0.2);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+        color: #f44336;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="db-monitor-container">
+    <div class="db-monitor-header">
+        <h1>🗄️ Monitor de Base de Datos</h1>
+        <button class="refresh-btn" onclick="location.reload()">🔄 Actualizar</button>
+    </div>
+
+    {% if db_stats.error %}
+    <div class="error-message">
+        <strong>Error:</strong> {{ db_stats.message or db_stats.error }}
+    </div>
+    {% else %}
+
+    <!-- Estadísticas Principales -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Tamaño de Base de Datos</h3>
+            <div class="stat-value">
+                {{ db_stats.database_size.size_pretty or 'N/A' }}
+            </div>
+            <div class="stat-label">Total almacenado</div>
+        </div>
+
+        {% if db_stats.connection_stats %}
+        <div class="stat-card">
+            <h3>Conexiones Activas</h3>
+            <div class="stat-value">
+                {{ db_stats.connection_stats.active }}/{{ db_stats.connection_stats.max_connections }}
+            </div>
+            <div class="stat-label">
+                {{ db_stats.connection_stats.total }} totales
+                {% if db_stats.connection_stats.idle > 0 %}
+                ({{ db_stats.connection_stats.idle }} inactivas)
+                {% endif %}
+            </div>
+            <div class="progress-bar">
+                {% set usage_percent = db_stats.connection_stats.usage_percent %}
+                <div class="progress-fill {% if usage_percent > 80 %}danger{% elif usage_percent > 60 %}warning{% endif %}" 
+                     style="width: {{ usage_percent }}%"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if db_stats.index_stats %}
+        <div class="stat-card">
+            <h3>Índices</h3>
+            <div class="stat-value">
+                {{ db_stats.index_stats.total_indexes }}
+            </div>
+            <div class="stat-label">{{ db_stats.index_stats.total_size_pretty }}</div>
+        </div>
+        {% endif %}
+
+        {% if db_stats.database_info %}
+        <div class="stat-card">
+            <h3>Tablas</h3>
+            <div class="stat-value">
+                {{ db_stats.database_info.tables_count }}
+            </div>
+            <div class="stat-label">En esquema público</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Información de la Base de Datos -->
+    {% if db_stats.database_info %}
+    <div class="info-section">
+        <h2>📊 Información de la Base de Datos</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-item-label">Nombre</span>
+                <span class="info-item-value">{{ db_stats.database_info.database_name }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-item-label">Versión PostgreSQL</span>
+                <span class="info-item-value">{{ db_stats.database_info.version_number }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-item-label">Total de Tablas</span>
+                <span class="info-item-value">{{ db_stats.database_info.tables_count }}</span>
+            </div>
+            {% if db_stats.database_info.created_date %}
+            <div class="info-item">
+                <span class="info-item-label">Creada</span>
+                <span class="info-item-value">{{ db_stats.database_info.created_date[:10] }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas de Conexiones -->
+    {% if db_stats.connection_stats %}
+    <div class="info-section">
+        <h2>🔌 Estadísticas de Conexiones</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-item-label">Total</span>
+                <span class="info-item-value">{{ db_stats.connection_stats.total }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-item-label">Activas</span>
+                <span class="info-item-value">
+                    <span class="badge success">{{ db_stats.connection_stats.active }}</span>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-item-label">Inactivas</span>
+                <span class="info-item-value">{{ db_stats.connection_stats.idle }}</span>
+            </div>
+            {% if db_stats.connection_stats.idle_in_transaction > 0 %}
+            <div class="info-item">
+                <span class="info-item-label">Idle in Transaction</span>
+                <span class="info-item-value">
+                    <span class="badge warning">{{ db_stats.connection_stats.idle_in_transaction }}</span>
+                </span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <span class="info-item-label">Máximo Permitido</span>
+                <span class="info-item-value">{{ db_stats.connection_stats.max_connections }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-item-label">Uso</span>
+                <span class="info-item-value">{{ "%.1f"|format(db_stats.connection_stats.usage_percent) }}%</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pool de Conexiones SQLAlchemy -->
+    {% if db_stats.connection_pool_stats and not db_stats.connection_pool_stats.error %}
+    <div class="info-section">
+        <h2>🏊 Pool de Conexiones (SQLAlchemy)</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-item-label">Tamaño del Pool</span>
+                <span class="info-item-value">{{ db_stats.connection_pool_stats.size }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-item-label">Checkeadas In</span>
+                <span class="info-item-value">
+                    <span class="badge success">{{ db_stats.connection_pool_stats.checked_in }}</span>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-item-label">Checkeadas Out</span>
+                <span class="info-item-value">
+                    <span class="badge {% if db_stats.connection_pool_stats.checked_out > 0 %}warning{% else %}success{% endif %}">
+                        {{ db_stats.connection_pool_stats.checked_out }}
+                    </span>
+                </span>
+            </div>
+            {% if db_stats.connection_pool_stats.overflow is defined %}
+            <div class="info-item">
+                <span class="info-item-label">Overflow</span>
+                <span class="info-item-value">{{ db_stats.connection_pool_stats.overflow }}</span>
+            </div>
+            {% endif %}
+            {% if db_stats.connection_pool_stats.invalid is defined %}
+            <div class="info-item">
+                <span class="info-item-label">Inválidas</span>
+                <span class="info-item-value">
+                    {% if db_stats.connection_pool_stats.invalid > 0 %}
+                    <span class="badge danger">{{ db_stats.connection_pool_stats.invalid }}</span>
+                    {% else %}
+                    <span class="badge success">0</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tablas más Grandes -->
+    {% if db_stats.table_sizes %}
+    <div class="info-section">
+        <h2>📦 Tablas más Grandes (Top 20)</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tabla</th>
+                        <th>Filas</th>
+                        <th>Tamaño Tabla</th>
+                        <th>Tamaño Índices</th>
+                        <th>Tamaño Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for table in db_stats.table_sizes %}
+                    <tr>
+                        <td><strong>{{ table.table_name }}</strong></td>
+                        <td>{{ "{:,}".format(table.row_count) }}</td>
+                        <td><span class="size-badge">{{ table.table_size_pretty }}</span></td>
+                        <td><span class="size-badge">{{ table.indexes_size_pretty }}</span></td>
+                        <td><strong class="size-badge">{{ table.total_size_pretty }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,828 @@
+{% extends "base.html" %}
+{% block title %}Dashboard de Guardarropía - Administración BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .stat-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .stat-subtitle {
+        color: #64748b;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+    .variation-positive {
+        color: #4caf50;
+    }
+    .variation-negative {
+        color: #f44336;
+    }
+    .variation-neutral {
+        color: #94a3b8;
+    }
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .metric-row:last-child {
+        border-bottom: none;
+    }
+    .metric-label {
+        color: #94a3b8;
+    }
+    .metric-value {
+        color: #e8e8e8;
+        font-weight: bold;
+    }
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- BOTONES DE ACCIÓN RÁPIDA -->
+    <div class="section" style="margin-bottom: 30px;">
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('guardarropia.pos') }}" 
+                    style="flex: 1; min-width: 200px; padding: 20px 40px; background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); text-decoration: none; display: inline-block; text-align: center;"
+                    onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(76, 175, 80, 0.4)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(76, 175, 80, 0.3)'">
+                📥 INGRESO
+            </a>
+            <button onclick="abrirModalSalida()" 
+                    style="flex: 1; min-width: 200px; padding: 20px 40px; background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);"
+                    onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(33, 150, 243, 0.4)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(33, 150, 243, 0.3)'">
+                📤 SALIDA
+            </button>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">🧥 Dashboard de Guardarropía</h2>
+        <p style="color: #94a3b8; margin-bottom: 30px;">
+            Estadísticas de rendimiento, recaudaciones y métricas operativas - Fecha: {{ shift_date }}
+        </p>
+        
+        <!-- Información del Turno -->
+        {% if jornada_info %}
+        <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 30px; border-left: 4px solid #667eea;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">📅 Información del Turno Actual</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">Fecha del Turno</div>
+                    <div style="color: #e8e8e8; font-size: 1.2rem; font-weight: bold;">{{ shift_date }}</div>
+                </div>
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">Nombre de Fiesta</div>
+                    <div style="color: #e8e8e8; font-size: 1.2rem; font-weight: bold;">{{ jornada_info.nombre_fiesta or 'N/A' }}</div>
+                </div>
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">Horas de Operación</div>
+                    <div style="color: #e8e8e8; font-size: 1.2rem; font-weight: bold;">
+                        {{ jornada_info.horario_apertura_programado or 'N/A' }} ({{ shift_date }})
+                        {% if jornada_info.horario_cierre_programado %}
+                        - {{ jornada_info.horario_cierre_programado }} 
+                        {% if jornada_info.fecha_cierre_programada and jornada_info.fecha_cierre_programada != shift_date %}
+                        ({{ jornada_info.fecha_cierre_programada }})
+                        {% else %}
+                        ({{ shift_date }})
+                        {% endif %}
+                        {% if turno_cruza_medianoche %}
+                        <span style="color: #ff9800; font-size: 0.9rem; margin-left: 5px;">⚠️ Cruza medianoche</span>
+                        {% endif %}
+                        {% else %}
+                        <span style="color: #4caf50; font-size: 0.9rem; margin-left: 5px;">🟢 Turno abierto</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if turno_duracion %}
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">Duración del Turno</div>
+                    <div style="color: #4caf50; font-size: 1.2rem; font-weight: bold;">{{ turno_duracion }}</div>
+                </div>
+                {% endif %}
+                {% if jornada_info.horario_apertura_real %}
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">Apertura Real</div>
+                    <div style="color: #e8e8e8; font-size: 1rem;">
+                        {{ jornada_info.horario_apertura_real.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% if jornada_info.horario_cierre_programado and turno_cruza_medianoche %}
+            <div style="margin-top: 15px; padding: 15px; background: rgba(255, 152, 0, 0.1); border-radius: 8px; border-left: 3px solid #ff9800;">
+                <div style="color: #ff9800; font-weight: bold; margin-bottom: 5px;">ℹ️ Turno que cruza medianoche</div>
+                <div style="color: #94a3b8; font-size: 0.9rem;">
+                    Este turno inició el día {{ shift_date }} a las {{ jornada_info.horario_apertura_programado or '22:00' }} 
+                    y finalizó el día {{ jornada_info.fecha_cierre_programada or shift_date }} a las {{ jornada_info.horario_cierre_programado }}. 
+                    Las operaciones después de medianoche (00:00-{{ jornada_info.horario_cierre_programado }}) pertenecen técnicamente al día siguiente, 
+                    pero se registran bajo la fecha del turno ({{ shift_date }}) para mantener la coherencia operativa.
+                </div>
+            </div>
+            {% elif not jornada_info.horario_cierre_programado %}
+            <div style="margin-top: 15px; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border-left: 3px solid #4caf50;">
+                <div style="color: #4caf50; font-weight: bold; margin-bottom: 5px;">🟢 Turno en curso</div>
+                <div style="color: #94a3b8; font-size: 0.9rem;">
+                    Este turno está actualmente abierto. La hora de cierre se registrará automáticamente cuando se cierre el turno.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- RECAUDACIONES -->
+        <div class="section" style="margin-bottom: 30px;">
+            <h3 class="section-title" style="font-size: 1.4rem; margin-bottom: 20px;">💰 Recaudaciones</h3>
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 20px;">
+                <div class="stat-card" style="border-left: 4px solid #4caf50;">
+                    <div class="stat-label">Recaudación Hoy</div>
+                    <div class="stat-number" style="color: #4caf50;">${{ "%.0f"|format(performance_stats.revenue_today) }}</div>
+                    {% if performance_stats.variation_revenue != 0 %}
+                    <div class="stat-subtitle">
+                        <span class="{% if performance_stats.variation_revenue > 0 %}variation-positive{% else %}variation-negative{% endif %}">
+                            {{ "%.1f"|format(performance_stats.variation_revenue) }}% vs ayer
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #2196f3;">
+                    <div class="stat-label">Recaudación Últimos 7 Días</div>
+                    <div class="stat-number" style="color: #2196f3;">${{ "%.0f"|format(performance_stats.revenue_last_7d) }}</div>
+                    <div class="stat-subtitle">Promedio diario: ${{ "%.0f"|format(performance_stats.avg_daily_revenue_7d) }}</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #ff9800;">
+                    <div class="stat-label">Recaudación Últimos 30 Días</div>
+                    <div class="stat-number" style="color: #ff9800;">${{ "%.0f"|format(performance_stats.revenue_30d) }}</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #9c27b0;">
+                    <div class="stat-label">Precio Promedio por Item</div>
+                    <div class="stat-number" style="color: #9c27b0;">${{ "%.0f"|format(performance_stats.avg_price_per_item) }}</div>
+                </div>
+            </div>
+            
+            <!-- Desglose por método de pago -->
+            <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-top: 20px;">
+                <h4 style="color: #667eea; margin-bottom: 15px;">💳 Recaudación por Método de Pago (Hoy)</h4>
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 5px;">💵 Efectivo</div>
+                        <div style="color: #4caf50; font-size: 1.5rem; font-weight: bold;">${{ "%.0f"|format(performance_stats.revenue_cash_today) }}</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: rgba(33, 150, 243, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 5px;">💳 Débito</div>
+                        <div style="color: #2196f3; font-size: 1.5rem; font-weight: bold;">${{ "%.0f"|format(performance_stats.revenue_debit_today) }}</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 5px;">💳 Crédito</div>
+                        <div style="color: #9c27b0; font-size: 1.5rem; font-weight: bold;">${{ "%.0f"|format(performance_stats.revenue_credit_today) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MÉTRICAS DE RENDIMIENTO -->
+        <div class="section" style="margin-bottom: 30px;">
+            <h3 class="section-title" style="font-size: 1.4rem; margin-bottom: 20px;">📊 Métricas de Rendimiento</h3>
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 20px;">
+                <div class="stat-card" style="border-left: 4px solid #4caf50;">
+                    <div class="stat-label">Items Depositados Hoy</div>
+                    <div class="stat-number" style="color: #4caf50;">{{ performance_stats.items_deposited_today }}</div>
+                    {% if performance_stats.variation_items != 0 %}
+                    <div class="stat-subtitle">
+                        <span class="{% if performance_stats.variation_items > 0 %}variation-positive{% else %}variation-negative{% endif %}">
+                            {{ "%.1f"|format(performance_stats.variation_items) }}% vs ayer ({{ performance_stats.items_deposited_yesterday }})
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #2196f3;">
+                    <div class="stat-label">Items Retirados Hoy</div>
+                    <div class="stat-number" style="color: #2196f3;">{{ performance_stats.items_retrieved_today }}</div>
+                    <div class="stat-subtitle">Tasa de retiro: {{ "%.1f"|format(performance_stats.retrieval_rate) }}%</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #ff9800;">
+                    <div class="stat-label">Items Últimos 7 Días</div>
+                    <div class="stat-number" style="color: #ff9800;">{{ performance_stats.items_last_7_days }}</div>
+                    <div class="stat-subtitle">Promedio diario: {{ "%.1f"|format(performance_stats.avg_daily_items_7d) }}</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #f44336;">
+                    <div class="stat-label">Items Pendientes</div>
+                    <div class="stat-number" style="color: #f44336;">{{ performance_stats.items_pending }}</div>
+                    <div class="stat-subtitle">Esperando retiro</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PRENDAS NO RETIRADAS -->
+        <div class="section" style="margin-bottom: 30px;">
+            <h3 class="section-title" style="font-size: 1.4rem; margin-bottom: 20px;">📸 Prendas No Retiradas</h3>
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 20px;">
+                <div class="stat-card" style="border-left: 4px solid #f44336; cursor: pointer;" onclick="window.location.href='{{ url_for('guardarropia_admin.prendas_no_retiradas') }}'">
+                    <div class="stat-label">Total No Retiradas</div>
+                    <div class="stat-number" style="color: #f44336;">{{ total_prendas_no_retiradas }}</div>
+                    <div class="stat-subtitle">Click para ver detalles</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #4caf50;">
+                    <div class="stat-label">Con Foto</div>
+                    <div class="stat-number" style="color: #4caf50;">{{ prendas_con_foto }}</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #ff9800;">
+                    <div class="stat-label">Sin Foto</div>
+                    <div class="stat-number" style="color: #ff9800;">{{ prendas_sin_foto }}</div>
+                </div>
+            </div>
+            
+            {% if prendas_por_dias %}
+            <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-top: 20px;">
+                <h4 style="color: #667eea; margin-bottom: 15px;">📊 Distribución por Tiempo</h4>
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    {% for rango, cantidad in prendas_por_dias.items() %}
+                    <div style="text-align: center; padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 5px;">{{ rango }}</div>
+                        <div style="color: #667eea; font-size: 1.5rem; font-weight: bold;">{{ cantidad }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="{{ url_for('guardarropia_admin.prendas_no_retiradas') }}" 
+                   style="display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: transform 0.2s;"
+                   onmouseover="this.style.transform='translateY(-2px)'"
+                   onmouseout="this.style.transform='translateY(0)'">
+                    📸 Ver Todas las Prendas No Retiradas
+                </a>
+            </div>
+        </div>
+        
+        <!-- ESTADÍSTICAS BÁSICAS -->
+        {% if stats %}
+        <div class="section" style="margin-bottom: 30px;">
+            <h3 class="section-title" style="font-size: 1.4rem; margin-bottom: 20px;">📦 Estadísticas de Operación - Caja Guardarropía</h3>
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 20px;">
+                <div class="stat-card" style="border-left: 4px solid #4caf50;">
+                    <div class="stat-label">Total Depositados</div>
+                    <div class="stat-number" style="color: #4caf50;">{{ stats.total_deposited or 0 }}</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #2196f3;">
+                    <div class="stat-label">Total Retirados</div>
+                    <div class="stat-number" style="color: #2196f3;">{{ stats.total_retrieved or 0 }}</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #ff9800;">
+                    <div class="stat-label">Items Pendientes</div>
+                    <div class="stat-number" style="color: #ff9800;">{{ stats.total_pending or 0 }}</div>
+                </div>
+                <div class="stat-card" style="border-left: 4px solid #f44336;">
+                    <div class="stat-label">Ocupación de Espacios</div>
+                    <div class="stat-number" style="color: #f44336;">{{ performance_stats.occupied_clusters_count }}/{{ performance_stats.total_clusters }}</div>
+                    <div class="stat-subtitle">{{ "%.1f"|format(performance_stats.occupancy_rate) }}% ocupado</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ performance_stats.occupancy_rate }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ANÁLISIS DE UTILIDAD -->
+            <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 12px; margin-top: 20px;">
+                <h3 style="color: #667eea; margin-bottom: 20px;">📊 Análisis de Utilidad - Caja Guardarropía</h3>
+                <p style="color: #94a3b8; margin-bottom: 20px; font-size: 0.9rem;">
+                    Análisis de rendimiento y utilidad del servicio operado desde la caja guardarropía
+                </p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div style="text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">Score de Utilidad</div>
+                        <div style="font-size: 2.5rem; font-weight: bold; color: {{ performance_stats.servicio_color }};">
+                            {{ performance_stats.utilidad_score }}/100
+                        </div>
+                        <div style="color: {{ performance_stats.servicio_color }}; font-size: 1.1rem; margin-top: 5px; font-weight: bold;">
+                            {{ performance_stats.servicio_util }}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">Hora Peak Caja (Items)</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #667eea;">
+                            {% if performance_stats.hora_peak_items is not none %}
+                            {{ performance_stats.hora_peak_items }}:00
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </div>
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px;">
+                            {% if performance_stats.hora_peak_items is not none %}
+                            {{ performance_stats.items_por_hora.get(performance_stats.hora_peak_items, 0) }} items
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">Hora Peak Caja (Ingresos)</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #4caf50;">
+                            {% if performance_stats.hora_peak_revenue is not none %}
+                            {{ performance_stats.hora_peak_revenue }}:00
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </div>
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px;">
+                            {% if performance_stats.hora_peak_revenue is not none %}
+                            ${{ "%.0f"|format(performance_stats.ingresos_por_hora.get(performance_stats.hora_peak_revenue, 0)) }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">Ingreso por Item</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #ff9800;">
+                            ${{ "%.0f"|format(performance_stats.revenue_per_item) }}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">Ingreso por Espacio</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #9c27b0;">
+                            ${{ "%.0f"|format(performance_stats.revenue_per_space) }}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">Tasa No Retiro</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: {% if performance_stats.tasa_no_retiro > 15 %}#f44336{% elif performance_stats.tasa_no_retiro > 5 %}#ff9800{% else %}#4caf50{% endif %};">
+                            {{ "%.1f"|format(performance_stats.tasa_no_retiro) }}%
+                        </div>
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px;">
+                            {{ performance_stats.items_no_retirados_count }} prendas
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">Ventas Registradas</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #2196f3;">
+                            {{ performance_stats.ventas_caja_hoy }}
+                        </div>
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px;">
+                            En caja hoy
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">Eficiencia de Caja</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #9c27b0;">
+                            ${{ "%.0f"|format(performance_stats.eficiencia_caja) }}
+                        </div>
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px;">
+                            Por venta
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gráfico de horas peak -->
+                {% if performance_stats.items_por_hora %}
+                <div style="margin-top: 20px;">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">📈 Actividad de Caja por Hora (Últimos 30 días)</h4>
+                    <div style="background: rgba(102, 126, 234, 0.05); padding: 20px; border-radius: 8px;">
+                        <div style="display: flex; align-items: flex-end; gap: 3px; height: 200px; justify-content: space-around; overflow-x: auto;">
+                            {% set max_items = 1 %}
+                            {% for hora in range(0, 24) %}
+                                {% set items_hora = performance_stats.items_por_hora.get(hora, 0) %}
+                                {% if items_hora > max_items %}
+                                    {% set max_items = items_hora %}
+                                {% endif %}
+                            {% endfor %}
+                            {% for hora in range(0, 24) %}
+                            {% set items_hora = performance_stats.items_por_hora.get(hora, 0) %}
+                            {% set altura = (items_hora / max_items * 180) if max_items > 0 else 0 %}
+                            <div style="flex: 1; min-width: 20px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+                                <div style="width: 100%; background: {% if hora == performance_stats.hora_peak_items %}#667eea{% else %}rgba(102, 126, 234, 0.3){% endif %}; 
+                                    height: {{ altura }}px; border-radius: 4px 4px 0 0; min-height: {% if items_hora > 0 %}5px{% else %}0px{% endif %}; 
+                                    transition: all 0.3s; cursor: pointer;" 
+                                    title="{{ hora }}:00 - {{ items_hora }} items - ${{ "%.0f"|format(performance_stats.ingresos_por_hora.get(hora, 0)) }}"></div>
+                                <div style="color: #94a3b8; font-size: 0.65rem; margin-top: 5px; transform: rotate(-45deg); white-space: nowrap;">
+                                    {{ hora }}h
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div style="text-align: center; margin-top: 15px; color: #94a3b8; font-size: 0.85rem;">
+                            {% if performance_stats.hora_peak_items is not none %}
+                            Hora peak: {{ performance_stats.hora_peak_items }}:00 con {{ performance_stats.items_por_hora.get(performance_stats.hora_peak_items, 0) }} items
+                            {% else %}
+                            No hay datos suficientes para determinar hora peak
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Factores de utilidad -->
+                <div style="margin-top: 20px;">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">Factores de Utilidad de la Caja:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                        {% for factor, puntos in performance_stats.utilidad_factores %}
+                        <div style="padding: 12px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border-left: 3px solid {% if puntos > 15 %}#4caf50{% elif puntos > 0 %}#ff9800{% else %}#f44336{% endif %};">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #e8e8e8; font-size: 0.9rem;">{{ factor }}</span>
+                                <span style="color: {% if puntos > 15 %}#4caf50{% elif puntos > 0 %}#ff9800{% else %}#f44336{% endif %}; font-weight: bold;">{{ puntos }} pts</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SUGERENCIAS DE MEJORA -->
+            <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 12px; margin-top: 20px;">
+                <h3 style="color: #667eea; margin-bottom: 20px;">💡 Sugerencias de Mejora - Operación de Caja</h3>
+                <p style="color: #94a3b8; margin-bottom: 20px; font-size: 0.9rem;">
+                    Recomendaciones para optimizar la operación de la caja guardarropía
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    {% for sugerencia in performance_stats.sugerencias %}
+                    <div style="padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 8px; border-left: 4px solid 
+                        {% if sugerencia.tipo == 'success' %}#4caf50
+                        {% elif sugerencia.tipo == 'warning' %}#ff9800
+                        {% elif sugerencia.tipo == 'error' %}#f44336
+                        {% else %}#2196f3
+                        {% endif %};">
+                        <div style="display: flex; align-items: start; gap: 10px;">
+                            <div style="font-size: 1.5rem;">
+                                {% if sugerencia.tipo == 'success' %}✅
+                                {% elif sugerencia.tipo == 'warning' %}⚠️
+                                {% elif sugerencia.tipo == 'error' %}❌
+                                {% else %}ℹ️
+                                {% endif %}
+                            </div>
+                            <div style="flex: 1;">
+                                <h4 style="color: #e8e8e8; margin-bottom: 5px; font-size: 1rem;">{{ sugerencia.titulo }}</h4>
+                                <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;">{{ sugerencia.descripcion }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- ACCESOS RÁPIDOS -->
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-bottom: 30px;">
+            <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 12px;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">📊 Informe de Espacios</h3>
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Visualiza y gestiona el mapa de espacios/clusters disponibles y ocupados
+                </p>
+                <a href="{{ url_for('guardarropia_admin.informe_espacios') }}" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 6px;">
+                    Ver Informe →
+                </a>
+            </div>
+            
+            <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 12px;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">📋 Listar Items</h3>
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Ver todos los items depositados en guardarropía
+                </p>
+                <a href="{{ url_for('guardarropia.listar') }}" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 6px;">
+                    Ver Lista →
+                </a>
+            </div>
+            
+            <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 12px;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">📸 Prendas No Retiradas</h3>
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Gestiona prendas no retiradas con fotos y seguimiento
+                </p>
+                <a href="{{ url_for('guardarropia_admin.prendas_no_retiradas') }}" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 6px;">
+                    Ver Prendas →
+                </a>
+            </div>
+        </div>
+        
+        <!-- ÚLTIMOS CIERRES DE CAJA -->
+        {% if ultimos_cierres %}
+        <div class="section" style="margin-top: 30px;">
+            <h3 class="section-title" style="font-size: 1.3rem; margin-bottom: 20px;">💰 Últimos Cierres de Caja</h3>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha Cierre</th>
+                            <th>Empleado</th>
+                            <th>Turno</th>
+                            <th>Total Esperado</th>
+                            <th>Total Real</th>
+                            <th>Diferencia</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cierre in ultimos_cierres %}
+                        <tr>
+                            <td>
+                                {% if cierre.closed_at %}
+                                {{ cierre.closed_at.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ cierre.employee_name or 'N/A' }}</td>
+                            <td>{{ cierre.shift_date or 'N/A' }}</td>
+                            <td>
+                                {% set total_esperado = (cierre.expected_cash or 0) + (cierre.expected_debit or 0) + (cierre.expected_credit or 0) %}
+                                ${{ "%.0f"|format(total_esperado) }}
+                            </td>
+                            <td>
+                                {% set total_real = (cierre.actual_cash or 0) + (cierre.actual_debit or 0) + (cierre.actual_credit or 0) %}
+                                ${{ "%.0f"|format(total_real) }}
+                            </td>
+                            <td>
+                                {% set diferencia = cierre.difference_total or 0 %}
+                                {% if diferencia == 0 %}
+                                <span style="color: #4caf50;">${{ "%.0f"|format(diferencia) }}</span>
+                                {% elif diferencia > 0 %}
+                                <span style="color: #4caf50;">+${{ "%.0f"|format(diferencia) }}</span>
+                                {% else %}
+                                <span style="color: #f44336;">${{ "%.0f"|format(diferencia) }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if cierre.status == 'resolved' %}
+                                <span style="color: #4caf50;">● Resuelto</span>
+                                {% elif cierre.status == 'balanced' %}
+                                <span style="color: #2196f3;">● Balanceado</span>
+                                {% elif cierre.status == 'pending' %}
+                                <span style="color: #ff9800;">● Pendiente</span>
+                                {% else %}
+                                <span style="color: #94a3b8;">● {{ cierre.status or 'N/A' }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="section" style="margin-top: 30px;">
+            <div class="admin-card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px; border-radius: 12px;">
+                <h3 class="section-title" style="font-size: 1.3rem; margin-bottom: 10px;">💰 Últimos Cierres de Caja</h3>
+                <p style="color: #94a3b8;">No hay cierres de caja registrados aún.</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- ITEMS RECIENTES -->
+        {% if recent_items %}
+        <div class="section">
+            <h3 class="section-title" style="font-size: 1.3rem; margin-bottom: 20px;">📦 Items Recientes</h3>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Cliente</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Depositado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_items %}
+                        <tr>
+                            <td><strong>{{ item.ticket_code }}</strong></td>
+                            <td>{{ item.customer_name or 'N/A' }}</td>
+                            <td>{{ item.description or 'N/A' }}</td>
+                            <td>
+                                {% if item.status == 'deposited' %}
+                                <span style="color: #4caf50;">● Depositado</span>
+                                {% elif item.status == 'retrieved' %}
+                                <span style="color: #2196f3;">● Retirado</span>
+                                {% else %}
+                                <span style="color: #ff9800;">● {{ item.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.deposited_at %}
+                                {{ item.deposited_at.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('guardarropia_admin.admin_ticket_detail', ticket_code=item.ticket_code) }}" 
+                                   class="btn-link" style="color: #667eea; text-decoration: none;">
+                                    Ver Detalle →
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state" style="text-align: center; padding: 40px; background: #1e293b; border-radius: 12px; margin-top: 20px;">
+            <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
+            <h3 style="color: #e8e8e8; margin-bottom: 10px;">No hay items recientes</h3>
+            <p style="color: #94a3b8;">Los items depositados aparecerán aquí</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- MODAL SALIDA -->
+<div id="modalSalida" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: #1e293b; padding: 40px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #2196f3;">
+        <h2 style="color: #2196f3; margin-bottom: 20px; text-align: center; font-size: 1.8rem;">📤 SALIDA DE PRENDA</h2>
+        <form id="formSalida" method="POST" action="{{ url_for('guardarropia.retirar') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #94a3b8; margin-bottom: 10px; font-weight: bold;">Código de Ticket:</label>
+                <input type="text" 
+                       id="inputCodigoSalida" 
+                       name="ticket_code" 
+                       autocomplete="off"
+                       placeholder="Escanear o ingresar código..."
+                       style="padding: 15px; width: 100%; border: 2px solid #2196f3; border-radius: 8px; background: #0f172a; color: #e8e8e8; font-size: 1.2rem; text-align: center; letter-spacing: 2px; text-transform: uppercase;"
+                       autofocus>
+                <p style="color: #64748b; font-size: 0.85rem; margin-top: 8px; text-align: center;">
+                    Escanea el código o ingrésalo manualmente
+                </p>
+            </div>
+            <div id="errorSalida" style="display: none; padding: 12px; background: rgba(244, 67, 54, 0.2); border-left: 3px solid #f44336; border-radius: 6px; margin-bottom: 20px;">
+                <span id="errorSalidaText" style="color: #f44336;"></span>
+            </div>
+            <div id="infoTicket" style="display: none; padding: 15px; background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196f3; border-radius: 6px; margin-bottom: 20px;">
+                <div style="color: #2196f3; font-weight: bold; margin-bottom: 8px;">Información del Ticket:</div>
+                <div id="infoTicketContent" style="color: #e8e8e8; font-size: 0.9rem;"></div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" 
+                        onclick="cerrarModalSalida()" 
+                        style="padding: 12px 24px; background: #64748b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem;">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                        id="btnConfirmarSalida"
+                        style="padding: 12px 24px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold;">
+                    Confirmar Salida
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Variables globales
+let timeoutSalida = null;
+
+// Funciones para abrir modales
+function abrirModalSalida() {
+    document.getElementById('modalSalida').style.display = 'flex';
+    setTimeout(() => {
+        document.getElementById('inputCodigoSalida').focus();
+    }, 100);
+}
+
+// Funciones para cerrar modales
+function cerrarModalSalida() {
+    document.getElementById('modalSalida').style.display = 'none';
+    document.getElementById('formSalida').reset();
+    document.getElementById('errorSalida').style.display = 'none';
+    document.getElementById('infoTicket').style.display = 'none';
+    document.getElementById('inputCodigoSalida').value = '';
+}
+
+// Cerrar modales al hacer clic fuera
+document.getElementById('modalSalida')?.addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalSalida();
+});
+
+// Manejar escaneo automático (Enter) para SALIDA con búsqueda previa
+document.getElementById('inputCodigoSalida')?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const codigo = this.value.trim().toUpperCase();
+        if (codigo) {
+            // Buscar ticket primero para mostrar información
+            buscarTicketSalida(codigo);
+        }
+    }
+});
+
+// Función para buscar ticket antes de retirar
+function buscarTicketSalida(ticketCode) {
+    const errorDiv = document.getElementById('errorSalida');
+    const errorText = document.getElementById('errorSalidaText');
+    const infoDiv = document.getElementById('infoTicket');
+    const infoContent = document.getElementById('infoTicketContent');
+    const btnConfirmar = document.getElementById('btnConfirmarSalida');
+    
+    // Limpiar errores previos
+    errorDiv.style.display = 'none';
+    infoDiv.style.display = 'none';
+    btnConfirmar.disabled = true;
+    btnConfirmar.textContent = '🔍 Buscando...';
+    
+    fetch('{{ url_for("guardarropia.api_buscar_ticket") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ticket_code: ticketCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = 'Confirmar Salida';
+        
+        if (data.success) {
+            // Mostrar información del ticket
+            const item = data.item;
+            infoContent.innerHTML = `
+                <div><strong>Ticket:</strong> ${item.ticket_code}</div>
+                <div><strong>Cliente:</strong> ${item.customer_name || 'N/A'}</div>
+                <div><strong>Descripción:</strong> ${item.description || 'N/A'}</div>
+                <div><strong>Depositado:</strong> ${item.deposited_at ? new Date(item.deposited_at).toLocaleString('es-CL') : 'N/A'}</div>
+            `;
+            infoDiv.style.display = 'block';
+            
+            // Auto-submit después de mostrar info (o esperar confirmación manual)
+            // Por ahora, solo mostramos la info y el usuario confirma manualmente
+        } else {
+            // Mostrar error
+            errorDiv.style.display = 'block';
+            errorText.textContent = data.error || 'Error al buscar el ticket';
+        }
+    })
+    .catch(error => {
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = 'Confirmar Salida';
+        errorDiv.style.display = 'block';
+        errorText.textContent = 'Error al buscar el ticket: ' + error.message;
+        console.error('Error:', error);
+    });
+}
+
+// Manejar envío de formularios
+document.getElementById('formSalida')?.addEventListener('submit', function(e) {
+    const codigo = document.getElementById('inputCodigoSalida').value.trim().toUpperCase();
+    if (!codigo) {
+        e.preventDefault();
+        document.getElementById('errorSalida').style.display = 'block';
+        document.getElementById('errorSalidaText').textContent = 'Por favor, ingresa un código de ticket';
+        return false;
+    }
+    // Convertir a mayúsculas antes de enviar
+    document.getElementById('inputCodigoSalida').value = codigo;
+});
+
+// Cerrar con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalSalida();
+    }
+});
+</script>
+{% endblock %}
+
+

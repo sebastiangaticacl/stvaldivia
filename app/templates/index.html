@@ -1,0 +1,836 @@
+{% extends "base.html" %}
+{% block title %}BIENVENIDX A BIMBA{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bimba_ui.css') }}">
+<style>
+@keyframes pulseSuccess {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 255, 0, 0.6); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+.flash-success {
+    animation: pulseSuccess 0.5s ease-in-out;
+}
+
+.flash-error {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* FASE 2: Estilos para modo QR */
+.btn-toggle-mode {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-toggle-mode:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.ticket-info-box {
+    background: rgba(102, 126, 234, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.ticket-info-box h3 {
+    color: #00ff00;
+    margin-bottom: 10px;
+}
+
+.ticket-info-box p {
+    color: #aaa;
+    margin-bottom: 15px;
+}
+
+/* === RESPONSIVE: Tabla de productos === */
+table.productos {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--gap-2, 20px) 0;
+}
+
+/* Mobile: Convertir tabla a cards */
+@media (max-width: 768px) {
+    table.productos,
+    table.productos thead,
+    table.productos tbody,
+    table.productos th,
+    table.productos td,
+    table.productos tr {
+        display: block;
+    }
+    
+    table.productos thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    table.productos tr {
+        background: var(--bg-panel, #1a1a2e);
+        border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+        border-radius: var(--radius-md, 8px);
+        margin-bottom: var(--gap-2, 16px);
+        padding: var(--gap-2, 16px);
+    }
+    
+    table.productos td {
+        border: none;
+        position: relative;
+        padding: var(--gap-2, 12px);
+        padding-left: 50%;
+        text-align: left;
+    }
+    
+    table.productos td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: var(--gap-2, 12px);
+        width: 45%;
+        padding-right: var(--gap-2, 12px);
+        white-space: nowrap;
+        font-weight: 600;
+        color: var(--text-muted, #aaaaaa);
+    }
+}
+
+/* === Botones de entrega táctiles === */
+.btn-entregar-tactil {
+    width: 100%;
+    min-height: 64px;
+    font-size: clamp(18px, 2.2vw, 24px);
+    font-weight: 700;
+    padding: var(--gap-3, 18px);
+    margin-top: var(--gap-2, 16px);
+    background: linear-gradient(135deg, var(--accent, #667eea) 0%, var(--accent2, #764ba2) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg, 12px);
+    cursor: pointer;
+    transition: all var(--transition, 0.2s ease);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.3));
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-entregar-tactil:active {
+    transform: scale(0.98);
+}
+
+.btn-entregar-tactil:hover,
+.btn-entregar-tactil:focus {
+    box-shadow: var(--shadow-lg, 0 6px 20px rgba(0, 0, 0, 0.4));
+    transform: translateY(-2px);
+}
+
+/* === Selector de cantidad táctil === */
+.quantity-selector-tactil {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2, 12px);
+    margin-bottom: var(--gap-2, 12px);
+}
+
+.qty-btn {
+    min-width: 48px;
+    min-height: 48px;
+    background: var(--bg-panel2, #252540);
+    color: var(--text, #e8e8e8);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-md, 8px);
+    font-size: clamp(20px, 2.5vw, 28px);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition, 0.2s ease);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qty-btn:active {
+    transform: scale(0.95);
+}
+
+.qty-input-tactil {
+    flex: 1;
+    min-height: 48px;
+    text-align: center;
+    font-size: clamp(18px, 2.2vw, 24px);
+    font-weight: 700;
+    background: var(--bg-panel, #1a1a2e);
+    color: var(--text, #e8e8e8);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-md, 8px);
+    padding: var(--gap-2, 12px);
+}
+
+/* === Responsive: Inputs y formularios === */
+@media (max-width: 480px) {
+    .btn-entregar-tactil {
+        min-height: 72px;
+        font-size: 20px;
+    }
+    
+    .qty-btn {
+        min-width: 56px;
+        min-height: 56px;
+    }
+    
+    .qty-input-tactil {
+        min-height: 56px;
+        font-size: 22px;
+    }
+}
+</style>
+<script>
+function changeQty(button, delta) {
+    const form = button.closest('.entregar-form-tactil');
+    const input = form.querySelector('.qty-input-tactil');
+    const max = parseInt(button.getAttribute('data-max'));
+    let currentValue = parseInt(input.value) || 1;
+    let newValue = currentValue + delta;
+    
+    if (newValue < 1) {
+        newValue = 1;
+    } else if (newValue > max) {
+        newValue = max;
+    }
+    
+    input.value = newValue;
+    
+    // Feedback visual
+    input.style.transform = 'scale(1.1)';
+    setTimeout(() => {
+        input.style.transform = 'scale(1)';
+    }, 200);
+}
+
+// FASE 2: Variables globales para ticket QR
+let currentTicket = null;
+let scanMode = 'sale_id'; // 'sale_id' o 'qr'
+
+// Función para cambiar modo de escaneo
+function toggleScanMode() {
+    scanMode = scanMode === 'sale_id' ? 'qr' : 'sale_id';
+    const qrForm = document.getElementById('qr-scan-form');
+    const saleForm = document.getElementById('sale-id-form');
+    const modeText = document.getElementById('scan-mode-text');
+    
+    if (scanMode === 'qr') {
+        qrForm.style.display = 'block';
+        saleForm.style.display = 'none';
+        modeText.textContent = '🔢 Buscar por Código';
+        document.getElementById('qr-token-input').focus();
+    } else {
+        qrForm.style.display = 'none';
+        saleForm.style.display = 'block';
+        modeText.textContent = '📷 Escanear QR';
+        document.getElementById('scanner-input').focus();
+    }
+}
+
+// FASE 2: Escanear QR code (usando cámara o input manual)
+function scanQRCode() {
+    const qrInput = document.getElementById('qr-token-input');
+    const qrToken = qrInput.value.trim();
+    
+    if (!qrToken) {
+        alert('Por favor, escanea o ingresa el código QR');
+        return;
+    }
+    
+    // Llamar al endpoint API
+    fetch('/api/tickets/scan', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qr_token: qrToken })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentTicket = data.ticket;
+            displayTicketQR(data.ticket);
+            playSuccessSound();
+        } else {
+            alert('Error: ' + data.error);
+            playErrorSound();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al escanear ticket');
+        playErrorSound();
+    });
+}
+
+// FASE 2: Enviar QR token manualmente
+function submitQRManual() {
+    scanQRCode();
+}
+
+// FASE 2: Mostrar ticket escaneado
+function displayTicketQR(ticketData) {
+    const ticketSection = document.getElementById('ticket-qr-section');
+    const displayCode = document.getElementById('ticket-display-code');
+    const status = document.getElementById('ticket-status');
+    const itemsContainer = document.getElementById('ticket-items-container');
+    
+    displayCode.textContent = `Ticket: ${ticketData.ticket.display_code}`;
+    status.textContent = `Estado: ${ticketData.ticket.status}`;
+    
+    // Renderizar items
+    let itemsHTML = '<table class="productos" style="margin-top: 20px;"><thead><tr><th>PRODUCTO</th><th>CANTIDAD</th><th>ENTREGADO</th><th>PENDIENTE</th><th>ACCIÓN</th></tr></thead><tbody>';
+    
+    ticketData.items.forEach(item => {
+        const pending = item.qty - item.delivered_qty;
+        const isDelivered = item.status === 'delivered';
+        
+        itemsHTML += `
+            <tr class="${isDelivered ? 'completo' : 'pendiente-disponible'}">
+                <td><strong>${item.product_name}</strong></td>
+                <td>${item.qty}</td>
+                <td>${item.delivered_qty}</td>
+                <td>${pending}</td>
+                <td>
+                    ${!isDelivered && pending > 0 ? `
+                        <button class="btn-entregar-tactil" onclick="deliverItem(${ticketData.ticket.id}, ${item.id}, 1)">
+                            Entregar 1
+                        </button>
+                    ` : `
+                        <div class="entregado-completo">
+                            <span class="icono-ok">✓</span>
+                            <strong>Completado</strong>
+                        </div>
+                    `}
+                </td>
+            </tr>
+        `;
+    });
+    
+    itemsHTML += '</tbody></table>';
+    itemsContainer.innerHTML = itemsHTML;
+    
+    ticketSection.style.display = 'block';
+    
+    // Ocultar sección de productos legacy si existe
+    const productosTable = document.querySelector('.productos');
+    if (productosTable && productosTable.closest('table')) {
+        productosTable.closest('table').style.display = 'none';
+    }
+}
+
+// FASE 2: Entregar item del ticket
+function deliverItem(ticketId, itemId, qty) {
+    fetch(`/api/tickets/${ticketId}/deliver`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ item_id: itemId, qty: qty })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            playSuccessSound();
+            // Re-escaneear ticket para actualizar estado
+            const qrInput = document.getElementById('qr-token-input');
+            if (qrInput && qrInput.value.trim()) {
+                scanQRCode();
+            } else if (currentTicket) {
+                // Usar el token del ticket actual
+                fetch('/api/tickets/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ qr_token: currentTicket.ticket.qr_token })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayTicketQR(data.ticket);
+                    }
+                });
+            }
+        } else {
+            alert('Error: ' + data.error);
+            playErrorSound();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al entregar item');
+        playErrorSound();
+    });
+}
+
+// Función para enfocar el input del escáner
+function focusScannerInput() {
+    const scannerInput = document.getElementById('scanner-input') || document.querySelector('input[name="sale_id"]');
+    if (scannerInput) {
+        scannerInput.focus();
+        scannerInput.select();
+    }
+}
+
+// Variable global para el contador de redirección
+let autoRedirectInterval = null;
+let autoRedirectSeconds = 30;
+
+// Función para cancelar la redirección automática
+function cancelAutoRedirect() {
+    if (autoRedirectInterval) {
+        clearInterval(autoRedirectInterval);
+        autoRedirectInterval = null;
+    }
+    const countdownElement = document.getElementById('countdown');
+    if (countdownElement) {
+        countdownElement.remove();
+    }
+}
+
+// Función para iniciar el contador de redirección
+function startAutoRedirect() {
+    // Cancelar cualquier contador existente
+    cancelAutoRedirect();
+    
+    const successMessages = document.querySelectorAll('.flash-success');
+    let deliveryMessage = null;
+    
+    successMessages.forEach(function(msg) {
+        if (msg.textContent.toLowerCase().includes('entregado')) {
+            deliveryMessage = msg;
+        }
+    });
+    
+    if (!deliveryMessage) return;
+    
+    // Crear elemento para mostrar el contador
+    const countdownElement = document.createElement('div');
+    countdownElement.style.marginTop = '8px';
+    countdownElement.style.fontSize = '0.9rem';
+    countdownElement.style.color = '#fff';
+    countdownElement.style.fontWeight = 'normal';
+    countdownElement.id = 'countdown';
+    deliveryMessage.appendChild(countdownElement);
+    
+    autoRedirectSeconds = 30;
+    
+    const updateCountdown = function() {
+        if (autoRedirectSeconds > 0 && autoRedirectInterval) {
+            countdownElement.textContent = `Volviendo al escaneo en ${autoRedirectSeconds} segundos (sin interacción)...`;
+            autoRedirectSeconds--;
+        } else {
+            cancelAutoRedirect();
+            // Redirigir al home de escaneo (sin parámetros)
+            window.location.href = '{{ url_for("scanner.scanner") }}';
+        }
+    };
+    
+    // Iniciar el contador
+    updateCountdown();
+    autoRedirectInterval = setInterval(updateCountdown, 1000);
+}
+
+// Función para reproducir sonido de éxito
+function playSuccessSound() {
+    // Crear un sonido usando Web Audio API (sin necesidad de archivos externos)
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Frecuencia ascendente (sonido de éxito)
+        oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+        oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+        oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (e) {
+        console.log('No se pudo reproducir sonido:', e);
+    }
+}
+
+// Función para reproducir sonido de error
+function playErrorSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Frecuencia descendente (sonido de error)
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(200, audioContext.currentTime + 0.2);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (e) {
+        console.log('No se pudo reproducir sonido:', e);
+    }
+}
+
+// Redirección automática después de entregar
+document.addEventListener('DOMContentLoaded', function() {
+    // Enfocar el input del escáner cuando no hay items (pantalla de escaneo)
+    if (!document.querySelector('.productos')) {
+        // Pequeño delay para asegurar que el input esté disponible después de la carga completa
+        setTimeout(focusScannerInput, 300);
+    }
+    
+    // Verificar si hay un mensaje de éxito (indicando que se acaba de entregar)
+    const successMessages = document.querySelectorAll('.flash-success');
+    
+    if (successMessages.length > 0) {
+        // Verificar si el mensaje contiene "entregado" (indica entrega exitosa)
+        let hasDeliveryMessage = false;
+        
+        successMessages.forEach(function(msg) {
+            if (msg.textContent.toLowerCase().includes('entregado')) {
+                hasDeliveryMessage = true;
+            }
+        });
+        
+        if (hasDeliveryMessage) {
+            // Iniciar contador de 30 segundos
+            startAutoRedirect();
+        }
+    }
+    
+    // Detectar interacción del usuario para cancelar la redirección automática
+    const userInteractions = [
+        'keydown', 'keyup', 'keypress',
+        'click', 'mousedown', 'mouseup',
+        'touchstart', 'touchend',
+        'input', 'change'
+    ];
+    
+    userInteractions.forEach(function(eventType) {
+        document.addEventListener(eventType, function(e) {
+            // Ignorar eventos del contador mismo
+            if (e.target && e.target.id === 'countdown') {
+                return;
+            }
+            // Cancelar redirección si hay interacción
+            cancelAutoRedirect();
+        }, { once: false });
+    });
+    
+    // También detectar cambios en inputs específicos
+    const scannerInput = document.getElementById('scanner-input') || document.querySelector('input[name="sale_id"]');
+    if (scannerInput) {
+        scannerInput.addEventListener('input', cancelAutoRedirect);
+        scannerInput.addEventListener('change', cancelAutoRedirect);
+        
+        // Modo escaneo continuo: detectar Enter y buscar automáticamente
+        scannerInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && scannerInput.value.trim()) {
+                e.preventDefault();
+                const form = scannerInput.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+        
+        // Detectar código completo (usualmente termina con Enter o tab)
+        let lastValue = '';
+        scannerInput.addEventListener('input', function(e) {
+            const currentValue = e.target.value.trim();
+            // Si el valor cambia significativamente (código escaneado), enfocar
+            if (currentValue.length > lastValue.length + 3) {
+                // Probablemente se escaneó un código completo
+                setTimeout(() => {
+                    if (currentValue.length >= 3) {
+                        // Auto-submit si tiene un código válido y se deja de escribir
+                        clearTimeout(window.scanTimeout);
+                        window.scanTimeout = setTimeout(() => {
+                            const form = scannerInput.closest('form');
+                            if (form && currentValue.length >= 3) {
+                                form.submit();
+                            }
+                        }, 500); // Esperar 500ms después del último cambio
+                    }
+                }, 100);
+            }
+            lastValue = currentValue;
+        });
+    }
+    
+    // FASE 2: Detectar Enter en input de QR token
+    const qrTokenInput = document.getElementById('qr-token-input');
+    if (qrTokenInput) {
+        qrTokenInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && qrTokenInput.value.trim()) {
+                e.preventDefault();
+                scanQRCode();
+            }
+        });
+        
+        // Auto-submit cuando se escanea un QR completo (UUID largo)
+        let lastQRValue = '';
+        qrTokenInput.addEventListener('input', function(e) {
+            const currentValue = e.target.value.trim();
+            // UUID tiene 36 caracteres, si detectamos un cambio grande, auto-escaneear
+            if (currentValue.length > lastQRValue.length + 10 && currentValue.length >= 36) {
+                setTimeout(() => {
+                    if (currentValue.length >= 36) {
+                        scanQRCode();
+                    }
+                }, 300);
+            }
+            lastQRValue = currentValue;
+        });
+    }
+    
+    // Detectar cuando se presiona el botón de entregar
+    const entregarButtons = document.querySelectorAll('.btn-entregar-tactil, button[type="submit"]');
+    entregarButtons.forEach(function(btn) {
+        btn.addEventListener('click', cancelAutoRedirect);
+    });
+    
+    // Detectar mensajes de error y reproducir sonido
+    const errorMessages = document.querySelectorAll('.flash-error, .msg-error');
+    if (errorMessages.length > 0) {
+        playErrorSound();
+        errorMessages.forEach(function(msg) {
+            msg.style.animation = 'shake 0.5s ease-in-out';
+        });
+    }
+});
+
+// Interceptar envío de formularios de entrega para feedback inmediato
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (form.classList.contains('entregar-form-tactil')) {
+        // Feedback visual inmediato
+        const submitBtn = form.querySelector('.btn-entregar-tactil');
+        if (submitBtn) {
+            submitBtn.style.opacity = '0.6';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Procesando...';
+        }
+    }
+});
+</script>
+{% endblock %}
+
+{% block titulo_sistema %}
+    {% if not items %}
+        <h1 class="titulo-sistema-principal">SISTEMA DE ENTREGA DE PRODUCTOS BIMBA</h1>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{# -------------------- SECCIÓN PRODUCTOS -------------------- #}
+{% if items %}
+    <div class="table-responsive-wrapper">
+        <table class="table-responsive productos">
+            <thead>
+                <tr>
+                    <th>PRODUCTO</th>
+                    <th>CANTIDAD</th>
+                    <th>ENTREGADO</th>
+                    <th>PENDIENTE</th>
+                    <th>ACCIÓN</th>
+                </tr>
+            </thead>
+
+        <tbody>
+        {% for item in items %}
+            {% set delivered = entregados_qty[(sale_id, item.name)]|default(0) %}
+            {% set pending = item.quantity - delivered %}
+            {% set entregas_list = entregados_todos.get((sale_id, item.name), []) %}
+
+            <tr class="{% if pending == 0 %}completo{% else %}pendiente-disponible{% endif %}">
+                <td class="producto-nombre">
+                    <strong>{{ item.name }}</strong>
+
+                    {# Mostrar modificadores #}
+                    {% if item.modifier_items and item.modifier_items|length > 0 %}
+                        <ul class="mods">
+                        {% for modifier in item.modifier_items %}
+                            {% if modifier.quantity and modifier.quantity|int > 0 %}
+                                <li>{{ modifier.quantity|int }}x {{ modifier.name }}</li>
+                            {% endif %}
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    {# Mostrar historial de entregas #}
+                    {% if entregas_list %}
+                        <div class="historial-entregas">
+                            <strong>Entregas realizadas:</strong>
+                            {% for entrega in entregas_list %}
+                                <div class="entrega-item">
+                                    {{ entrega.qty }}x por {{ entrega.bartender }} ({{ entrega.barra }}) - {{ entrega.timestamp }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </td>
+
+                <td class="producto-cantidad" data-label="Cantidad">{{ item.quantity }}</td>
+                <td class="producto-entregado" data-label="Entregado">{{ delivered }}</td>
+                <td class="producto-pendiente" data-label="Pendiente">{{ pending }}</td>
+
+                <td class="producto-accion" data-label="Acción">
+                {% if pending > 0 %}
+                    <form method="POST" action="{{ url_for('routes.entregar') }}" class="entregar-form-tactil">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="sale_id" value="{{ sale_id }}">
+                        <input type="hidden" name="item_name" value="{{ item.name }}">
+                        
+                        <div class="quantity-selector-tactil">
+                            <button type="button" class="qty-btn qty-minus" onclick="changeQty(this, -1)" data-max="{{ pending }}">
+                                <span>-</span>
+                            </button>
+                            <input type="number" 
+                                   name="qty" 
+                                   id="qty-{{ loop.index }}" 
+                                   value="1" 
+                                   min="1" 
+                                   max="{{ pending }}" 
+                                   required
+                                   class="qty-input-tactil"
+                                   readonly>
+                            <button type="button" class="qty-btn qty-plus" onclick="changeQty(this, 1)" data-max="{{ pending }}">
+                                <span>+</span>
+                            </button>
+                        </div>
+                        <button type="submit" class="btn-entregar-tactil">
+                            <span>Entregar</span>
+                        </button>
+                    </form>
+
+                {% else %}
+                    <div class="entregado-completo">
+                        <span class="icono-ok">✓</span>
+                        <div class="entregado-info-tactil">
+                            {% if entregas_list %}
+                                <strong>Completado</strong>
+                            {% else %}
+                                <strong>Todo Entregado</strong>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% elif sale_id and not error %}
+    <div class="msg msg-info">
+        No se encontraron productos para la venta ID: {{ sale_id }} o la venta está vacía.
+    </div>
+{% endif %}
+
+{# -------------------- FORM BUSCAR VENTA / ESCANEAR QR -------------------- #}
+<div class="buscar-box-inline">
+    <div style="margin-bottom: 15px;">
+        <button type="button" id="toggle-scan-mode" class="btn-toggle-mode" onclick="toggleScanMode()">
+            <span id="scan-mode-text">📷 Escanear QR</span>
+        </button>
+    </div>
+    
+    {# Formulario para escanear QR token (FASE 2) #}
+    <form id="qr-scan-form" method="POST" action="{{ url_for('scanner.api_scan_ticket') }}" class="buscar-form-inline" style="display: none;">
+        <label class="titulo-buscar-inline">Escanear QR del Ticket:</label>
+        <input type="text" 
+               name="qr_token" 
+               id="qr-token-input" 
+               value="" 
+               placeholder="Escanea el código QR o pega el token" 
+               autocomplete="off"
+               spellcheck="false">
+        <button type="button" id="btn-scan-qr" onclick="scanQRCode()">Escanear QR</button>
+        <button type="button" id="btn-manual-qr" onclick="submitQRManual()">Buscar</button>
+    </form>
+    
+    {# Formulario legacy para buscar por sale_id #}
+    <form id="sale-id-form" method="GET" action="{{ url_for('scanner.scanner') }}" class="buscar-form-inline">
+        <label class="titulo-buscar-inline">Ingresar Código de Venta:</label>
+        <input type="text" 
+               name="sale_id" 
+               id="scanner-input" 
+               value="" 
+               placeholder="BMB 12345 o POS 123" 
+               autofocus
+               autocomplete="off"
+               spellcheck="false">
+        <button type="submit">Buscar Venta</button>
+    </form>
+</div>
+
+{# -------------------- SECCIÓN TICKET QR (FASE 2) -------------------- #}
+<div id="ticket-qr-section" style="display: none;">
+    <div class="ticket-info-box">
+        <h3 id="ticket-display-code"></h3>
+        <p id="ticket-status"></p>
+        <div id="ticket-items-container"></div>
+    </div>
+</div>
+
+{# -------------------- DETALLES DE VENTA -------------------- #}
+{% if venta_info_adicional %}
+    <div class="venta-info-dos-lineas">
+        {% if venta_info_adicional.error %}
+            <h3>Detalles de Venta ID: {{ sale_id }}</h3>
+            <p>{{ venta_info_adicional.error }}</p>
+        {% else %}
+            <h3 class="titulo-detalles-dos-lineas">Detalles de Venta ID: {{ venta_info_adicional.venta_id }}</h3>
+            <div class="venta-info-columnas">
+                <div class="venta-info-columna">
+                    <p><strong>Fecha de Venta:</strong> {{ venta_info_adicional.fecha_venta }}</p>
+                    <p><strong>Vendido por:</strong> {{ venta_info_adicional.vendido_por }}</p>
+                    <p><strong>Caja:</strong> {{ venta_info_adicional.caja }}</p>
+                </div>
+                <div class="venta-info-columna">
+                    <p><strong>Cliente:</strong> {{ venta_info_adicional.cliente }}</p>
+                    <p><strong>Comentario:</strong> {{ venta_info_adicional.comentario }}</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+
+{# -------------------- ERROR -------------------- #}
+{% if error %}
+    <div class="msg msg-error">{{ error }}</div>
+{% endif %}
+
+{% endblock %}

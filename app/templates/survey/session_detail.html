@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% block title %}Detalles de Sesión - {{ session_date }}{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<style>
+    .detail-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .back-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+
+    .back-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
+    }
+
+    .session-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+
+    .session-header h1 {
+        color: #00ff00;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 25px;
+        border-radius: 10px;
+        text-align: center;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .stat-card .value {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #00ff00;
+        margin: 15px 0;
+    }
+
+    .stat-card .label {
+        color: #aaa;
+        font-size: 1.1rem;
+    }
+
+    .chart-container {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .chart-wrapper {
+        position: relative;
+        height: 400px;
+    }
+
+    .chart-container h3 {
+        color: #00ff00;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+
+    .responses-list {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 25px;
+        border-radius: 10px;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .response-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+
+    .response-item .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .response-item .rating {
+        font-size: 1.8rem;
+    }
+
+    .response-item .details {
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .info-item {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .info-item label {
+        color: #aaa;
+        font-size: 0.9rem;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .info-item .value {
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('routes.admin_dashboard') }}" class="btn btn-primary" style="margin-right: 10px;">
+            🏠 Dashboard Principal
+        </a>
+        <a href="{{ url_for('survey.survey_history') }}" class="btn btn-primary">
+            ← Volver al Historial
+        </a>
+    </div>
+
+    <div class="session-header">
+        <h1>🎉 Detalles de Sesión - {{ session_date }}</h1>
+        
+        {% if session_info %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+            <div class="info-item">
+                <label>Fiesta</label>
+                <div class="value">{{ session_info.fiesta_nombre or 'Sin nombre' }}</div>
+            </div>
+            {% if session_info.djs %}
+            <div class="info-item">
+                <label>DJs</label>
+                <div class="value">{{ session_info.djs }}</div>
+            </div>
+            {% endif %}
+            {% if session_info.bartenders %}
+            <div class="info-item">
+                <label>Bartenders</label>
+                <div class="value">{{ session_info.bartenders }}</div>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <label>Hora Inicio</label>
+                <div class="value">{{ session_info.hora_inicio or 'N/A' }}</div>
+            </div>
+            <div class="info-item">
+                <label>Hora Fin</label>
+                <div class="value">{{ session_info.hora_fin or 'En curso' }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">Total Respuestas</div>
+            <div class="value">{{ stats.total_respuestas }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Promedio de Calificación</div>
+            <div class="value">{{ "%.2f"|format(stats.average_rating) }} ⭐</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <div class="chart-container">
+            <h3>📊 Distribución de Calificaciones</h3>
+            <div class="chart-wrapper">
+                <canvas id="ratingsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>📈 Respuestas por Hora</h3>
+            <div class="chart-wrapper">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h3>📋 Todas las Respuestas</h3>
+        <div class="responses-list">
+            {% for response in stats.responses|reverse %}
+            <div class="response-item">
+                <div class="header">
+                    <div>
+                        <strong style="color: #667eea;">Barra {{ response.barra }}</strong>
+                        {% if response.bartender_nombre %}
+                        <span style="color: #aaa; margin-left: 10px;">- {{ response.bartender_nombre }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="rating">
+                        {{ '⭐' * (response.rating|int) }}
+                    </div>
+                </div>
+                <div class="details">
+                    {{ response.timestamp }} 
+                    {% if response.comment %}
+                    | "{{ response.comment }}"
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Gráfico de distribución de calificaciones
+    const ratingsCount = {{ stats.ratings_count|tojson }};
+    const ctx1 = document.getElementById('ratingsChart').getContext('2d');
+    
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: ['1 ⭐', '2 ⭐⭐', '3 ⭐⭐⭐', '4 ⭐⭐⭐⭐', '5 ⭐⭐⭐⭐⭐'],
+            datasets: [{
+                label: 'Cantidad',
+                data: [
+                    ratingsCount['1'] || 0,
+                    ratingsCount['2'] || 0,
+                    ratingsCount['3'] || 0,
+                    ratingsCount['4'] || 0,
+                    ratingsCount['5'] || 0
+                ],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(255, 159, 64, 0.8)',
+                    'rgba(255, 205, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(54, 162, 235, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(255, 159, 64)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)',
+                    'rgb(54, 162, 235)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#aaa',
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#aaa'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico por hora
+    const hourlyData = {{ stats.by_hour|tojson }};
+    const ctx2 = document.getElementById('hourlyChart').getContext('2d');
+    
+    const hours = [];
+    const counts = [];
+    for (let i = 19; i < 24; i++) {
+        hours.push(`${i}:00`);
+        counts.push(hourlyData[i.toString()] || 0);
+    }
+    for (let i = 0; i <= 6; i++) {
+        hours.push(`${i}:00`);
+        counts.push(hourlyData[i.toString()] || 0);
+    }
+    
+    new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: hours,
+            datasets: [{
+                label: 'Respuestas por Hora',
+                data: counts,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#aaa',
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#aaa'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

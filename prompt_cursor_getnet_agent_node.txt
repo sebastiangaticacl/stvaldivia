@@ -1,0 +1,277 @@
+Quiero que construyas un "AGENTE GETNET" local en **Node.js** para los tótems Linux de Bimba usando el SDK oficial de Getnet que viene en el ZIP Node_JS de Santander (Getnet).
+
+Este agente se ejecutará en CADA tótem Linux y hará de intermediario entre:
+
+- El navegador (Chromium en modo kiosko, que muestra la caja web de Bimba)
+- El POS Getnet (conectado por USB / COM)
+- El backend central (Bimbaverso) que expone /api/caja/venta-ok y /api/caja/venta-fallida-log
+
+────────────────────────────────────────────
+IMPORTANTE SOBRE EL SDK
+────────────────────────────────────────────
+
+En el ZIP Node_JS tengo archivos como:
+
+- index.js
+- /lib/PosIntegrado.js
+- otros archivos del SDK
+
+El archivo index.js que vi hace:
+
+  const POSIntegrado = require('./lib/PosIntegrado');
+  module.exports = POSIntegrado;
+
+Por lo tanto, desde Node se usa así:
+
+  const POSIntegrado = require('ruta/al/sdk'); // Ajusta require a la estructura final que definas
+
+Quiero que tú, Cursor, abras el ZIP que tengo localmente, revises /lib/PosIntegrado.js y construyas un servicio HTTP local que use esa clase / API oficial POSIntegrado para:
+
+- inicializar el POS integrado,
+- enviar una transacción de venta,
+- recibir la respuesta de Getnet con códigos como ResponseCode, AuthorizationCode, etc.
+
+NO inventes el protocolo bajo nivel: usa SOLO lo que expone el SDK POSIntegrado.
+
+────────────────────────────────────────────
+ARQUITECTURA DEL AGENTE
+────────────────────────────────────────────
+
+El agente será un pequeño servidor HTTP en Node:
+
+- Host: 127.0.0.1
+- Puerto: 7777
+- Framework: Express (o Fastify, pero prefiero Express por simplicidad)
+
+Endpoints:
+
+1) GET /estado
+   - Devuelve algo como:
+
+     {
+       "status": "ok",
+       "posInicializado": true/false,
+       "lastPayment": {
+         "ok": true/false/null,
+         "responseCode": "...",
+         "responseMessage": "...",
+         "timestamp": "ISO8601"
+       }
+     }
+
+2) POST /pago
+   - Body JSON (desde el navegador del tótem):
+
+     {
+       "amount": 15000,
+       "currency": "CLP",
+       "metadata": {
+         "caja_codigo": "caja1",
+         "cajero": "TOTEM_AUTO_1"
+       }
+     }
+
+   - Lógica:
+
+     a) Validar amount > 0.
+     b) Inicializar POSIntegrado si aún no está inicializado.
+     c) Ejecutar venta (crédito/débito) según el SDK:
+        - monto = amount
+        - ticketNumber = correlativo simple
+        - otros parámetros requeridos por la función del SDK
+     d) Esperar respuesta del POS (callback / promesa según API del SDK).
+     e) Mapear respuesta a un objeto standard:
+
+        {
+          "ok": true/false,
+          "responseCode": "...",
+          "responseMessage": "...",
+          "authorizationCode": "...",
+          "ticketNumber": "...",
+          "raw": {...} // respuesta completa o string
+        }
+
+     f) Responder SIEMPRE 200 OK al navegador con ese JSON.
+
+   - NO se llama aquí al backend de Bimbaverso. Eso lo hace el frontend (navegador) después, igual que ya tenemos diseñado:
+     - si ok === true → llamará a /api/caja/venta-ok
+     - si ok === false → llamará a /api/caja/venta-fallida-log
+
+────────────────────────────────────────────
+MODO DEMO PARA DESARROLLO
+────────────────────────────────────────────
+
+Quiero que el agente tenga un modo DEMO, activado por variable de entorno:
+
+- GETNET_DEMO=true  → no llama al POS real; simula una respuesta aprobada/rechazada.
+- GETNET_DEMO=false → usa el SDK POSIntegrado y habla con el POS físico.
+
+En modo DEMO:
+
+- 80% de los pagos devuelven ok=true con ResponseCode="0"
+- 20% devuelven ok=false con ResponseCode="05" y message="No autorizado (SIMULADO)"
+
+Esto permite probar desde Chromium aunque no haya POS conectado.
+
+────────────────────────────────────────────
+CONFIGURACIÓN POR ENV
+────────────────────────────────────────────
+
+Usar dotenv para variables:
+
+- PORT=7777
+- GETNET_DEMO=true/false
+- GETNET_COM_PORT=/dev/ttyUSB0 (si el SDK lo necesita o algún identificador de dispositivo)
+- GETNET_COMMERCE_CODE=...
+- GETNET_TERMINAL_ID=...
+- GETNET_API_KEY=...
+- etc. (usa TODO lo que el SDK POSIntegrado exija, leyendo el manual / ejemplos dentro del ZIP)
+
+Quiero un archivo `.env.example` con variables sugeridas.
+
+────────────────────────────────────────────
+ESTRUCTURA DE ARCHIVOS DEL AGENTE
+────────────────────────────────────────────
+
+Crea esta estructura:
+
+/getnet-agent-node
+  package.json
+  .env.example
+  src/
+    index.js           // punto de entrada del servidor HTTP
+    config.js          // lee env, valida configuración
+    pos.js             // wrapper alrededor de POSIntegrado (SDK)
+    logger.js          // logger simple (console + timestamps)
+    routes/
+      pago.js          // define POST /pago
+      estado.js        // define GET /estado
+
+En `pos.js`:
+
+- Exporta funciones:
+  - initPOS() → inicializa POSIntegrado solo una vez (singleton).
+  - sale(amount, metadata) → ejecuta la venta con el POS real o demo y devuelve una Promise con el objeto estándar:
+
+    {
+      ok: true/false,
+      responseCode: "...",
+      responseMessage: "...",
+      authorizationCode: "...",
+      ticketNumber: "...",
+      raw: {...}
+    }
+
+- Implementación interna:
+  - Si GETNET_DEMO=true → no usar el SDK, solo simular.
+  - Si GETNET_DEMO=false → usar POSIntegrado:
+    - crea instancia si no existe
+    - llama métodos según el manual (inicialización, venta, etc.)
+    - maneja callbacks / eventos que entregue el SDK
+
+IMPORTANTE:
+- Usa la API real de POSIntegrado tal como esté definida en /lib/PosIntegrado.js
+- Comenta claramente qué métodos del SDK se usan (ej: init, sale, close, etc.).
+
+────────────────────────────────────────────
+FLUJO COMPLETO DESDE EL NAVEGADOR
+────────────────────────────────────────────
+
+El navegador del tótem (Linux Chromium) hará:
+
+1) Usuario arma carrito.
+2) Al tocar "Pagar con tarjeta", el frontend calcula `total` y hace:
+
+   fetch("http://127.0.0.1:7777/pago", { method:"POST", body: JSON.stringify({ amount, metadata }) })
+
+3) El agente Node responde con:
+
+   {
+     "ok": true/false,
+     "responseCode": "...",
+     "responseMessage": "...",
+     "authorizationCode": "...",
+     "ticketNumber": "...",
+     "raw": { ... }
+   }
+
+4) Si ok === true:
+   - navegador llama a /api/caja/venta-ok con:
+     {
+       "total": amount,
+       "canal": "TOTEM",
+       "venta": { "caja_codigo": "...", "cajero": "...", "items": carrito },
+       "medio_pago": "TARJETA_GETNET",
+       "getnet": { ...info anterior... }
+     }
+   - backend registra venta + descuenta inventario + genera ticket_code
+   - navegador abre /voucher/{venta_id} y manda imprimir
+   - limpiar carrito
+
+5) Si ok === false:
+   - navegador llama a /api/caja/venta-fallida-log con:
+     {
+       "total": amount,
+       "venta": {...},
+       "motivo": responseMessage,
+       "getnet": { responseCode, responseMessage, raw }
+     }
+   - mantiene carrito
+   - muestra mensaje neutro:
+     "No se pudo completar la operación. ¿Quieres volver a intentarlo?"
+   - botón "Volver a intentar" vuelve a llamar al endpoint /pago
+   - botón "Cancelar compra" limpia el carrito
+
+NO quiero que el agente Node llame al backend; eso se queda en el browser.
+
+────────────────────────────────────────────
+LOGS Y ERRORES
+────────────────────────────────────────────
+
+- Usa logger.js para imprimir:
+  - inicio del servidor
+  - inicialización del POS
+  - cada intento de pago (monto, caja_codigo)
+  - resultado (aprobado / rechazado / error)
+- En caso de error en el POS o SDK, siempre devuelve JSON con ok=false y un mensaje amigable:
+
+  {
+    "ok": false,
+    "responseCode": "ERROR_SDK",
+    "responseMessage": "Error al comunicarse con el POS",
+    "raw": { "error": err.message }
+  }
+
+────────────────────────────────────────────
+ENTREGABLES
+────────────────────────────────────────────
+
+Quiero que generes TODO el código del agente:
+
+- package.json (con dependencias: express, dotenv, etc.)
+- src/index.js
+- src/config.js
+- src/logger.js
+- src/pos.js
+- src/routes/pago.js
+- src/routes/estado.js
+- .env.example
+
+El código debe ser:
+
+- modular
+- bien comentado
+- listo para correr con:
+  - npm install
+  - npm start
+
+
+
+
+
+
+
+
+
+
+

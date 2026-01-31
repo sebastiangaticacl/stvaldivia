@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+{% block title %}📦 Dashboard de Inventario - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .inventory-dashboard {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: var(--spacing-sm, 0.75rem);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    @media (min-width: 768px) {
+        .inventory-dashboard {
+            padding: var(--spacing-md, 1rem);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .inventory-dashboard {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-md, 1rem);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (min-width: 768px) {
+        .dashboard-header {
+            padding: var(--spacing-lg, 1.5rem);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .dashboard-header h1 {
+        color: #00ff00;
+        margin-bottom: 20px;
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+    }
+
+    .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-xs, 0.5rem);
+        margin-bottom: var(--spacing-md, 1rem);
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        padding-bottom: var(--spacing-sm, 0.75rem);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .tab {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        min-height: 44px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px 8px 0 0;
+        color: #ccc;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        white-space: nowrap;
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+        display: inline-flex;
+        align-items: center;
+        touch-action: manipulation;
+    }
+
+    @media (min-width: 768px) {
+        .tab {
+            padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
+            font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        }
+    }
+
+    .tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+    }
+
+    .tab:hover {
+        background: #3a3a4e;
+        color: white;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm, 0.75rem);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+
+    @media (min-width: 480px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-md, 1rem);
+        }
+    }
+
+    @media (min-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    @media (min-width: 768px) {
+        .stat-card {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .stat-card .label {
+        color: #aaa;
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+        margin-bottom: var(--spacing-sm, 0.75rem);
+    }
+
+    .stat-card .value {
+        color: #fff;
+        font-size: clamp(1.5rem, 6vw, 2.5rem);
+        font-weight: bold;
+        line-height: 1.2;
+    }
+
+    .stat-card.primary .value {
+        color: #00ff00;
+    }
+
+    .stat-card.warning .value {
+        color: #ffaa00;
+    }
+
+    .stat-card.danger .value {
+        color: #ff4444;
+    }
+
+    .content-section {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-md, 1rem);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    @media (min-width: 768px) {
+        .content-section {
+            padding: var(--spacing-lg, 1.5rem);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .content-section h2 {
+        color: #667eea;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        padding-bottom: 10px;
+    }
+
+    .alert-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .alert-item {
+        padding: 15px;
+        background: #2a2a3e;
+        border: 2px solid rgba(255, 68, 68, 0.3);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        color: #ff4444;
+    }
+
+    .alert-item.warning {
+        border-color: rgba(255, 170, 0, 0.3);
+        color: #ffaa00;
+    }
+
+    .btn {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        min-height: 44px;
+        border: none;
+        border-radius: 8px;
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    @media (min-width: 768px) {
+        .btn {
+            width: auto;
+            font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+            padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inventory-dashboard">
+    <div class="dashboard-header">
+        <h1>📦 Dashboard de Inventario</h1>
+        
+        <div class="tabs">
+            <a href="{{ url_for('inventory_admin.dashboard') }}" class="tab active">📊 Dashboard</a>
+            <a href="{{ url_for('inventory_admin.products_view') }}" class="tab">🛍️ Productos</a>
+            <a href="{{ url_for('ingredients.list_ingredients') }}" class="tab">🥤 Ingredientes</a>
+            <a href="{{ url_for('inventory_admin.ingredients_stock_view') }}" class="tab">📍 Inventario por Ubicación</a>
+            <a href="{{ url_for('ingredients.list_recipes') }}" class="tab">📝 Recetas</a>
+            <a href="{{ url_for('inventory_admin.movements_view') }}" class="tab">📋 Movimientos</a>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <div class="label">📦 Productos Activos</div>
+            <div class="value">{{ total_productos }}</div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">
+                {{ productos_sin_receta }} sin receta
+            </div>
+        </div>
+        <div class="stat-card" style="border-color: rgba(102, 126, 234, 0.5);">
+            <div class="label">📝 Con Receta</div>
+            <div class="value" style="color: #667eea;">{{ productos_con_receta }}</div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">
+                {{ ((productos_con_receta / total_productos * 100) if total_productos > 0 else 0)|round(1) }}% del total
+            </div>
+        </div>
+        <div class="stat-card" style="border-color: rgba(0, 255, 255, 0.5);">
+            <div class="label">🥤 Ingredientes</div>
+            <div class="value" style="color: #00ffff;">{{ total_ingredientes }}</div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">
+                Ingredientes activos
+            </div>
+        </div>
+        <div class="stat-card" style="border-color: rgba(255, 170, 0, 0.5);">
+            <div class="label">🍹 Recetas</div>
+            <div class="value" style="color: #ffaa00;">{{ total_recetas }}</div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">
+                Recetas configuradas
+            </div>
+        </div>
+        {% if productos_stock_bajo %}
+        <div class="stat-card warning">
+            <div class="label">⚠️ Productos con Inventario Bajo</div>
+            <div class="value">{{ productos_stock_bajo|length }}</div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">
+                Requieren atención
+            </div>
+        </div>
+        {% endif %}
+        {% if alertas_stock_bajo %}
+        <div class="stat-card danger">
+            <div class="label">🚨 Alertas de Ingredientes</div>
+            <div class="value">{{ alertas_stock_bajo|length }}</div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa;">
+                Inventario negativo detectado
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Alertas -->
+    {% if alertas_stock_bajo or productos_stock_bajo %}
+    <div class="content-section">
+        <h2>⚠️ Alertas de Stock</h2>
+        
+        {% if alertas_stock_bajo %}
+        <h3 style="color: #ff4444; margin-top: 20px; margin-bottom: 15px;">Ingredientes con Inventario Negativo</h3>
+        <ul class="alert-list">
+            {% for alerta in alertas_stock_bajo %}
+            <li class="alert-item">
+                <strong>{{ alerta['ingrediente'] }}</strong> en {{ alerta['ubicacion'] }}: 
+                <span style="font-weight: bold;">{{ alerta['stock'] }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        {% if productos_stock_bajo %}
+        <h3 style="color: #ffaa00; margin-top: 20px; margin-bottom: 15px;">Productos con Inventario Bajo</h3>
+        <ul class="alert-list">
+            {% for producto in productos_stock_bajo %}
+            <li class="alert-item warning">
+                <strong>{{ producto.name }}</strong>: 
+                Inventario {{ producto.stock_quantity }} (Mínimo: {{ producto.stock_minimum }})
+                <a href="{{ url_for('products.edit_product', product_id=producto.id) }}" class="btn btn-sm btn-primary" style="float: right;">
+                    ✏️ Editar
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Inventario por Ubicación -->
+    <div class="content-section">
+        <h2>📍 Inventario por Ubicación</h2>
+        <style>
+        .ubicaciones-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+        @media (min-width: 480px) {
+            .ubicaciones-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--spacing-md, 1rem);
+            }
+        }
+        @media (min-width: 768px) {
+            .ubicaciones-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            }
+        }
+        .ubicacion-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+        @media (min-width: 480px) {
+            .ubicacion-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--spacing-md, 1rem);
+            }
+        }
+        </style>
+        <div class="ubicaciones-grid">
+            {% for ubicacion, summary in stock_por_ubicacion.items() %}
+            <div style="background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%); padding: var(--spacing-md, 1rem); border-radius: 12px; border: 2px solid rgba(102, 126, 234, 0.3); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); width: 100%; box-sizing: border-box;">
+                <h3 style="color: #667eea; margin-bottom: var(--spacing-md, 1rem); font-size: clamp(1.1rem, 3vw, 1.4rem); display: flex; align-items: center; gap: 10px;">
+                    <span>📍</span> {{ ubicacion }}
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-sm, 0.75rem); margin-bottom: var(--spacing-md, 1rem);">
+                    <div style="text-align: center;">
+                        <div style="color: #aaa; font-size: var(--font-size-xs, clamp(0.75rem, 1.5vw, 0.875rem)); margin-bottom: 5px;">Total Ingredientes</div>
+                        <div style="font-size: clamp(1.5rem, 5vw, 2rem); color: #00ff00; font-weight: bold;">{{ summary['total_ingredients'] }}</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: #aaa; font-size: var(--font-size-xs, clamp(0.75rem, 1.5vw, 0.875rem)); margin-bottom: 5px;">Con Inventario</div>
+                        <div style="font-size: clamp(1.5rem, 5vw, 2rem); color: #667eea; font-weight: bold;">{{ summary['ingredients']|selectattr('quantity', 'gt', 0)|list|length }}</div>
+                    </div>
+                </div>
+                <style>
+                @media (min-width: 480px) {
+                    .ubicacion-stats-grid {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                        gap: var(--spacing-md, 1rem) !important;
+                    }
+                }
+                </style>
+                <div class="ubicacion-stats-grid" style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-sm, 0.75rem); margin-bottom: var(--spacing-md, 1rem);">
+                    <div style="text-align: center;">
+                        <div style="color: #aaa; font-size: var(--font-size-xs, clamp(0.75rem, 1.5vw, 0.875rem)); margin-bottom: 5px;">Total Ingredientes</div>
+                        <div style="font-size: clamp(1.5rem, 5vw, 2rem); color: #00ff00; font-weight: bold;">{{ summary['total_ingredients'] }}</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: #aaa; font-size: var(--font-size-xs, clamp(0.75rem, 1.5vw, 0.875rem)); margin-bottom: 5px;">Con Inventario</div>
+                        <div style="font-size: clamp(1.5rem, 5vw, 2rem); color: #667eea; font-weight: bold;">{{ summary['ingredients']|selectattr('quantity', 'gt', 0)|list|length }}</div>
+                    </div>
+                </div>
+                {% if summary['ingredients']|selectattr('is_negative')|list|length > 0 %}
+                <div style="background: rgba(255, 68, 68, 0.1); border: 1px solid rgba(255, 68, 68, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                    <div style="color: #ff4444; font-size: 0.9rem; font-weight: bold;">
+                        ⚠️ {{ summary['ingredients']|selectattr('is_negative')|list|length }} con inventario negativo
+                    </div>
+                </div>
+                {% endif %}
+                <a href="{{ url_for('inventory_admin.ingredients_stock_view', ubicacion=ubicacion) }}" class="btn btn-primary" style="width: 100%; text-align: center; margin-top: 10px;">
+                    Ver Detalles →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Movimientos Recientes -->
+    {% if movimientos_recientes %}
+    <div class="content-section">
+        <h2>📋 Movimientos Recientes</h2>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%); color: #667eea;">
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.3);">Fecha/Hora</th>
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.3);">Ingrediente</th>
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.3);">Ubicación</th>
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid rgba(102, 126, 234, 0.3);">Tipo</th>
+                        <th style="padding: 15px; text-align: right; border-bottom: 2px solid rgba(102, 126, 234, 0.3);">Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in movimientos_recientes %}
+                    <tr style="border-bottom: 1px solid rgba(102, 126, 234, 0.2); background: {% if loop.index % 2 == 0 %}#2a2a3e{% else %}#1a1a2e{% endif %}; transition: background 0.2s;">
+                        <td data-label="Fecha/Hora" style="padding: 12px; color: #ccc; font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));">{{ movimiento.created_at.strftime('%d/%m/%Y %H:%M') if movimiento.created_at else '-' }}</td>
+                        <td data-label="Ingrediente" style="padding: 12px; color: #e8e8e8; font-weight: 500;">{{ movimiento.ingredient.name if movimiento.ingredient else '?' }}</td>
+                        <td data-label="Ubicación" style="padding: 12px; color: #aaa; font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));">{{ movimiento.location }}</td>
+                        <td data-label="Tipo" style="padding: 12px;">
+                            <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: var(--font-size-xs, clamp(0.75rem, 1.5vw, 0.875rem)); font-weight: 500; 
+                                background: {% if movimiento.movement_type == 'entrada' %}rgba(0, 255, 0, 0.2){% elif movimiento.movement_type == 'venta' %}rgba(255, 68, 68, 0.2){% else %}rgba(102, 126, 234, 0.2){% endif %};
+                                color: {% if movimiento.movement_type == 'entrada' %}#00ff00{% elif movimiento.movement_type == 'venta' %}#ff4444{% else %}#667eea{% endif %};">
+                                {{ movimiento.movement_type|upper }}
+                            </span>
+                        </td>
+                        <td data-label="Cantidad" class="number" style="padding: 12px; text-align: right; color: {% if movimiento.quantity >= 0 %}#00ff00{% else %}#ff4444{% endif %}; font-weight: bold; font-size: var(--font-size-lg, clamp(1.125rem, 3vw, 1.5rem));">
+                            {% if movimiento.quantity >= 0 %}+{% endif %}{{ movimiento.quantity }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 25px; text-align: center;">
+            <a href="{{ url_for('inventory_admin.movements_view') }}" class="btn btn-primary">
+                Ver Todos los Movimientos →
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- MEJORA: Categorías de Productos -->
+    <div class="content-section">
+        <h2>📂 Categorías de Productos</h2>
+        
+        {% if categorias_productos is defined and categorias_productos and categorias_productos|length > 0 %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+            {% for categoria in categorias_productos %}
+            <div style="background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%); padding: 20px; border-radius: 10px; border: 2px solid rgba(102, 126, 234, 0.3); text-align: center; transition: all 0.3s;">
+                <div style="font-size: 2rem; margin-bottom: 10px;">📁</div>
+                <div style="color: #fff; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">{{ categoria }}</div>
+                <div style="color: #aaa; font-size: 0.9rem; margin-bottom: 10px;">
+                    {{ categorias_con_conteo.get(categoria, 0) }} producto(s)
+                </div>
+                <a href="{{ url_for('inventory_admin.products_view', categoria=categoria) }}" class="btn btn-sm btn-primary" style="margin-top: 10px; display: inline-block;">
+                    Ver Productos →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: #aaa;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">📂</div>
+            <p style="margin-bottom: 10px; color: #ffaa00; font-weight: bold;">No se encontraron categorías de productos.</p>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 20px;">
+                {% if categorias_productos is defined %}
+                    Hay {{ total_productos }} productos activos, pero ninguno tiene categoría asignada.
+                {% else %}
+                    No se pudieron cargar las categorías. Verifica que haya productos activos con categorías.
+                {% endif %}
+            </p>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 20px;">
+                Los productos se mostrarán sin categoría. Agrega categorías a tus productos para organizarlos mejor.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <a href="{{ url_for('products.create_product') }}" class="btn btn-primary">
+                    ➕ Crear Producto con Categoría
+                </a>
+                <a href="{{ url_for('inventory_admin.products_view') }}" class="btn btn-secondary">
+                    📦 Ver Todos los Productos
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="content-section">
+        <h2>⚡ Acciones Rápidas</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <a href="{{ url_for('products.create_product') }}" class="btn btn-primary">
+                ➕ Agregar Producto
+            </a>
+            <a href="{{ url_for('ingredients.create_ingredient') }}" class="btn btn-primary">
+                🥤 Agregar Ingrediente
+            </a>
+            <a href="{{ url_for('ingredients.list_recipes') }}" class="btn btn-primary">
+                📝 Gestionar Recetas
+            </a>
+            <a href="{{ url_for('inventory_admin.stock_entry_view') }}" class="btn btn-primary">
+                📥 Ingresar Compra/Stock
+            </a>
+            <a href="{{ url_for('routes.register_inventory') }}" class="btn btn-primary">
+                📦 Registrar Inventario Inicial
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+

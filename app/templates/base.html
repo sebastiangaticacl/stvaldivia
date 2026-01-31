@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="es">
+
+{% macro get_meta_description() -%}
+    {% block meta_description %}Sistema de Gestión de Entregas BIMBA{% endblock %}
+{%- endmacro %}
+
+{% macro get_title() -%}
+    {% block title %}BIMBA - Sistema de Gestión{% endblock %}
+{%- endmacro %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+    {% set meta_desc = get_meta_description() %}
+    <meta name="description" content="{{ meta_desc }}">
+    <meta name="keywords" content="BIMBA, sistema gestión, punto de venta, POS, restaurante, bar, entregas">
+    <meta name="author" content="BIMBA System">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#1a1a2e">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="{% block og_title %}{{ get_title() }}{% endblock %}">
+    <meta property="og:description" content="{{ get_meta_description() }}">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.url }}">
+    <meta property="twitter:title" content="{{ get_title() }}">
+    <meta property="twitter:description" content="{{ get_meta_description() }}">
+    
+    <title>{{ get_title() }}</title>
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.url }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/bimba-logo.png') }}">
+
+    {# Cache-busting para CSS - Versión estable para producción #}
+    {% set CSS_VERSION = current_app.config.get('CSS_VERSION', '20250115-01') if current_app else '20250115-01' %}
+    
+    <!-- CSS BASE (carga primero) -->
+    <!-- Sistema de Diseño (Design System) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}?v={{ CSS_VERSION }}">
+    <!-- Utilidades profesionales -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/utilities.css') }}?v={{ CSS_VERSION }}">
+    <!-- Estilos principales -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v={{ CSS_VERSION }}">
+    <!-- Progress Bars y Toast Notifications -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/progress-toast.css') }}?v={{ CSS_VERSION }}">
+    
+    <!-- CSS RESPONSIVE (carga después para override) -->
+    <!-- Sistema Responsive Base (Mobile-First) - DEBE cargar después de main.css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-base.css') }}?v={{ CSS_VERSION }}">
+    <!-- Tablas Responsive -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tables-responsive.css') }}?v={{ CSS_VERSION }}">
+    <!-- Formularios mejorados -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms-enhanced.css') }}?v={{ CSS_VERSION }}">
+    
+    <!-- CSS CONDICIONAL (admin) -->
+    {% if session.get('admin_logged_in') %}
+    <!-- Estilo estandarizado para páginas admin (basado en /encuesta/admin) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-standard.css') }}?v={{ CSS_VERSION }}">
+    <!-- Sistema de Notificaciones -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v={{ CSS_VERSION }}">
+    {% endif %}
+    
+    <!-- CSRF Token Meta Tag para JavaScript -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {% block head_extra %}{% endblock %}
+    
+    <!-- Utilidades JavaScript -->
+</head>
+
+<body {% if session.get('admin_logged_in') %}class="has-admin-nav" {% endif %}>
+    <!-- Skip to content para accesibilidad -->
+    <a href="#main-content" class="skip-to-content">Saltar al contenido principal</a>
+    
+    <!-- Barra de Navegación Superior Sticky (solo para admin) -->
+    {% if session.get('admin_logged_in') %}
+    <nav class="admin-top-nav">
+        <div class="admin-nav-container">
+            <div class="admin-nav-left">
+                <a href="/admin" class="admin-nav-logo">
+                    <img src="{{ url_for('static', filename='img/bimba-logo.png') }}" alt="BIMBA" class="logo-img"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <!-- Texto de respaldo solo si falla la imagen -->
+                    <span class="logo-text" style="display: none;">BIMBA</span>
+                </a>
+            </div>
+            <button class="mobile-menu-toggle" aria-label="Menú" type="button" id="mobile-menu-toggle-btn">
+                <span class="hamburger-icon">☰</span>
+            </button>
+            <!-- Menú desktop (visible solo en >=1024px) -->
+            <div class="admin-nav-right admin-nav-desktop">
+                <a href="/admin"
+                    class="admin-nav-btn {% if request.endpoint == 'routes.admin_dashboard' %}active{% endif %}"
+                    aria-label="Inicio">
+                    🏠 Home
+                </a>
+                
+                <!-- Desplegable Ventas -->
+                <div class="nav-dropdown {% if request.endpoint == 'routes.admin_logs' or request.path.startswith('/caja') or request.path.startswith('/kiosk') or request.path.startswith('/ecommerce') or request.endpoint == 'routes.admin_scanner' or (request.endpoint and ('caja' in request.endpoint or 'kiosk' in request.endpoint or 'ecommerce' in request.endpoint or request.endpoint == 'scanner.scanner')) %}active{% endif %}">
+                    <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Ventas" aria-expanded="false">
+                        💰 Ventas <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('routes.admin_logs') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'routes.admin_logs' %}active{% endif %}"
+                            aria-label="Ver Tickets de Entregas">
+                            📋 Tickets
+                        </a>
+                        <div class="nav-dropdown-divider"></div>
+                        <div class="nav-dropdown-header">TPV</div>
+                        <a href="{{ url_for('caja.login') }}"
+                            class="nav-dropdown-item {% if request.path.startswith('/caja') or (request.endpoint and 'caja' in request.endpoint) %}active{% endif %}"
+                            aria-label="Cajas">
+                            🏪 Cajas: {{ tpv_status.cajas.abiertas }}/{{ tpv_status.cajas.total }}
+                        </a>
+                        <a href="{{ url_for('kiosk.kiosk_home') }}"
+                            class="nav-dropdown-item {% if request.path.startswith('/kiosk') or (request.endpoint and 'kiosk' in request.endpoint) %}active{% endif %}"
+                            aria-label="Kioskos">
+                            🛒 Kioskos {% if tpv_status.kioskos.activos > 0 %}●{% else %}○{% endif %}
+                        </a>
+                <a href="/ecommerce"
+                    class="nav-dropdown-item {% if request.path.startswith('/ecommerce') or (request.endpoint and 'ecommerce' in request.endpoint) %}active{% endif %}"
+                    aria-label="Ecommerce">
+                    🌐 Ecommerce {% if tpv_status.ecommerce.activo %}●{% else %}○{% endif %}
+                </a>
+                <a href="{{ url_for('ecommerce.landing') }}"
+                    class="nav-dropdown-item {% if request.path == '/ecommerce/landing' or (request.endpoint == 'ecommerce.landing') %}active{% endif %}"
+                    aria-label="Landing Page">
+                    🎯 Landing Page
+                </a>
+                <div class="nav-dropdown-divider"></div>
+                        <a href="{{ url_for('routes.admin_scanner') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'scanner.scanner' or request.endpoint == 'routes.admin_scanner' %}active{% endif %}"
+                            aria-label="Escaneo de Tickets">
+                            📱 Scanner
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Desplegable Gestión -->
+                <div class="nav-dropdown {% if request.endpoint and (request.endpoint.startswith('survey.') or request.path.startswith('/admin/inventario') or request.path.startswith('/admin/inventory') or request.path.startswith('/admin/ingredients') or request.endpoint == 'routes.register_inventory' or request.endpoint == 'routes.view_inventory' or ('inventory' in request.endpoint or 'ingredient' in request.endpoint) or request.endpoint.startswith('equipo.') or request.endpoint.startswith('guardarropia.') or request.endpoint.startswith('guardarropia_admin.')) %}active{% endif %}">
+                    <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Gestión" aria-expanded="false">
+                        📊 Gestión <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('survey.survey_admin') }}"
+                            class="nav-dropdown-item {% if request.endpoint and request.endpoint.startswith('survey.') %}active{% endif %}"
+                            aria-label="Administrar Encuestas">
+                            📝 Encuestas
+                        </a>
+                        <a href="{{ url_for('inventory_admin.dashboard') }}"
+                            class="nav-dropdown-item {% if request.path.startswith('/admin/inventario') or request.path.startswith('/admin/inventory') or request.path.startswith('/admin/ingredients') or request.endpoint == 'routes.register_inventory' or request.endpoint == 'routes.view_inventory' or request.endpoint and ('inventory' in request.endpoint or 'ingredient' in request.endpoint) %}active{% endif %}"
+                            aria-label="Gestionar Inventario">
+                            📦 Inventario
+                        </a>
+                        <a href="{{ url_for('equipo.listar') }}"
+                            class="nav-dropdown-item {% if request.endpoint and request.endpoint.startswith('equipo.') %}active{% endif %}"
+                            aria-label="Gestionar Equipo">
+                            👥 Equipo
+                        </a>
+                        <a href="{{ url_for('guardarropia_admin.admin_index') }}"
+                            class="nav-dropdown-item {% if request.endpoint and (request.endpoint.startswith('guardarropia.') or request.endpoint.startswith('guardarropia_admin.')) %}active{% endif %}"
+                            aria-label="Gestionar Guardarropía">
+                            🧥 Guardarropía
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Desplegable Administración -->
+                <div class="nav-dropdown {% if request.endpoint == 'routes.admin_turnos' or request.endpoint == 'routes.admin_programacion' or request.path.startswith('/admin/programacion') or request.endpoint == 'routes.admin_panel_control' or (request.endpoint and 'payment_machines' in request.endpoint) %}active{% endif %}">
+                    <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Administración" aria-expanded="false">
+                        ⚙️ Administración <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('routes.admin_turnos') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'routes.admin_turnos' %}active{% endif %}"
+                            aria-label="Apertura y Cierre de Turnos">
+                            ⏰ Apertura y Cierre
+                        </a>
+                        <a href="{{ url_for('routes.admin_programacion') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'routes.admin_programacion' or request.path.startswith('/admin/programacion') %}active{% endif %}"
+                            aria-label="Programación de Eventos">
+                            📅 Programación
+                        </a>
+                        <a href="{{ url_for('routes.admin_panel_control') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'routes.admin_panel_control' %}active{% endif %}"
+                            aria-label="Panel de Control">
+                            🎛️ Panel de Control
+                        </a>
+                        <a href="{{ url_for('admin.payment_machines_list') }}"
+                            class="nav-dropdown-item {% if request.endpoint and 'payment_machines' in request.endpoint %}active{% endif %}"
+                            aria-label="Máquinas de Pago">
+                            💳 Máquinas de Pago
+                        </a>
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('auth.logout_admin') }}" class="admin-nav-btn logout-btn"
+                    aria-label="Cerrar Sesión de Administrador">🔓 Salir</a>
+            </div>
+        </div>
+    </nav>
+    <!-- Menú móvil (fuera del nav para evitar clipping por overflow) -->
+    {% if session.get('admin_logged_in') %}
+    <div class="admin-nav-right mobile-menu" id="mobile-menu">
+        <a href="/admin"
+            class="admin-nav-btn {% if request.endpoint == 'routes.admin_dashboard' %}active{% endif %}"
+            aria-label="Inicio">
+            🏠 Home
+        </a>
+        
+        <!-- Desplegable Ventas (móvil) -->
+        <div class="nav-dropdown {% if request.endpoint == 'routes.admin_logs' or request.path.startswith('/caja') or request.path.startswith('/kiosk') or request.path.startswith('/ecommerce') or request.endpoint == 'routes.admin_scanner' or (request.endpoint and ('caja' in request.endpoint or 'kiosk' in request.endpoint or 'ecommerce' in request.endpoint or request.endpoint == 'scanner.scanner')) %}active{% endif %}">
+            <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Ventas" aria-expanded="false">
+                💰 Ventas <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="nav-dropdown-menu">
+                <a href="{{ url_for('routes.admin_logs') }}"
+                    class="nav-dropdown-item {% if request.endpoint == 'routes.admin_logs' %}active{% endif %}"
+                    aria-label="Ver Tickets de Entregas">
+                    📋 Tickets
+                </a>
+                <div class="nav-dropdown-divider"></div>
+                <div class="nav-dropdown-header">TPV</div>
+                <a href="{{ url_for('caja.login') }}"
+                    class="nav-dropdown-item {% if request.path.startswith('/caja') or (request.endpoint and 'caja' in request.endpoint) %}active{% endif %}"
+                    aria-label="Cajas">
+                    🏪 Cajas: {{ tpv_status.cajas.abiertas }}/{{ tpv_status.cajas.total }}
+                </a>
+                <a href="{{ url_for('kiosk.kiosk_home') }}"
+                    class="nav-dropdown-item {% if request.path.startswith('/kiosk') or (request.endpoint and 'kiosk' in request.endpoint) %}active{% endif %}"
+                    aria-label="Kioskos">
+                    🛒 Kioskos {% if tpv_status.kioskos.activos > 0 %}●{% else %}○{% endif %}
+                </a>
+                <a href="/ecommerce"
+                    class="nav-dropdown-item {% if request.path.startswith('/ecommerce') or (request.endpoint and 'ecommerce' in request.endpoint) %}active{% endif %}"
+                    aria-label="Ecommerce">
+                    🌐 Ecommerce {% if tpv_status.ecommerce.activo %}●{% else %}○{% endif %}
+                </a>
+                <a href="{{ url_for('ecommerce.landing') }}"
+                    class="nav-dropdown-item {% if request.path == '/ecommerce/landing' or (request.endpoint == 'ecommerce.landing') %}active{% endif %}"
+                    aria-label="Landing Page">
+                    🎯 Landing Page
+                </a>
+                <div class="nav-dropdown-divider"></div>
+                <a href="{{ url_for('routes.admin_scanner') }}"
+                    class="nav-dropdown-item {% if request.endpoint == 'scanner.scanner' or request.endpoint == 'routes.admin_scanner' %}active{% endif %}"
+                    aria-label="Escaneo de Tickets">
+                    📱 Scanner
+                </a>
+            </div>
+        </div>
+        
+        <!-- Desplegable Gestión (móvil) -->
+        <div class="nav-dropdown {% if request.endpoint and (request.endpoint.startswith('survey.') or request.path.startswith('/admin/inventario') or request.path.startswith('/admin/inventory') or request.path.startswith('/admin/ingredients') or request.endpoint == 'routes.register_inventory' or request.endpoint == 'routes.view_inventory' or ('inventory' in request.endpoint or 'ingredient' in request.endpoint) or request.endpoint.startswith('equipo.') or request.endpoint.startswith('guardarropia.') or request.endpoint.startswith('guardarropia_admin.')) %}active{% endif %}">
+            <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Gestión" aria-expanded="false">
+                📊 Gestión <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="nav-dropdown-menu">
+                <a href="{{ url_for('survey.survey_admin') }}"
+                    class="nav-dropdown-item {% if request.endpoint and request.endpoint.startswith('survey.') %}active{% endif %}"
+                    aria-label="Administrar Encuestas">
+                    📝 Encuestas
+                </a>
+                <a href="{{ url_for('inventory_admin.dashboard') }}"
+                    class="nav-dropdown-item {% if request.path.startswith('/admin/inventario') or request.path.startswith('/admin/inventory') or request.path.startswith('/admin/ingredients') or request.endpoint == 'routes.register_inventory' or request.endpoint == 'routes.view_inventory' or request.endpoint and ('inventory' in request.endpoint or 'ingredient' in request.endpoint) %}active{% endif %}"
+                    aria-label="Gestionar Inventario">
+                    📦 Inventario
+                </a>
+                <a href="{{ url_for('equipo.listar') }}"
+                    class="nav-dropdown-item {% if request.endpoint and request.endpoint.startswith('equipo.') %}active{% endif %}"
+                    aria-label="Gestionar Equipo">
+                    👥 Equipo
+                </a>
+                <a href="{{ url_for('guardarropia_admin.admin_index') }}"
+                    class="nav-dropdown-item {% if request.endpoint and (request.endpoint.startswith('guardarropia.') or request.endpoint.startswith('guardarropia_admin.')) %}active{% endif %}"
+                    aria-label="Gestionar Guardarropía">
+                    🧥 Guardarropía
+                </a>
+            </div>
+        </div>
+        
+        <!-- Desplegable Administración (móvil) -->
+        <div class="nav-dropdown {% if request.endpoint == 'routes.admin_turnos' or request.endpoint == 'routes.admin_programacion' or request.path.startswith('/admin/programacion') or request.endpoint == 'routes.admin_panel_control' or (request.endpoint and 'payment_machines' in request.endpoint) %}active{% endif %}">
+            <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Administración" aria-expanded="false">
+                ⚙️ Administración <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="nav-dropdown-menu">
+                <a href="{{ url_for('routes.admin_turnos') }}"
+                    class="nav-dropdown-item {% if request.endpoint == 'routes.admin_turnos' %}active{% endif %}"
+                    aria-label="Apertura y Cierre de Turnos">
+                    ⏰ Apertura y Cierre
+                </a>
+                <a href="{{ url_for('routes.admin_programacion') }}"
+                    class="nav-dropdown-item {% if request.endpoint == 'routes.admin_programacion' or request.path.startswith('/admin/programacion') %}active{% endif %}"
+                    aria-label="Programación de Eventos">
+                    📅 Programación
+                </a>
+                <a href="{{ url_for('routes.admin_panel_control') }}"
+                    class="nav-dropdown-item {% if request.endpoint == 'routes.admin_panel_control' %}active{% endif %}"
+                    aria-label="Panel de Control">
+                    🎛️ Panel de Control
+                </a>
+                <a href="{{ url_for('admin.payment_machines_list') }}"
+                    class="nav-dropdown-item {% if request.endpoint and 'payment_machines' in request.endpoint %}active{% endif %}"
+                    aria-label="Máquinas de Pago">
+                    💳 Máquinas de Pago
+                </a>
+            </div>
+        </div>
+        
+        <a href="{{ url_for('auth.logout_admin') }}" class="admin-nav-btn logout-btn"
+            aria-label="Cerrar Sesión de Administrador">🔓 Salir</a>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div id="main-content" class="container">
+        <!-- Flash messages -->
+        <div class="flash-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Título del sistema (solo en sistema de entrega, no en admin, no en home, no en login) -->
+        {% if not session.get('admin_logged_in') and request.endpoint != 'home.index' and request.endpoint !=
+        'auth.login_admin' %}
+        {% block titulo_sistema %}
+        {% endblock %}
+        {% endif %}
+
+        <!-- Contenido principal -->
+        <main id="main-content-inner" class="main-container">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer con información del desarrollador -->
+        <footer class="footer-desarrollador">
+            Sistema Desarrollado por Sebastián Gatica - <a
+                href="mailto:hola@sebastiangatica.cl">hola@sebastiangatica.cl</a>
+            {% if app_version %}
+            <span style="margin-left: 10px; color: #888; font-size: 0.85em;">| {{ app_version }}</span>
+            {% endif %}
+        </footer>
+    </div>
+
+    <!-- Barra del Footer Fija (solo en sistema de entrega, NO en admin, NO en home, NO en login) -->
+    {% if not session.get('admin_logged_in') and request.endpoint != 'home.index' and request.endpoint !=
+    'auth.login_admin' %}
+    <div class="footer-bar">
+        <div class="session-info">
+            {% if session.get('barra') and session.get('bartender') %}
+            <p><strong>Barra:</strong> <span aria-label="Barra actual">{{ session.get('barra') }}</span> |
+                <strong>Bartender:</strong> <span aria-label="Bartender actual">{{ session.get('bartender') }}</span>
+            </p>
+            {% endif %}
+        </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer Admin Unificado (todas las páginas admin) -->
+    {% if session.get('admin_logged_in') %}
+    <footer class="admin-footer-unified"
+        style="position: fixed; bottom: 0; left: 0; right: 0; background: rgba(26, 26, 46, 0.95); border-top: 2px solid rgba(102, 126, 234, 0.3); padding: 12px 20px; z-index: 999; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; backdrop-filter: blur(10px);">
+        <!-- Información del turno (izquierda) -->
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+            {% set shift_status_actual = shift_status if shift_status else (g.shift_status if g.shift_status else {}) %}
+            {% set shift_metrics_actual = shift_metrics if shift_metrics else (g.shift_metrics if g.shift_metrics else
+            {}) %}
+            {% if shift_status_actual.get('is_open', False) %}
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span
+                    style="display: inline-block; width: 10px; height: 10px; background: #4caf50; border-radius: 50%; animation: pulse 2s infinite;"></span>
+                <span style="color: #4caf50; font-weight: bold;">Turno Abierto</span>
+            </div>
+            <div style="color: #aaa; font-size: 0.9rem;">
+                <strong>Tiempo:</strong> <span id="footer-tiempo">{{ shift_metrics_actual.get('tiempo_transcurrido', 'N/A') }}</span>
+            </div>
+            <div style="color: #aaa; font-size: 0.9rem;">
+                <strong>Entregas:</strong> <span id="footer-entregas" style="color: #4caf50; font-weight: bold;">{{
+                    shift_metrics_actual.get('total_entregas', 0) }}</span>
+            </div>
+            <div style="color: #aaa; font-size: 0.9rem;">
+                <strong>Entradas:</strong> <span id="footer-entradas" style="color: #667eea; font-weight: bold;">{{
+                    shift_metrics_actual.get('total_entradas', 0) }}</span>
+            </div>
+            {% else %}
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span
+                    style="display: inline-block; width: 10px; height: 10px; background: #ff9800; border-radius: 50%;"></span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Información del sistema (centro/derecha) -->
+        <div style="color: #888; font-size: 0.85rem; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <span>
+                <strong>Usuario:</strong> <span style="color: #667eea; font-weight: bold;">{{
+                    session.get('admin_username', 'admin') }}</span>
+            </span>
+            <span>|</span>
+            <span>
+                Sistema BIMBA - <span id="current-time-footer-unified">--:--:--</span>
+            </span>
+            {% if app_version %}
+            <span>|</span>
+            <span style="color: #667eea; font-weight: 500;">{{ app_version }}</span>
+            {% endif %}
+        </div>
+
+        <!-- Countdown solo en /admin/logs -->
+        {% if request.endpoint == 'routes.admin_logs' %}
+        <div id="countdown-footer" style="display: flex; align-items: center; gap: 12px;">
+            <div
+                style="display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; backdrop-filter: blur(10px);">
+                <div id="countdown-indicator"
+                    style="width: 6px; height: 6px; background-color: #4caf50; border-radius: 50%; animation: countdownPulse 1s infinite;">
+                </div>
+                <span id="countdown-text" style="color: #e8e8e8;">Actualizando en</span>
+                <span id="countdown-number"
+                    style="color: #4caf50; font-size: 1rem; font-weight: 700; min-width: 15px; text-align: center;">5</span>
+                <span style="color: #e8e8e8;">s</span>
+            </div>
+            <button id="pause-update-btn" onclick="toggleAutoUpdate()"
+                style="padding: 8px 16px; background: rgba(102, 126, 234, 0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #667eea; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s;"
+                onmouseover="this.style.background='rgba(102, 126, 234, 0.4)'"
+                onmouseout="this.style.background='rgba(102, 126, 234, 0.3)'">
+                ⏸️ Pausar
+            </button>
+        </div>
+        {% endif %}
+    </footer>
+
+    <style>
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes countdownPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+        }
+
+        /* Ajustar padding del contenido cuando hay footer admin */
+            {
+            % if session.get('admin_logged_in') %
+        }
+
+        .main-container {
+            padding-bottom: 70px;
+        }
+
+            {
+            % endif %
+        }
+    </style>
+
+    <script>
+        // Actualizar hora en el footer unificado
+        function updateFooterTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const timeElement = document.getElementById('current-time-footer-unified');
+            if (timeElement) {
+                timeElement.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+        }
+        // Actualizar inmediatamente y luego cada segundo
+        updateFooterTime();
+        setInterval(updateFooterTime, 1000);
+        
+        // Actualizar métricas del footer (tiempo, entregas, entradas)
+        {% if shift_status_actual.get('is_open', False) %}
+        let footerOpenedAt = null;
+        {% if shift_status_actual.get('opened_at') %}
+        try {
+            // Intentar parsear la fecha de apertura
+            const openedAtStr = '{{ shift_status_actual.get("opened_at") }}';
+            footerOpenedAt = new Date(openedAtStr);
+            // Si no es válida, intentar obtener desde la API
+            if (isNaN(footerOpenedAt.getTime())) {
+                footerOpenedAt = null;
+            }
+        } catch(e) {
+            console.error('Error parseando fecha de apertura:', e);
+            footerOpenedAt = null;
+        }
+        {% endif %}
+        
+        function updateFooterMetrics() {
+            // Actualizar tiempo transcurrido cada minuto
+            if (footerOpenedAt && !isNaN(footerOpenedAt.getTime())) {
+                const now = new Date();
+                const diff = now - footerOpenedAt;
+                if (diff > 0) {
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const tiempoElement = document.getElementById('footer-tiempo');
+                    if (tiempoElement) {
+                        tiempoElement.textContent = `${hours}h ${minutes}m`;
+                    }
+                }
+            } else {
+                // Si no tenemos la fecha localmente, obtenerla desde la API
+                updateFooterTimeFromAPI();
+            }
+        }
+        
+        async function updateFooterTimeFromAPI() {
+            try {
+                const response = await fetch('/admin/api/dashboard/metrics');
+                const data = await response.json();
+                
+                if (data.success && data.metrics && data.metrics.turno_actual && data.metrics.turno_actual.abierto_en) {
+                    footerOpenedAt = new Date(data.metrics.turno_actual.abierto_en);
+                    updateFooterMetrics();
+                }
+            } catch (error) {
+                console.error('Error obteniendo fecha de apertura:', error);
+            }
+        }
+        
+        async function updateFooterMetricsFromAPI() {
+            try {
+                const response = await fetch('/admin/api/dashboard/metrics');
+                const data = await response.json();
+                
+                if (data.success && data.metrics) {
+                    // Actualizar entregas desde métricas de entregas
+                    if (data.metrics.entregas) {
+                        const entregasElement = document.getElementById('footer-entregas');
+                        if (entregasElement) {
+                            // entregas.turno contiene el total de entregas del turno
+                            const totalEntregas = data.metrics.entregas.turno || 0;
+                            entregasElement.textContent = totalEntregas;
+                        }
+                    }
+                    
+                    // Actualizar tiempo si no lo tenemos
+                    if (!footerOpenedAt && data.metrics.turno_actual && data.metrics.turno_actual.abierto_en) {
+                        footerOpenedAt = new Date(data.metrics.turno_actual.abierto_en);
+                        updateFooterMetrics();
+                    }
+                    
+                    // Actualizar entradas (por ahora se mantiene en 0, ya que está deshabilitado en el context processor)
+                    // TODO: Implementar cuando se habilite la carga de entradas
+                }
+            } catch (error) {
+                console.error('Error actualizando métricas del footer:', error);
+            }
+        }
+        
+        // Actualizar tiempo cada minuto
+        updateFooterMetrics();
+        setInterval(updateFooterMetrics, 60000);
+        
+        // Actualizar entregas y tiempo desde API cada 30 segundos
+        updateFooterMetricsFromAPI();
+        setInterval(updateFooterMetricsFromAPI, 30000);
+        {% endif %}
+
+        // Countdown solo en /admin/logs
+        {% if request.endpoint == 'routes.admin_logs' %}
+        let countdown = 5;
+        function updateCountdown() {
+            const countdownElement = document.getElementById('countdown-number');
+            if (countdownElement) {
+                countdownElement.textContent = countdown;
+                countdown = countdown > 0 ? countdown - 1 : 5;
+            }
+        }
+        setInterval(updateCountdown, 1000);
+
+        // Estado de actualización automática
+        window.autoUpdatePaused = false;
+        window.countdownInterval = null;
+        window.updateInterval = null;
+
+        // Función para pausar/reanudar actualización
+        function toggleAutoUpdate() {
+            window.autoUpdatePaused = !window.autoUpdatePaused;
+            const btn = document.getElementById('pause-update-btn');
+            const indicator = document.getElementById('countdown-indicator');
+            const countdownDiv = document.getElementById('countdown-footer').querySelector('div');
+
+            if (window.autoUpdatePaused) {
+                // Pausar
+                if (window.countdownInterval) {
+                    clearInterval(window.countdownInterval);
+                    window.countdownInterval = null;
+                }
+                if (window.updateInterval) {
+                    clearInterval(window.updateInterval);
+                    window.updateInterval = null;
+                }
+                btn.textContent = '▶️ Reanudar';
+                btn.style.background = 'rgba(76, 175, 80, 0.3)';
+                btn.style.borderColor = 'rgba(76, 175, 80, 0.5)';
+                btn.style.color = '#4caf50';
+                if (indicator) indicator.style.animation = 'none';
+                if (countdownDiv) countdownDiv.style.opacity = '0.5';
+                document.getElementById('countdown-text').textContent = 'Actualización pausada';
+                document.getElementById('countdown-number').textContent = '—';
+            } else {
+                // Reanudar
+                btn.textContent = '⏸️ Pausar';
+                btn.style.background = 'rgba(102, 126, 234, 0.3)';
+                btn.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+                btn.style.color = '#667eea';
+                if (indicator) indicator.style.animation = 'countdownPulse 1s infinite';
+                if (countdownDiv) countdownDiv.style.opacity = '1';
+                document.getElementById('countdown-text').textContent = 'Actualizando en';
+                // Reiniciar countdown y actualización
+                if (window.startCountdownFunction) window.startCountdownFunction();
+                if (window.startUpdateIntervalFunction) window.startUpdateIntervalFunction();
+            }
+        }
+        {% endif %}
+    </script>
+    {% endif %}
+
+    <!-- Indicador de estado de conexión API -->
+    <div id="api-status-indicator"
+        style="position: fixed; top: 10px; right: 10px; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; z-index: 1000; transition: all 0.3s; display: none;">
+        <span id="api-status-text"></span>
+    </div>
+
+    <script>
+        // Verificar estado de conexión API (siempre visible)
+        function checkApiStatus() {
+            fetch('{{ url_for("api.health_check") }}', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                cache: 'no-store'
+            })
+                .then(response => {
+                    // Si la respuesta no es OK, intentar parsear el JSON de error
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            // Retornar datos con el status code
+                            return { ...data, httpStatus: response.status };
+                        }).catch(() => {
+                            // Si no se puede parsear, crear un objeto de error
+                            return {
+                                status: 'error',
+                                message: `HTTP ${response.status}`,
+                                online: false,
+                                httpStatus: response.status
+                            };
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const indicator = document.getElementById('api-status-indicator');
+                    const text = document.getElementById('api-status-text');
+
+                    // Solo mostrar si hay un indicador en el DOM
+                    if (!indicator || !text) return;
+
+                    // Log solo en desarrollo
+                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                        console.log('API Health Check Response:', data);
+                    }
+
+                    if (data.online === true || data.status === 'ok') {
+                        indicator.style.backgroundColor = '#00ff00';
+                        indicator.style.color = '#000';
+                        indicator.style.display = 'block';
+                        text.textContent = '✓ API Conectada';
+                        // Ocultar después de 3 segundos si está online
+                        setTimeout(() => {
+                            if (indicator) indicator.style.display = 'none';
+                        }, 3000);
+                    } else {
+                        // Mostrar todos los errores
+                        indicator.style.backgroundColor = '#ff4444';
+                        indicator.style.color = '#fff';
+                        indicator.style.display = 'block';
+                        text.textContent = `✗ ${data.message || 'API Desconectada'}`;
+                    }
+                })
+                .catch(error => {
+                    const indicator = document.getElementById('api-status-indicator');
+                    const text = document.getElementById('api-status-text');
+
+                    if (indicator && text) {
+                        // Log solo en desarrollo
+                        // CORRECCIÓN SEO: Solo en desarrollo local
+                        const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                        if (isLocalDev) {
+                            console.error('Error verificando API:', error);
+                        }
+                        indicator.style.backgroundColor = '#ff4444';
+                        indicator.style.color = '#fff';
+                        indicator.style.display = 'block';
+                        text.textContent = `✗ Error de conexión: ${error.message || 'Desconocido'}`;
+                    }
+                });
+        }
+
+        // Verificar solo al abrir el turno (no automáticamente)
+        // La verificación se hace solo cuando se abre un turno desde el dashboard
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // JavaScript personalizado si es necesario
+        });
+        
+        // Función para toggle del menú móvil (SIMPLIFICADA Y ROBUSTA)
+        function toggleMobileMenu(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            const menu = document.getElementById('mobile-menu');
+            const toggle = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
+            
+            if (!menu || !toggle) {
+                console.warn('Menu elements not found', { menu: !!menu, toggle: !!toggle });
+                return false;
+            }
+            
+            const isOpen = menu.classList.contains('mobile-menu-open');
+            
+            console.log('Toggle menu:', { isOpen, menuExists: !!menu, toggleExists: !!toggle, menuDisplay: menu ? window.getComputedStyle(menu).display : 'N/A' });
+            
+            if (isOpen) {
+                // Cerrar menú
+                console.log('Cerrando menú...');
+                menu.classList.remove('mobile-menu-open');
+                toggle.classList.remove('active');
+                // Remover estilos inline y dejar que el CSS maneje el ocultamiento
+                menu.style.removeProperty('display');
+                menu.style.removeProperty('opacity');
+                menu.style.removeProperty('visibility');
+                menu.style.removeProperty('pointer-events');
+                document.body.style.overflow = '';
+                console.log('Menú cerrado');
+            } else {
+                // Abrir menú
+                console.log('Abriendo menú...');
+                // PRIMERO agregar la clase
+                menu.classList.add('mobile-menu-open');
+                toggle.classList.add('active');
+                // Remover cualquier estilo inline que pueda estar bloqueando
+                menu.style.removeProperty('display');
+                menu.style.removeProperty('opacity');
+                menu.style.removeProperty('visibility');
+                menu.style.removeProperty('pointer-events');
+                menu.style.removeProperty('transform');
+                // El CSS debería manejar el resto
+                document.body.style.overflow = 'hidden';
+                console.log('Menú abierto. Display:', window.getComputedStyle(menu).display, 'Classes:', menu.className);
+            }
+            
+            return false;
+        }
+        
+        // Asegurar que la función esté disponible globalmente
+        window.toggleMobileMenu = toggleMobileMenu;
+        
+        // Inicialización del menú móvil (EJECUTAR INMEDIATAMENTE Y EN DOMContentLoaded)
+        (function initMobileMenu() {
+            function setupMenu() {
+                const toggleBtn = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
+                const menu = document.getElementById('mobile-menu');
+                
+                if (!menu) {
+                    console.warn('Menu no encontrado en setupMenu');
+                    return;
+                }
+                
+                // Asegurar que el menú esté oculto por defecto en móvil
+                if (window.innerWidth <= 1023) {
+                    menu.classList.remove('mobile-menu-open');
+                    if (toggleBtn) toggleBtn.classList.remove('active');
+                    // El CSS ya maneja el ocultamiento, solo asegurar que no haya estilos inline conflictivos
+                    menu.style.removeProperty('display');
+                    menu.style.removeProperty('opacity');
+                    menu.style.removeProperty('visibility');
+                    menu.style.removeProperty('pointer-events');
+                }
+                
+                if (toggleBtn) {
+                    console.log('Toggle button encontrado, agregando listeners...');
+                    // Remover cualquier listener previo clonando el elemento
+                    const newToggleBtn = toggleBtn.cloneNode(true);
+                    toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+                    
+                    // Función handler compartida - CON PROTECCIÓN CONTRA DOBLE DISPARO
+                    let isToggling = false;
+                    const handleMenuToggle = function(e) {
+                        console.log('🔵 Evento detectado:', e.type, 'isToggling:', isToggling);
+                        
+                        // Prevenir doble disparo
+                        if (isToggling) {
+                            console.log('⏸️ Bloqueado: ya está procesando');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return false;
+                        }
+                        
+                        isToggling = true;
+                        setTimeout(() => { isToggling = false; }, 300);
+                        
+                        try {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            
+                            const menu = document.getElementById('mobile-menu');
+                            const toggle = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
+                            
+                            if (!menu || !toggle) {
+                                console.error('❌ Elementos no encontrados:', { menu: !!menu, toggle: !!toggle });
+                                isToggling = false;
+                                return false;
+                            }
+                            
+                            const isOpen = menu.classList.contains('mobile-menu-open');
+                            console.log('📊 Estado actual del menú:', { isOpen, menuDisplay: window.getComputedStyle(menu).display });
+                            
+                            if (isOpen) {
+                                console.log('🔴 CERRANDO menú...');
+                                menu.classList.remove('mobile-menu-open');
+                                toggle.classList.remove('active');
+                                menu.style.setProperty('display', 'none', 'important');
+                                menu.style.setProperty('opacity', '0', 'important');
+                                menu.style.setProperty('visibility', 'hidden', 'important');
+                                menu.style.setProperty('pointer-events', 'none', 'important');
+                                document.body.style.overflow = '';
+                                console.log('✅ Menú CERRADO');
+                            } else {
+                                console.log('🟢 ABRIENDO menú...');
+                                // Remover cualquier estilo inline que pueda estar bloqueando
+                                menu.style.removeProperty('display');
+                                menu.style.removeProperty('opacity');
+                                menu.style.removeProperty('visibility');
+                                menu.style.removeProperty('pointer-events');
+                                menu.style.removeProperty('transform');
+                                // Agregar la clase para que el CSS maneje el despliegue completo
+                                menu.classList.add('mobile-menu-open');
+                                toggle.classList.add('active');
+                                document.body.style.overflow = 'hidden';
+                                // Pequeño delay para verificar que el CSS se aplicó correctamente
+                                setTimeout(() => {
+                                    const computedStyle = window.getComputedStyle(menu);
+                                    console.log('✅ Menú ABIERTO. Display:', computedStyle.display, 'Position:', computedStyle.position, 'Top:', computedStyle.top);
+                                }, 50);
+                            }
+                        } catch (err) {
+                            console.error('❌ Error en handleMenuToggle:', err);
+                            isToggling = false;
+                        }
+                        return false;
+                    };
+                    
+                    // SOLO usar addEventListener, NO onclick (evita doble disparo)
+                    // Usar capture: true para capturar el evento antes que otros listeners
+                    newToggleBtn.addEventListener('click', handleMenuToggle, { capture: true, passive: false });
+                    
+                    // Para touch, prevenir que también dispare click
+                    newToggleBtn.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        handleMenuToggle(e);
+                    }, { passive: false });
+                    
+                    console.log('Listeners agregados correctamente al botón');
+                    
+                    console.log('Listeners agregados correctamente');
+                } else {
+                    console.warn('Toggle button NO encontrado');
+                }
+            }
+            
+            // Ejecutar inmediatamente si el DOM ya está listo
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setupMenu);
+            } else {
+                setupMenu();
+            }
+            
+            // También ejecutar después de un pequeño delay para asegurar que todo esté cargado
+            setTimeout(setupMenu, 50);
+        })();
+        
+        // Cerrar menú móvil al hacer click fuera
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const toggle = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
+            
+            if (menu && toggle && 
+                !menu.contains(event.target) && 
+                !toggle.contains(event.target) &&
+                menu.classList.contains('mobile-menu-open')) {
+                menu.classList.remove('mobile-menu-open');
+                toggle.classList.remove('active');
+                menu.style.setProperty('display', 'none', 'important');
+                menu.style.setProperty('opacity', '0', 'important');
+                menu.style.setProperty('visibility', 'hidden', 'important');
+                menu.style.setProperty('pointer-events', 'none', 'important');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // Cerrar menú móvil al hacer click en un enlace
+        document.addEventListener('DOMContentLoaded', function() {
+            const adminNavLinks = document.querySelectorAll('#mobile-menu .admin-nav-btn:not(.nav-dropdown-toggle), #mobile-menu .nav-dropdown-item');
+            const menu = document.getElementById('mobile-menu');
+            const toggle = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
+            
+            if (adminNavLinks && adminNavLinks.length > 0) {
+                adminNavLinks.forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        if (window.innerWidth <= 1023 && menu) {
+                            menu.classList.remove('mobile-menu-open');
+                            if (toggle) toggle.classList.remove('active');
+                            menu.style.setProperty('display', 'none', 'important');
+                            menu.style.setProperty('opacity', '0', 'important');
+                            menu.style.setProperty('visibility', 'hidden', 'important');
+                            menu.style.setProperty('pointer-events', 'none', 'important');
+                            document.body.style.overflow = '';
+                        }
+                    });
+                });
+            }
+            
+        });
+        
+        // Manejo de desplegables del menú
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
+            
+            dropdownToggles.forEach(function(toggle) {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const dropdown = this.closest('.nav-dropdown');
+                    const isOpen = dropdown.classList.contains('open');
+                    
+                    // Cerrar todos los demás desplegables
+                    document.querySelectorAll('.nav-dropdown').forEach(function(dd) {
+                        if (dd !== dropdown) {
+                            dd.classList.remove('open');
+                            dd.querySelector('.nav-dropdown-toggle').setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                    
+                    // Toggle del desplegable actual
+                    if (isOpen) {
+                        dropdown.classList.remove('open');
+                        this.setAttribute('aria-expanded', 'false');
+                    } else {
+                        dropdown.classList.add('open');
+                        this.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            });
+            
+            // Cerrar desplegables al hacer click fuera
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.nav-dropdown')) {
+                    document.querySelectorAll('.nav-dropdown').forEach(function(dropdown) {
+                        dropdown.classList.remove('open');
+                        dropdown.querySelector('.nav-dropdown-toggle').setAttribute('aria-expanded', 'false');
+                    });
+                }
+            });
+            
+            // Cerrar desplegables al hacer click en un item del menú (solo en desktop)
+            document.querySelectorAll('.nav-dropdown-item').forEach(function(item) {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth >= 1024) {
+                        const dropdown = this.closest('.nav-dropdown');
+                        if (dropdown) {
+                            dropdown.classList.remove('open');
+                            dropdown.querySelector('.nav-dropdown-toggle').setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- Scripts cargados al final para no bloquear el renderizado -->
+    <!-- Error Capture Mode (solo en desarrollo) -->
+    {% if config.get('FLASK_ENV') != 'production' or config.get('DEBUG_ERRORS') %}
+    <script>
+        window.DEBUG_ERRORS = true;
+    </script>
+    <script src="{{ url_for('static', filename='js/error_capture.js') }}"></script>
+    {% endif %}
+    <!-- SocketIO (self-hosted) -->
+    <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}" defer></script>
+    <!-- Chart.js para gráficos (self-hosted) -->
+    <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}" defer></script>
+
+    <!-- Módulos JavaScript reutilizables (optimización) -->
+    <script src="{{ url_for('static', filename='js/utils/dateFormatter.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/utils/currencyFormatter.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/components/Modal.js') }}"></script>
+
+    <!-- Sistema de Notificaciones (solo para admin) -->
+    {% if session.get('admin_logged_in') %}
+    <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
+    {% endif %}
+
+    <!-- Utilidades JavaScript -->
+    <!-- Sistema de Confirmaciones -->
+    <script src="{{ url_for('static', filename='js/confirm.js') }}" defer></script>
+    <!-- Mejoras de Accesibilidad -->
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}" defer></script>
+</body>
+
+</html>

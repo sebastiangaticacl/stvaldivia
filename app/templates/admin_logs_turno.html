@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Ventas del Turno{% endblock %}
+
+{% block content %}
+
+<h2 style="margin: 0 0 20px 0;">💰 Ventas Vendidas en el Turno ({{ total_sales }} total) - Mostrar {{ per_page }}</h2>
+
+{% if not shift_open %}
+<div style="background-color: rgba(255, 152, 0, 0.2); color: #ff9800; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ff9800;">
+</div>
+{% elif shift_info %}
+<div style="background-color: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333;">
+    <p style="margin: 5px 0;"><strong>Fiesta:</strong> {{ shift_info.get('fiesta_nombre', 'N/A') }}</p>
+    <p style="margin: 5px 0;"><strong>Turno abierto:</strong> {{ shift_info.get('opened_at', 'N/A') }}</p>
+    <p style="margin: 5px 0;"><strong>Fecha:</strong> {{ shift_info.get('shift_date', 'N/A') }}</p>
+</div>
+{% endif %}
+
+{% if api_error %}
+<div style="background-color: rgba(255, 152, 0, 0.2); color: #ff9800; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ff9800;">
+    ⚠️ No se pudo conectar con la API POS. Verifica la configuración de la API.
+</div>
+{% endif %}
+
+<!-- Selector de cantidad -->
+<div style="background-color: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <form style="display: flex; gap: 10px; align-items: center;">
+        <label style="color: #e8e8e8;">Mostrar:</label>
+        <select id="per-page-select" onchange="changePerPage(this.value)" style="padding: 10px; border-radius: 6px; border: 1px solid #444; background-color: #18181a; color: #e8e8e8;">
+            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            <option value="200" {% if per_page == 200 %}selected{% endif %}>200</option>
+        </select>
+    </form>
+</div>
+
+{% if total_pages > 1 %}
+<div style="margin: 20px 0; text-align: center;">
+    <span style="color: #aaa;">Página {{ current_page }} de {{ total_pages }}</span>
+    <div style="margin-top: 10px;">
+        {% if has_prev %}
+        <a href="{{ url_for('routes.admin_logs_turno', page=current_page-1, per_page=per_page) }}" class="btn btn-primary">Anterior</a>
+        {% endif %}
+        {% if has_next %}
+        <a href="{{ url_for('routes.admin_logs_turno', page=current_page+1, per_page=per_page) }}" class="btn btn-primary">Siguiente</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<table id="turno-table" style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr>
+            <th style="padding: 10px; border: 1px solid #444; background-color: #333;">Ticket</th>
+            <th style="padding: 10px; border: 1px solid #444; background-color: #333;">Fecha/Hora</th>
+            <th style="padding: 10px; border: 1px solid #444; background-color: #333;">Total</th>
+            <th style="padding: 10px; border: 1px solid #444; background-color: #333;">Cajero</th>
+            <th style="padding: 10px; border: 1px solid #444; background-color: #333;">Caja</th>
+        </tr>
+    </thead>
+    <tbody id="turno-tbody">
+        {% if sales %}
+            {% for sale in sales %}
+            <tr style="background-color: {% if loop.index % 2 == 0 %}#1a1a1a{% else %}#222{% endif %};">
+                <td style="padding: 10px; border: 1px solid #444; color: #4caf50; font-weight: bold;">{{ sale.get('sale_id', 'N/A') }}</td>
+                <td style="padding: 10px; border: 1px solid #444; color: #aaa;">{{ sale.get('sale_time', sale.get('sale_date', 'N/A')) }}</td>
+                <td style="padding: 10px; border: 1px solid #444; text-align: right; color: #4caf50; font-weight: bold;">${{ "{:,.0f}".format(sale.get('sale_total', 0)) }}</td>
+                <td style="padding: 10px; border: 1px solid #444; color: #aaa;">{{ sale.get('employee_id', 'N/A') }}</td>
+                <td style="padding: 10px; border: 1px solid #444; color: #aaa;">{{ sale.get('register_id', 'N/A') }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="5" style="padding: 20px; text-align: center; color: #aaa;">
+                    {% if shift_open %}
+                        No hay ventas registradas en este turno.
+                    {% else %}
+                        No hay un turno abierto actualmente.
+                    {% endif %}
+                </td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<script>
+    function changePerPage(perPage) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', perPage);
+        url.searchParams.set('page', '1');
+        window.location.href = url.toString();
+    }
+</script>
+
+{% endblock %}
+
+
+

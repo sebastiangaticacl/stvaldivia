@@ -1,0 +1,670 @@
+{% extends "base.html" %}
+{% block title %}Área Administrativa{% endblock %}
+
+{% block titulo_sistema %}
+{% endblock %}
+
+{% block content %}
+
+<style>
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes countdownPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Countdown movido al footer */
+
+#countdown-number {
+    display: inline-block;
+    animation: countdownPulse 0.5s ease-in-out;
+    color: #4caf50;
+    font-size: 20px;
+    font-weight: 700;
+}
+</style>
+
+<!-- Countdown movido al footer -->
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+    <h2 style="margin: 0;">
+        {% if filter_by_turno %}
+            Tickets del Turno Actual ({{ total_logs }} total) - Mostrar {{ per_page }}
+        {% else %}
+            Registros de Entregas ({{ total_logs }} total) - Mostrar {{ per_page }}
+        {% endif %}
+    </h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="{{ url_for('routes.admin_scanner') }}" 
+           style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: all 0.3s;"
+           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(102, 126, 234, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)'">
+            📱 Escanear Ticket
+        </a>
+        <a href="{{ url_for('routes.admin_logs', turno='true') }}" 
+           style="padding: 12px 24px; background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); transition: all 0.3s;"
+           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)'">
+            📋 Ver Tickets del Turno
+        </a>
+    </div>
+</div>
+
+<!-- Búsqueda y filtros (colapsable) -->
+<div style="background-color: #222; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+    <button type="button" 
+            id="toggle-search-btn" 
+            onclick="toggleSearch()" 
+            style="width: 100%; padding: 10px; background-color: #333; color: #e8e8e8; border: 1px solid #444; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s;"
+            onmouseover="this.style.backgroundColor='#3a3a3a'"
+            onmouseout="this.style.backgroundColor='#333'">
+        <span>🔍 Buscador y Filtros</span>
+        <span id="search-arrow" style="transition: transform 0.3s;">▼</span>
+    </button>
+    <div id="search-form-container" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #444;">
+        <form id="search-form" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <input type="text" 
+                   id="search-input" 
+                   placeholder="Buscar por ticket, producto, bartender..." 
+                   style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: 1px solid #444; background-color: #18181a; color: #e8e8e8;">
+            <select id="filter-bartender" style="padding: 10px; border-radius: 6px; border: 1px solid #444; background-color: #18181a; color: #e8e8e8;">
+                <option value="">Todos los bartenders</option>
+            </select>
+            <select id="filter-barra" style="padding: 10px; border-radius: 6px; border: 1px solid #444; background-color: #18181a; color: #e8e8e8;">
+                <option value="">Todas las barras</option>
+                <option value="Barra Principal">Barra Principal</option>
+                <option value="Barra Terraza">Barra Terraza</option>
+                <option value="Barra VIP">Barra VIP</option>
+                <option value="Barra Exterior">Barra Exterior</option>
+            </select>
+            <select id="per-page-select" onchange="changePerPage(this.value)" style="padding: 10px; border-radius: 6px; border: 1px solid #444; background-color: #18181a; color: #e8e8e8;">
+                <option value="20" {% if per_page == 20 %}selected{% endif %}>Mostrar 20</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>Mostrar 50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>Mostrar 100</option>
+                <option value="200" {% if per_page == 200 %}selected{% endif %}>Mostrar 200</option>
+            </select>
+            <button type="button" onclick="clearFilters()" class="btn" style="padding: 10px 20px;">Limpiar</button>
+        </form>
+    </div>
+</div>
+
+<!-- Paginación -->
+{% if total_pages > 1 %}
+<div style="margin: 20px 0; text-align: center;">
+    <span style="color: #aaa;">Página {{ current_page }} de {{ total_pages }}</span>
+    <div style="margin-top: 10px;">
+        {% if has_prev %}
+        <a href="{{ url_for('routes.admin_logs', page=current_page-1) }}" class="btn btn-primary">Anterior</a>
+        {% endif %}
+        {% if has_next %}
+        <a href="{{ url_for('routes.admin_logs', page=current_page+1) }}" class="btn btn-primary">Siguiente</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<table id="logs-table" style="width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <thead>
+        <tr>
+            <th style="padding: 12px; background: linear-gradient(135deg, #2d5a3d 0%, #1e3d2a 100%); color: #fff; border: 1px solid #1a2e1f; text-align: left; font-weight: bold;">Producto</th>
+            <th style="padding: 12px; background: linear-gradient(135deg, #2d5a3d 0%, #1e3d2a 100%); color: #fff; border: 1px solid #1a2e1f; text-align: center; font-weight: bold;">Cantidad</th>
+            <th style="padding: 12px; background: linear-gradient(135deg, #2d5a3d 0%, #1e3d2a 100%); color: #fff; border: 1px solid #1a2e1f; text-align: center; font-weight: bold;">Entregas</th>
+            <th style="padding: 12px; background: linear-gradient(135deg, #2d5a3d 0%, #1e3d2a 100%); color: #fff; border: 1px solid #1a2e1f; text-align: left; font-weight: bold;">Bartender</th>
+            <th style="padding: 12px; background: linear-gradient(135deg, #2d5a3d 0%, #1e3d2a 100%); color: #fff; border: 1px solid #1a2e1f; text-align: left; font-weight: bold;">Barra</th>
+            <th style="padding: 12px; background: linear-gradient(135deg, #2d5a3d 0%, #1e3d2a 100%); color: #fff; border: 1px solid #1a2e1f; text-align: left; font-weight: bold;">Última Entrega</th>
+        </tr>
+    </thead>
+    <tbody id="logs-tbody">
+        {% if logs %}
+            {% set current_ticket = '' %}
+            {% for log in logs %}
+            {% if current_ticket != log.sale_id %}
+                {% set current_ticket = log.sale_id %}
+                <tr>
+                    <td colspan="7" style="padding: 12px 15px; background: linear-gradient(135deg, #1e3d2a 0%, #2d5a3d 100%); border-left: 4px solid #4caf50; border-right: 1px solid #1a2e1f; border-top: 1px solid #1a2e1f; border-bottom: 1px solid #1a2e1f;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <strong style="color: #fff; font-size: 1.15em; margin-right: 15px;">🎫 {{ log.sale_id }}</strong>
+                                <span style="color: #4caf50; font-size: 0.95em; background-color: rgba(76, 175, 80, 0.2); padding: 4px 10px; border-radius: 12px; margin-right: 8px; font-weight: bold;">
+                                    {{ log.productos_entregados }} {% if log.productos_entregados == 1 %}Producto entregado{% else %}Productos entregados{% endif %}
+                                </span>
+                                {% if log.productos_pendientes > 0 %}
+                                <span style="color: #ff9800; font-size: 0.95em; background-color: rgba(255, 152, 0, 0.2); padding: 4px 10px; border-radius: 12px; font-weight: bold;">
+                                    {{ log.productos_pendientes }} {% if log.productos_pendientes == 1 %}Producto pendiente{% else %}Productos pendientes{% endif %}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <button type="button" 
+                                    class="btn-ver-detalles-ticket"
+                                    data-sale-id="{{ log.sale_id }}"
+                                    style="padding: 8px 20px; background-color: #4caf50; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                                    onmouseover="this.style.backgroundColor='#45a049'; this.style.transform='scale(1.05)'"
+                                    onmouseout="this.style.backgroundColor='#4caf50'; this.style.transform='scale(1)'">
+                                📋 Ver Detalles Completos
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            {% endif %}
+            <tr data-log-id="{{ log.sale_id }}-{{ log.item_name }}-{{ log.fecha_entrega }}"
+                style="{% if log.qty_entregado > 0 %}background-color: rgba(76, 175, 80, 0.08);{% else %}background-color: #1a1a1a;{% endif %} transition: background-color 0.2s;"
+                onmouseover="this.style.backgroundColor='rgba(76, 175, 80, 0.15)'"
+                onmouseout="this.style.backgroundColor='{% if log.qty_entregado > 0 %}rgba(76, 175, 80, 0.08){% else %}#1a1a1a{% endif %}'">
+                <td style="padding: 12px; border: 1px solid #333; color: #e8e8e8; font-weight: 500;">
+                    <div style="display: flex; align-items: center;">
+                        <span style="margin-right: 8px; color: #4caf50;">📦</span>
+                        <span>{{ log.item_name }}</span>
+                    </div>
+                </td>
+                <td style="padding: 12px; border: 1px solid #333; text-align: center;">
+                    <span style="font-weight: bold; font-size: 1.1em; color: #4caf50; background-color: rgba(76, 175, 80, 0.2); padding: 6px 12px; border-radius: 6px; display: inline-block;">
+                        {{ log.qty_entregado }}
+                    </span>
+                </td>
+                <td style="padding: 12px; border: 1px solid #333; text-align: center;">
+                    {% if log.entregas_info and log.entregas_info|length > 0 %}
+                        <span style="color: #667eea; font-weight: bold; background-color: rgba(102, 126, 234, 0.2); padding: 4px 10px; border-radius: 12px; font-size: 0.9em;">
+                            {{ log.entregas_info|length }} {{ 'vez' if log.entregas_info|length == 1 else 'veces' }}
+                        </span>
+                    {% else %}
+                        <span style="color: #666;">-</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px; border: 1px solid #333; color: #e8e8e8;">
+                    <div style="display: flex; align-items: center;">
+                        <span style="margin-right: 6px; color: #ff9800;">👤</span>
+                        <span>{{ log.bartender }}</span>
+                    </div>
+                </td>
+                <td style="padding: 12px; border: 1px solid #333; color: #e8e8e8;">
+                    <div style="display: flex; align-items: center;">
+                        <span style="margin-right: 6px; color: #667eea;">🍺</span>
+                        <span>{{ log.barra }}</span>
+                    </div>
+                </td>
+                <td style="padding: 12px; border: 1px solid #333; color: #aaa; font-size: 0.9em;">
+                    {% if log.fecha_entrega and log.fecha_entrega != '-' %}
+                        {{ log.fecha_entrega[:16] if log.fecha_entrega|length > 16 else log.fecha_entrega }}
+                    {% else %}
+                        <span style="color: #666;">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="6" style="padding: 40px; text-align: center; color: #aaa; font-size: 1.1em;">
+                    <div style="margin-bottom: 10px; font-size: 3em;">📭</div>
+                    <div>No hay entregas registradas</div>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: #666;">Los tickets escaneados aparecerán aquí</div>
+                </td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<!-- Modal para detalles de entregas -->
+<div id="delivery-details-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto; align-items: center; justify-content: center; padding: 10px;">
+    <div style="background-color: #222; padding: 15px; border-radius: 6px; max-width: 320px; width: 100%; color: #e8e8e8; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);">
+        <h3 id="modal-title" style="margin: 0 0 12px 0; font-size: 16px; font-weight: bold;">Detalles de Entregas</h3>
+        <div id="modal-content"></div>
+        <button onclick="window.closeDeliveryDetails()" style="margin-top: 12px; padding: 8px 16px; background-color: #555; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">Cerrar</button>
+    </div>
+</div>
+
+
+<script>
+// Funciones globales (fuera de DOMContentLoaded para que estén disponibles en onclick)
+window.escapeHtml = function(text) {
+    if (!text && text !== 0) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+};
+
+window.showDeliveryDetails = function(saleId, itemName, entregasInfo) {
+    console.log('showDeliveryDetails llamado:', { saleId, itemName, entregasInfo });
+    
+    // Pausar countdown y actualización automática cuando se abre el modal
+    if (window.countdownInterval) {
+        clearInterval(window.countdownInterval);
+        window.countdownInterval = null;
+    }
+    if (window.updateInterval) {
+        clearInterval(window.updateInterval);
+        window.updateInterval = null;
+    }
+    
+    const modal = document.getElementById('delivery-details-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    
+    if (!modal || !modalTitle || !modalContent) {
+        console.error('Elementos del modal no encontrados');
+        alert('Error: No se pudo abrir el modal. Por favor, recarga la página.');
+        return;
+    }
+    
+    modalTitle.textContent = `Detalles del Ticket - ${window.escapeHtml(saleId)}`;
+    modal.style.display = 'flex';
+    modalContent.innerHTML = '<p style="text-align: center; color: #aaa;">Cargando información del ticket...</p>';
+    
+    // Limpiar sale_id para la API
+    const saleIdClean = saleId.replace("BMB ", "").replace("B ", "").trim();
+    
+    // Obtener información completa de la venta desde la API
+    fetch(`/api/sale-details/${encodeURIComponent(saleId)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText || 'Error de conexión'}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Construir HTML con información completa (diseño compacto)
+            let html = `
+                <div style="margin-bottom: 12px; padding: 12px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 14px; font-weight: bold; border-bottom: 1px solid rgba(102, 126, 234, 0.3); padding-bottom: 8px;">📋 Ticket</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+                        <div>
+                            <p style="margin: 6px 0; color: #aaa; line-height: 1.4;"><strong style="color: #e8e8e8;">ID:</strong> <span style="color: #4caf50; font-weight: bold;">${window.escapeHtml(data.sale_id || saleId)}</span></p>
+                            <p style="margin: 6px 0; color: #aaa; line-height: 1.4;"><strong style="color: #e8e8e8;">Caja:</strong> <span style="color: #667eea;">${window.escapeHtml(data.caja || 'N/A')}</span></p>
+                        </div>
+                        <div>
+                            <p style="margin: 6px 0; color: #aaa; line-height: 1.4;"><strong style="color: #e8e8e8;">Fecha:</strong> <span style="color: #ff9800;">${window.escapeHtml(data.fecha_compra || 'N/A')}</span></p>
+                            <p style="margin: 6px 0; color: #aaa; line-height: 1.4;"><strong style="color: #e8e8e8;">Vendedor:</strong> <span style="color: #4caf50;">${window.escapeHtml(data.vendedor || 'N/A')}</span></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Mostrar items con entregas y pendientes (diseño compacto)
+            if (data.items && data.items.length > 0) {
+                html += `<h4 style="margin-top: 12px; margin-bottom: 10px; color: #e8e8e8; font-size: 14px; font-weight: bold;">📦 Productos:</h4>`;
+                
+                data.items.forEach((item, itemIndex) => {
+                    const tienePendiente = item.pendiente > 0;
+                    const estaCompleto = item.pendiente === 0 && item.qty_entregado > 0;
+                    
+                    html += `
+                        <div style="margin-bottom: 10px; padding: 10px; background-color: ${tienePendiente ? 'rgba(255, 152, 0, 0.1)' : estaCompleto ? 'rgba(76, 175, 80, 0.1)' : '#1a1a1a'}; border-radius: 4px; border: 1px solid ${tienePendiente ? 'rgba(255, 152, 0, 0.3)' : estaCompleto ? 'rgba(76, 175, 80, 0.3)' : '#333'};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                                <h5 style="margin: 0; color: #e8e8e8; font-size: 13px; font-weight: bold; flex: 1; min-width: 100px;">${window.escapeHtml(item.name)}</h5>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <span style="color: #aaa;">Vendido: <strong style="color: #e8e8e8;">${item.qty_vendido}</strong></span>
+                                    <span style="color: #4caf50;">Entregado: <strong>${item.qty_entregado}</strong></span>
+                                    ${tienePendiente ? `<span style="color: #ff9800; font-weight: bold;">⚠️ Pendiente: ${item.pendiente}</span>` : ''}
+                                    ${estaCompleto ? `<span style="color: #4caf50;">✅ Completo</span>` : ''}
+                                </div>
+                            </div>
+                    `;
+                    
+                    // Mostrar entregas de este item (diseño compacto)
+                    if (item.entregas && item.entregas.length > 0) {
+                        html += `
+                            <div style="margin-top: 8px;">
+                                <p style="margin: 6px 0; color: #aaa; font-size: 12px;"><strong>Entregas:</strong></p>
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px;">
+                                    <thead>
+                                        <tr style="background-color: #333;">
+                                            <th style="padding: 6px; border: 1px solid #444; text-align: center; font-size: 11px;">Cant.</th>
+                                            <th style="padding: 6px; border: 1px solid #444; text-align: left; font-size: 11px;">Bartender</th>
+                                            <th style="padding: 6px; border: 1px solid #444; text-align: left; font-size: 11px;">Barra</th>
+                                            <th style="padding: 6px; border: 1px solid #444; text-align: left; font-size: 11px;">Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        // Ordenar entregas por fecha (más recientes primero)
+                        const sortedEntregas = [...item.entregas].sort((a, b) => {
+                            const dateA = new Date(a.timestamp || '');
+                            const dateB = new Date(b.timestamp || '');
+                            return dateB - dateA;
+                        });
+                        
+                        sortedEntregas.forEach((entrega, index) => {
+                            // Formatear fecha más corta
+                            const fecha = entrega.timestamp ? new Date(entrega.timestamp).toLocaleString('es-ES', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}) : 'N/A';
+                            html += `
+                                <tr style="background-color: ${index % 2 === 0 ? '#222' : '#1a1a1a'};">
+                                    <td style="padding: 6px; border: 1px solid #444; text-align: center; color: #4caf50; font-weight: bold;">${entrega.qty || 0}</td>
+                                    <td style="padding: 6px; border: 1px solid #444;">${window.escapeHtml(entrega.bartender || 'N/A')}</td>
+                                    <td style="padding: 6px; border: 1px solid #444;">${window.escapeHtml(entrega.barra || 'N/A')}</td>
+                                    <td style="padding: 6px; border: 1px solid #444; color: #aaa; font-size: 11px;">${window.escapeHtml(fecha)}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    } else {
+                        html += `<p style="margin: 8px 0 0 0; color: #666; font-size: 12px;">Sin entregas registradas.</p>`;
+                    }
+                    
+                    html += `</div>`;
+                });
+            } else {
+                html += `<p style="color: #aaa; text-align: center; padding: 12px; font-size: 14px;">No se encontraron productos.</p>`;
+            }
+            
+            modalContent.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al obtener detalles de la venta:', error);
+            modalContent.innerHTML = `
+                <div style="padding: 12px; text-align: center;">
+                    <p style="color: #f44336; font-size: 14px; margin-bottom: 10px;">❌ Error al cargar detalles</p>
+                    <p style="color: #aaa; font-size: 13px;">${window.escapeHtml(error.message)}</p>
+                    <p style="color: #666; font-size: 12px; margin-top: 10px;">Verifica que el ticket exista.</p>
+                </div>
+            `;
+        });
+};
+
+window.closeDeliveryDetails = function() {
+    const modal = document.getElementById('delivery-details-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Reanudar countdown y actualización automática cuando se cierra el modal (solo si no está pausado)
+    if (!window.autoUpdatePaused) {
+        if (window.startCountdownFunction) {
+            window.startCountdownFunction();
+        }
+        if (window.startUpdateIntervalFunction) {
+            window.startUpdateIntervalFunction();
+        }
+    }
+};
+
+// Cerrar modal al hacer clic fuera
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('delivery-details-modal');
+    if (event.target == modal) {
+        window.closeDeliveryDetails();
+    }
+});
+
+// Función para mostrar/ocultar el buscador
+function toggleSearch() {
+    const container = document.getElementById('search-form-container');
+    const arrow = document.getElementById('search-arrow');
+    
+    if (container.style.display === 'none' || !container.style.display) {
+        container.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+        arrow.textContent = '▲';
+    } else {
+        container.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+        arrow.textContent = '▼';
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Agregar event listeners a los botones "Ver Detalles Completos" del ticket
+    document.querySelectorAll('.btn-ver-detalles-ticket').forEach(button => {
+        button.addEventListener('click', function() {
+            const saleId = this.getAttribute('data-sale-id');
+            // Llamar a la función con el sale_id (la función obtendrá toda la info desde la API)
+            window.showDeliveryDetails(saleId, '', []);
+        });
+    });
+    
+    // Countdown en el footer para actualización automática
+    const countdownNumber = document.getElementById('countdown-number');
+    window.countdownInterval = null;
+    window.updateInterval = null;
+    
+    // Inicializar estado de pausa si no existe
+    if (typeof window.autoUpdatePaused === 'undefined') {
+        window.autoUpdatePaused = false;
+    }
+    
+    function startCountdown() {
+        // No iniciar si está pausado
+        if (window.autoUpdatePaused) {
+            return;
+        }
+        
+        // No iniciar countdown si el modal está abierto
+        const modal = document.getElementById('delivery-details-modal');
+        if (modal && modal.style.display === 'block') {
+            return;
+        }
+        
+        // Solo mostrar countdown si la página está visible
+        if (document.hidden) {
+            return;
+        }
+        
+        if (!countdownNumber) return;
+        
+        let count = 5;
+        countdownNumber.textContent = count;
+        
+        // Limpiar interval anterior si existe
+        if (window.countdownInterval) {
+            clearInterval(window.countdownInterval);
+        }
+        
+        window.countdownInterval = setInterval(function() {
+            // Verificar si está pausado
+            if (window.autoUpdatePaused) {
+                clearInterval(window.countdownInterval);
+                window.countdownInterval = null;
+                return;
+            }
+            
+            // Verificar si el modal está abierto antes de continuar
+            const modal = document.getElementById('delivery-details-modal');
+            if (modal && modal.style.display === 'block') {
+                clearInterval(window.countdownInterval);
+                window.countdownInterval = null;
+                return;
+            }
+            
+            count--;
+            countdownNumber.textContent = count;
+            
+            if (count <= 0) {
+                clearInterval(window.countdownInterval);
+                window.countdownInterval = null;
+                
+                // Verificar una última vez si el modal está abierto o está pausado antes de recargar
+                const modal = document.getElementById('delivery-details-modal');
+                if (modal && modal.style.display === 'block') {
+                    return;
+                }
+                if (window.autoUpdatePaused) {
+                    return;
+                }
+                
+                console.log('🔄 Actualizando logs desde el log local...');
+                window.location.reload();
+            }
+        }, 1000);
+    }
+    
+    // Función para iniciar el intervalo de actualización
+    function startUpdateInterval() {
+        // Limpiar intervalo anterior si existe
+        if (window.updateInterval) {
+            clearInterval(window.updateInterval);
+        }
+        
+        // Actualizar cada 5 segundos (consulta interna al log, no a la API)
+        window.updateInterval = setInterval(function() {
+            // No actualizar si está pausado
+            if (window.autoUpdatePaused) {
+                return;
+            }
+            
+            // No actualizar si el modal está abierto
+            const modal = document.getElementById('delivery-details-modal');
+            if (modal && modal.style.display === 'block') {
+                return;
+            }
+            
+            // Solo actualizar si la página está visible
+            if (!document.hidden) {
+                startCountdown();
+            }
+        }, 5000);
+    }
+    
+    // Hacer las funciones accesibles globalmente para poder reanudarlas desde closeDeliveryDetails
+    window.startCountdownFunction = startCountdown;
+    window.startUpdateIntervalFunction = startUpdateInterval;
+    
+    // Iniciar countdown inmediatamente
+    startCountdown();
+    
+    // Iniciar intervalo de actualización
+    startUpdateInterval();
+
+    socket.on('log_deleted', function(data) {
+        const entry = data.log_entry;
+        const logId = `${entry[0]}-${entry[1]}-${entry[5]}`;
+        const row = document.querySelector(`tr[data-log-id="${logId}"]`);
+        
+        if (row) {
+            console.log(`🗑️ Entrada eliminada: ${entry[2]}x ${entry[1]}`);
+            row.style.transition = 'opacity 0.5s';
+            row.style.opacity = '0';
+            setTimeout(() => {
+                row.remove();
+            }, 500);
+        }
+    });
+
+    socket.on('all_logs_cleared', function(data) {
+        console.log('🗑️ Todos los logs han sido eliminados');
+        // Eliminar todas las filas de la tabla
+        logsTbody.innerHTML = '';
+    });
+
+
+    // Función para cambiar cantidad de registros por página
+    function changePerPage(perPage) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', perPage);
+        url.searchParams.set('page', '1'); // Resetear a página 1
+        window.location.href = url.toString();
+    }
+    
+    // Búsqueda y filtros
+    const searchInput = document.getElementById('search-input');
+    const filterBartender = document.getElementById('filter-bartender');
+    const filterBarra = document.getElementById('filter-barra');
+    const tableRows = document.querySelectorAll('#logs-tbody tr');
+    
+    // Obtener lista única de bartenders (nueva estructura: columna 4)
+    const bartenders = new Set();
+    tableRows.forEach(row => {
+        if (row.cells.length > 4) {
+            const bartender = row.cells[4].textContent.trim();
+            if (bartender && bartender !== 'No entregado') bartenders.add(bartender);
+        }
+    });
+    bartenders.forEach(bt => {
+        const option = document.createElement('option');
+        option.value = bt;
+        option.textContent = bt;
+        filterBartender.appendChild(option);
+    });
+    
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedBartender = filterBartender.value.toLowerCase();
+        const selectedBarra = filterBarra.value.toLowerCase();
+        
+        tableRows.forEach(row => {
+            // Estructura: [Ticket, Producto, Cantidad Entregada, Bartender, Barra, Fecha]
+            const saleId = row.cells[0].textContent.toLowerCase();
+            const product = row.cells[1].textContent.toLowerCase();
+            const bartender = row.cells[4].textContent.toLowerCase();
+            const barra = row.cells[5].textContent.toLowerCase();
+            const date = row.cells[6].textContent.toLowerCase();
+            
+            const matchesSearch = !searchTerm || 
+                saleId.includes(searchTerm) || 
+                product.includes(searchTerm) || 
+                bartender.includes(searchTerm) ||
+                date.includes(searchTerm);
+            
+            const matchesBartender = !selectedBartender || bartender === selectedBartender;
+            const matchesBarra = !selectedBarra || barra === selectedBarra;
+            
+            if (matchesSearch && matchesBartender && matchesBarra) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    
+    function clearFilters() {
+        searchInput.value = '';
+        filterBartender.value = '';
+        filterBarra.value = '';
+        filterTable();
+    }
+    
+    searchInput.addEventListener('input', filterTable);
+    filterBartender.addEventListener('change', filterTable);
+    filterBarra.addEventListener('change', filterTable);
+});
+</script>
+
+<!-- Sección Tickets -->
+<div style="margin-top: 50px; padding-top: 30px; border-top: 2px solid rgba(102, 126, 234, 0.3);">
+    <h2 class="category-title" style="font-size: 1.8rem; color: #e8e8e8; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid rgba(102, 126, 234, 0.3);">🎫 Tickets</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px;">
+        <a href="{{ url_for('routes.admin_logs') }}" 
+           style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid rgba(76, 175, 80, 0.3); border-radius: 15px; padding: 30px; transition: all 0.3s ease; cursor: pointer; text-decoration: none; display: block; color: inherit;"
+           onmouseover="this.style.transform='translateY(-5px)'; this.style.borderColor='rgba(76, 175, 80, 0.6)'; this.style.boxShadow='0 10px 30px rgba(76, 175, 80, 0.3)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(76, 175, 80, 0.3)'; this.style.boxShadow='none'">
+            <span style="font-size: 3.5rem; margin-bottom: 15px; display: block;">📋</span>
+            <h3 style="color: #e8e8e8; margin: 0 0 10px 0; font-size: 1.5rem; font-weight: bold;">Logs de Entregas</h3>
+            <p style="color: #aaa; margin: 0; font-size: 1rem; line-height: 1.5;">Visualiza y gestiona todos los registros de entregas de productos</p>
+            <span style="display: inline-block; margin-top: 10px; padding: 5px 12px; background: rgba(76, 175, 80, 0.2); border-radius: 20px; font-size: 0.85rem; color: #4caf50;">Tiempo Real</span>
+        </a>
+        
+        <a href="{{ url_for('routes.export_csv') }}" 
+           style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid rgba(76, 175, 80, 0.3); border-radius: 15px; padding: 30px; transition: all 0.3s ease; cursor: pointer; text-decoration: none; display: block; color: inherit;"
+           onmouseover="this.style.transform='translateY(-5px)'; this.style.borderColor='rgba(76, 175, 80, 0.6)'; this.style.boxShadow='0 10px 30px rgba(76, 175, 80, 0.3)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(76, 175, 80, 0.3)'; this.style.boxShadow='none'">
+            <span style="font-size: 3.5rem; margin-bottom: 15px; display: block;">💾</span>
+            <h3 style="color: #e8e8e8; margin: 0 0 10px 0; font-size: 1.5rem; font-weight: bold;">Exportar Datos</h3>
+            <p style="color: #aaa; margin: 0; font-size: 1rem; line-height: 1.5;">Descarga los logs en formato CSV para análisis externo</p>
+        </a>
+    </div>
+</div>
+
+{% endblock %}

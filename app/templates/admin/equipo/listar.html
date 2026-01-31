@@ -1,0 +1,1752 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Equipo - Administración BIMBA{% endblock %}
+{% block meta_description %}Gestiona el equipo de trabajo, empleados, cargos y sueldos del sistema BIMBA.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .equipo-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--spacing-sm, 0.75rem);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 768px) {
+        .equipo-container {
+            padding: var(--spacing-md, 1rem);
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .equipo-container {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .equipo-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+    }
+    
+    .equipo-header h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .equipo-header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    
+    .equipo-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm, 0.75rem);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+    
+    @media (min-width: 480px) {
+        .equipo-stats {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md, 1rem);
+        }
+    }
+    
+    .stat-card {
+        background: rgba(26, 26, 46, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .stat-card .icon {
+        font-size: 2rem;
+        margin-bottom: 5px;
+    }
+    
+    .stat-card .value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .stat-card .label {
+        font-size: 0.85rem;
+        color: #aaa;
+    }
+    
+    .search-filter-bar {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .search-filter-bar input,
+    .search-filter-bar select {
+        padding: var(--spacing-sm, 0.75rem);
+        min-height: 44px;
+        background: rgba(26, 26, 46, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #e8e8e8;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        cursor: pointer;
+        width: 100%;
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    @media (min-width: 768px) {
+        .search-filter-bar input {
+            flex: 1;
+            min-width: 200px;
+            width: auto;
+        }
+        
+        .search-filter-bar select {
+            width: auto;
+        }
+    }
+    
+    .btn-add-equipo {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        min-height: 44px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        white-space: nowrap;
+        width: 100%;
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    @media (min-width: 768px) {
+        .btn-add-equipo {
+            width: auto;
+        }
+    }
+    
+    .equipo-list {
+        display: block;
+        width: 100%;
+    }
+    
+    .equipo-list-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(26, 26, 46, 0.5);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .equipo-list-table thead {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+    }
+    
+    .equipo-list-table th {
+        padding: 15px;
+        text-align: left;
+        color: #e8e8e8;
+        font-weight: 600;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .equipo-list-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+        color: #e8e8e8;
+    }
+    
+    .equipo-list-table tbody tr {
+        transition: background 0.2s ease;
+    }
+    
+    .equipo-list-table tbody tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .equipo-list-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .equipo-card {
+        background: linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(22, 33, 62, 0.8) 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .equipo-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .equipo-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.6);
+    }
+    
+    .equipo-card:hover::before {
+        opacity: 1;
+    }
+    
+    .equipo-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 5px;
+    }
+    
+    .equipo-card-header .cargo-icon {
+        font-size: 2rem;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(102, 126, 234, 0.2);
+        border-radius: 10px;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .equipo-card-header h4 {
+        color: #e8e8e8;
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        flex: 1;
+    }
+    
+    .equipo-card-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        border-left: 3px solid rgba(102, 126, 234, 0.5);
+    }
+    
+    .equipo-card-info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #aaa;
+        font-size: 0.9rem;
+    }
+    
+    .equipo-card-info-item strong {
+        color: #e8e8e8;
+        min-width: 80px;
+    }
+    
+    .equipo-card-info-item .status-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .equipo-card-info-item .status-active {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+    
+    .equipo-card-info-item .status-inactive {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+        border: 1px solid rgba(244, 67, 54, 0.3);
+    }
+    
+    .equipo-card-salary {
+        padding: 10px;
+        background: rgba(76, 175, 80, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        text-align: center;
+    }
+    
+    .equipo-card-salary .salary-label {
+        color: #aaa;
+        font-size: 0.8rem;
+        margin-bottom: 5px;
+    }
+    
+    .equipo-card-salary .salary-value {
+        color: #4caf50;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+    
+    .equipo-card p {
+        color: #aaa;
+        margin: 5px 0;
+        font-size: 0.9rem;
+    }
+    
+    .equipo-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-xs, 0.5rem);
+    }
+    
+    @media (min-width: 768px) {
+        .equipo-actions {
+            flex-direction: row;
+            gap: var(--spacing-sm, 0.75rem);
+        }
+    }
+    
+    .equipo-actions button,
+    .equipo-actions a {
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+        min-height: 44px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+        font-weight: 600;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    @media (min-width: 768px) {
+        .equipo-actions button,
+        .equipo-actions a {
+            width: auto;
+        }
+    }
+    
+    .btn-edit {
+        background: rgba(102, 126, 234, 0.3);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+    }
+    
+    .btn-edit:hover {
+        background: rgba(102, 126, 234, 0.5);
+        color: #fff;
+    }
+    
+    .btn-delete {
+        background: rgba(244, 67, 54, 0.3);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+        color: #f44336;
+    }
+    
+    .btn-delete:hover {
+        background: rgba(244, 67, 54, 0.5);
+        color: #fff;
+    }
+    
+    .btn-ficha {
+        background: rgba(0, 188, 212, 0.3);
+        border: 1px solid rgba(0, 188, 212, 0.5);
+        color: #00bcd4;
+    }
+    
+    .btn-ficha:hover {
+        background: rgba(0, 188, 212, 0.5);
+        color: #fff;
+    }
+    
+    .form-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: rgba(26, 26, 46, 0.5);
+        border-radius: 10px;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        box-sizing: border-box;
+    }
+    
+    .form-section h3 {
+        color: #e8e8e8;
+        margin-top: 0;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-group label {
+        display: block;
+        color: #e8e8e8;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    
+    .form-group input[type="text"],
+    .form-group select {
+        width: 100%;
+        padding: 10px;
+        background: rgba(26, 26, 46, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #e8e8e8;
+        font-size: 0.95rem;
+    }
+    
+    .form-group input[type="checkbox"] {
+        margin-right: 10px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+    
+    .form-actions button {
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    
+    .btn-cancel {
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+    }
+    
+    .employee-message {
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .employee-message.success {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.5);
+        color: #4caf50;
+    }
+    
+    .employee-message.error {
+        background: rgba(244, 67, 54, 0.2);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+        color: #f44336;
+    }
+    
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+    
+    .modal-content {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.5);
+        border-radius: 15px;
+        padding: 30px;
+        max-width: 800px;
+        width: 90%;
+        max-height: 90vh;
+        margin: 20px auto;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .modal-header h2 {
+        color: #e8e8e8;
+        margin: 0;
+    }
+    
+    .modal-close-btn {
+        background: rgba(244, 67, 54, 0.3);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+        color: #f44336;
+        border-radius: 5px;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+    
+    .cargo-salary-item {
+        background: rgba(26, 26, 46, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .cargo-salary-item label {
+        display: block;
+        color: #e8e8e8;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    
+    .cargo-salary-item input {
+        width: 100%;
+        padding: 10px;
+        background: rgba(26, 26, 46, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #e8e8e8;
+        font-size: 0.95rem;
+    }
+    
+    .cargo-salary-card {
+        background: rgba(26, 26, 46, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .cargo-salary-card .cargo-name {
+        color: #667eea;
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .cargo-salary-card .cargo-salary {
+        color: #4caf50;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="equipo-container">
+    <!-- Barra de búsqueda y filtros -->
+    <div class="search-filter-bar">
+        <input type="text" id="equipo-search" placeholder="🔍 Buscar por nombre o cargo..." 
+               onkeyup="filterEquipo()">
+        <select id="equipo-filter-cargo" onchange="filterEquipo()">
+            <option value="">Todos los cargos</option>
+            <!-- Los cargos se cargarán dinámicamente -->
+        </select>
+        <select id="equipo-filter-status" onchange="filterEquipo()">
+            <option value="active" selected>Solo activos</option>
+            <option value="inactive">Solo inactivos</option>
+            <option value="">Todos</option>
+        </select>
+        <button onclick="openAddEquipoForm()" class="btn-add-equipo">
+            ➕ Agregar Miembro
+        </button>
+    </div>
+    
+    <!-- Mensajes de feedback -->
+    <div id="equipo-message" class="employee-message" style="display: none;"></div>
+    
+    <!-- Lista de equipo -->
+    <div class="equipo-section">
+        <h2 class="section-title">👥 Lista de Equipo</h2>
+        <div id="equipo-list" class="equipo-list">
+            {% if employees %}
+            <div class="table-responsive-wrapper">
+                <table class="table-responsive equipo-list-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cargo</th>
+                            <th>PIN</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees %}
+                        <tr>
+                            <td data-label="Nombre">
+                                <strong style="color: #e8e8e8;">{{ emp.name or 'Sin nombre' }}</strong>
+                            </td>
+                            <td data-label="Cargo">{{ emp.cargo or 'N/A' }}</td>
+                            <td data-label="PIN">{% if emp.pin %}****{% else %}<span style="color: #aaa;">No configurado</span>{% endif %}</td>
+                            <td data-label="Estado">
+                                <span class="{% if emp.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                    {% if emp.is_active %}Activo{% else %}Inactivo{% endif %}
+                                </span>
+                            </td>
+                            <td class="actions-cell" data-label="Acciones">
+                            <div class="equipo-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <a href="{{ url_for('equipo.ficha_personal', employee_id=emp.id) }}" class="btn-ficha" style="padding: 6px 12px; font-size: 0.85rem;">
+                                    📄 Ficha
+                                </a>
+                                <button onclick="editEquipo('{{ emp.id }}')" class="btn-edit" style="padding: 6px 12px; font-size: 0.85rem;">
+                                    ✏️ Editar
+                                </button>
+                                <button onclick="deleteEquipo('{{ emp.id }}', '{{ emp.name|replace("'", "\\'")|replace('"', '&quot;') }}')" class="btn-delete" style="padding: 6px 12px; font-size: 0.85rem;">
+                                    🗑️ Eliminar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align: center; padding: 40px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 10px;">
+                <p style="color: #667eea; font-size: 1.1rem; margin: 0;">No hay miembros del equipo registrados</p>
+                <p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Haz clic en "Agregar Miembro" para comenzar</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Formulario para agregar/editar -->
+    <div id="add-equipo-form" class="form-section" style="display: none;">
+        <h3 id="form-title">Agregar Miembro del Equipo</h3>
+        <form id="equipo-form" onsubmit="saveEquipo(event)" autocomplete="off">
+            <input type="hidden" id="equipo-id" name="equipo_id" autocomplete="off">
+            
+            <div class="form-group">
+                <label for="equipo-name">Nombre: <span style="color: #f44336;">*</span></label>
+                <input type="text" id="equipo-name" name="name" required autocomplete="off"
+                       placeholder="Nombre completo">
+            </div>
+            
+            <div class="form-group">
+                <label for="equipo-cargo">Cargo: <span style="color: #f44336;">*</span></label>
+                <select id="equipo-cargo" name="cargo" required autocomplete="off">
+                    <option value="">Seleccionar cargo...</option>
+                    <!-- Los cargos se cargarán dinámicamente -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="equipo-pin">PIN (4 dígitos): <span style="color: #f44336;">*</span></label>
+                <input type="text" id="equipo-pin" name="pin" maxlength="4" pattern="[0-9]{4}" required autocomplete="off"
+                       placeholder="1234">
+                <p style="font-size: 0.85rem; color: #aaa; margin-top: 5px;">
+                    PIN numérico de 4 dígitos para autenticación (obligatorio)
+                </p>
+            </div>
+            
+            <div class="form-group">
+                <label for="equipo-active">Activo: <span style="color: #f44336;">*</span></label>
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="equipo-active" name="active" checked required>
+                    <span style="color: #e8e8e8;">Miembro del equipo activo en el sistema</span>
+                </label>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" onclick="cancelEquipoForm()" class="btn-cancel">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-save">
+                    💾 Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Botón para Definición de Cargos y Sueldos (Sección especial apartada) -->
+    <div style="margin-top: 60px; padding-top: 40px; border-top: 2px solid rgba(102, 126, 234, 0.3); text-align: center;">
+        <button onclick="openCargosSueldosSection()" style="padding: 20px 40px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); border: 2px solid rgba(102, 126, 234, 0.5); color: #e8e8e8; border-radius: 15px; cursor: pointer; font-weight: 600; font-size: 1.2rem; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);">
+            💼 Definición de Cargos y Sueldos
+        </button>
+        <p style="color: #aaa; margin-top: 15px; font-size: 0.9rem;">Sección especial para administrar cargos y sus sueldos por turno</p>
+    </div>
+    
+    <!-- Sección de Definición de Cargos y Sueldos (Desplegada por defecto) -->
+    <div id="cargos-sueldos-section" class="cargos-section" style="display: block; margin-top: 40px; padding-top: 40px; border-top: 2px solid rgba(102, 126, 234, 0.3);">
+        <div style="padding: 25px; background: linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(22, 33, 62, 0.8) 100%); border-radius: 15px; border: 2px solid rgba(102, 126, 234, 0.3); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid rgba(102, 126, 234, 0.3);">
+                <div>
+                    <h2 class="section-title" style="margin-top: 0;">💼 Definición de Cargos y Sueldos</h2>
+                    <p style="color: #aaa; margin: 10px 0 0 0; font-size: 0.9rem;">Administra los cargos disponibles y sus sueldos por turno</p>
+                    {% if not is_superadmin %}
+                    <div style="margin-top: 10px; padding: 12px; background: rgba(255, 152, 0, 0.15); border-left: 3px solid #ff9800; border-radius: 4px;">
+                        <p style="color: #ff9800; margin: 0; font-size: 0.9rem; font-weight: 600;">
+                            🔒 Solo el superadministrador puede modificar cargos y sueldos
+                        </p>
+                    </div>
+                    {% else %}
+                    <div style="margin-top: 10px; padding: 12px; background: rgba(76, 175, 80, 0.15); border-left: 3px solid #4caf50; border-radius: 4px;">
+                        <p style="color: #4caf50; margin: 0; font-size: 0.9rem; font-weight: 600;">
+                            ✅ Eres superadministrador - Puedes modificar cargos y sueldos (todos los cambios quedarán registrados)
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="openAddCargoModal()" id="btn-add-cargo" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3); transition: all 0.3s ease;"
+                            {% if not is_superadmin %}disabled title="Solo el superadministrador puede agregar cargos" style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+                        ➕ Agregar Cargo
+                    </button>
+                    <button onclick="closeCargosSueldosSection()" style="padding: 12px 24px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.3s ease;">
+                        ✕ Cerrar
+                    </button>
+                </div>
+            </div>
+            <div id="cargos-list" style="margin-top: 20px;">
+                <p style="text-align: center; color: #aaa; padding: 20px;">Cargando cargos...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Agregar/Editar Cargo -->
+<div id="cargo-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="cargo-modal-title">Agregar Cargo</h2>
+            <button onclick="closeCargoModal()" class="modal-close-btn">✕</button>
+        </div>
+        <div class="form-section">
+            <form id="cargo-form" onsubmit="saveCargo(event)">
+                <input type="hidden" id="cargo-id" name="cargo_id">
+                
+                <div class="form-group">
+                    <label for="cargo-nombre">Nombre del Cargo:</label>
+                    <input type="text" id="cargo-nombre" name="nombre" required
+                           placeholder="Ej: BARRA, CAJA, GUARDIA">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cargo-descripcion">Descripción (opcional):</label>
+                    <input type="text" id="cargo-descripcion" name="descripcion"
+                           placeholder="Descripción del cargo">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cargo-orden">Orden de visualización:</label>
+                    <input type="number" id="cargo-orden" name="orden" value="0" min="0"
+                           placeholder="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cargo-sueldo-turno">Sueldo por Turno ($):</label>
+                    <input type="number" id="cargo-sueldo-turno" name="sueldo_por_turno" step="0.01" min="0" required
+                           placeholder="Ej: 50000" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cargo-bono-fijo">Bono Fijo ($):</label>
+                    <input type="number" id="cargo-bono-fijo" name="bono_fijo" step="0.01" min="0"
+                           placeholder="Ej: 5000" value="0">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" onclick="closeCargoModal()" class="btn-cancel">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-save">
+                        💾 Guardar Cargo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let allEquipo = []; // Variable global para almacenar todos los miembros del equipo
+
+// Funciones para el formulario
+function openAddEquipoForm() {
+    const formDiv = document.getElementById('add-equipo-form');
+    const listDiv = document.getElementById('equipo-list');
+    const formTitle = document.getElementById('form-title');
+    
+    // Limpiar formulario
+    const equipoForm = document.getElementById('equipo-form');
+    if (equipoForm) equipoForm.reset();
+    const equipoId = document.getElementById('equipo-id');
+    if (equipoId) equipoId.value = '';
+    const equipoActive = document.getElementById('equipo-active');
+    if (equipoActive) equipoActive.checked = true;
+    if (formTitle) formTitle.textContent = 'Agregar Miembro del Equipo';
+    
+    // Ocultar lista y mostrar formulario
+    if (listDiv) {
+        listDiv.style.display = 'none';
+    }
+    if (formDiv) {
+        formDiv.style.display = 'block';
+        // Scroll suave al formulario
+        setTimeout(() => {
+            formDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+    }
+}
+
+function cancelEquipoForm() {
+    const formDiv = document.getElementById('add-equipo-form');
+    const listDiv = document.getElementById('equipo-list');
+    
+    // Limpiar formulario
+    document.getElementById('equipo-form').reset();
+    document.getElementById('equipo-id').value = '';
+    document.getElementById('equipo-active').checked = true;
+    
+    // Ocultar formulario y mostrar lista
+    if (formDiv) {
+        formDiv.style.display = 'none';
+    }
+    if (listDiv) {
+        listDiv.style.display = 'grid';
+    }
+}
+
+function saveEquipo(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const equipoId = document.getElementById('equipo-id').value;
+    
+    const data = {
+        name: document.getElementById('equipo-name').value.trim(),
+        cargo: document.getElementById('equipo-cargo').value.trim(),
+        pin: document.getElementById('equipo-pin').value.trim(),
+        active: document.getElementById('equipo-active').checked
+    };
+    
+    if (!data.name) {
+        showEquipoMessage('❌ El nombre es obligatorio', 'error');
+        return;
+    }
+    
+    // Validar PIN
+    if (data.pin && !/^\d{4}$/.test(data.pin)) {
+        showEquipoMessage('❌ El PIN debe ser numérico y de 4 dígitos', 'error');
+        return;
+    }
+    
+    const url = equipoId ? `/admin/equipo/api/employees/${encodeURIComponent(equipoId)}` : '/admin/equipo/api/employees';
+    const method = equipoId ? 'PUT' : 'POST';
+    
+    const submitBtn = form.querySelector('.btn-save');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ Guardando...';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(data)
+    })
+        .then(async response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                throw new Error(`Respuesta no JSON (${response.status}): ${text.substring(0, 100)}`);
+            }
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.message || `Error HTTP ${response.status}`);
+            }
+            
+            return result;
+        })
+        .then(result => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            
+            if (result.success) {
+                showEquipoMessage('✅ Miembro del equipo guardado correctamente', 'success');
+                cancelEquipoForm();
+                loadEquipo(); // Recargar la lista
+            } else {
+                showEquipoMessage('❌ Error al guardar: ' + (result.message || 'Error desconocido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al guardar miembro del equipo:', error);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            const errorMessage = error.message || 'Error desconocido';
+            showEquipoMessage('❌ Error al guardar: ' + errorMessage, 'error');
+        });
+}
+
+function deleteEquipo(id, name) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar a "${name}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    fetch(`/admin/equipo/api/employees/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showEquipoMessage('✅ Miembro del equipo eliminado correctamente', 'success');
+                loadEquipo();
+            } else {
+                showEquipoMessage('❌ Error al eliminar: ' + (data.message || 'Error desconocido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showEquipoMessage('❌ Error de conexión al eliminar el miembro del equipo', 'error');
+        });
+}
+
+function editEquipo(id) {
+    fetch(`/admin/equipo/api/employees/${encodeURIComponent(id)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.employee) {
+                const emp = data.employee;
+                const formDiv = document.getElementById('add-equipo-form');
+                const listDiv = document.getElementById('equipo-list');
+                const formTitle = document.getElementById('form-title');
+                
+                // Llenar formulario
+                document.getElementById('equipo-id').value = emp.id;
+                document.getElementById('equipo-name').value = emp.name || '';
+                document.getElementById('equipo-cargo').value = emp.cargo || '';
+                document.getElementById('equipo-pin').value = emp.pin || '';
+                document.getElementById('equipo-active').checked = emp.active !== false;
+                formTitle.textContent = 'Editar Miembro del Equipo';
+                
+                // Ocultar lista y mostrar formulario
+                if (listDiv) {
+                    listDiv.style.display = 'none';
+                }
+                if (formDiv) {
+                    formDiv.style.display = 'block';
+                    // Scroll suave al formulario
+                    setTimeout(() => {
+                        formDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 100);
+                }
+            } else {
+                showEquipoMessage('❌ Error al cargar el miembro del equipo: ' + (data.message || 'Error desconocido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showEquipoMessage('❌ Error de conexión al cargar el miembro del equipo', 'error');
+        });
+}
+
+// Funciones de carga y filtrado de equipo
+function loadEquipo() {
+    const listDiv = document.getElementById('equipo-list');
+    if (!listDiv) return;
+    
+    listDiv.innerHTML = '<p style="text-align: center; color: #aaa; padding: 20px;">Cargando equipo...</p>';
+    
+    fetch('/admin/equipo/api/employees')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allEquipo = data.employees || []; // Almacenar en la variable global
+                filterEquipo(); // Aplicar filtros y mostrar
+            } else {
+                listDiv.innerHTML = `
+                    <div style="text-align: center; padding: 20px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 10px;">
+                        <p style="color: #f44336; margin: 0;">Error al cargar equipo: ${data.message || 'Error desconocido'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            listDiv.innerHTML = `
+                <div style="text-align: center; padding: 20px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 10px;">
+                    <p style="color: #f44336; margin: 0;">Error de conexión al cargar equipo</p>
+                </div>
+            `;
+        });
+}
+
+function filterEquipo() {
+    const searchTerm = document.getElementById('equipo-search').value.toLowerCase();
+    const filterCargo = document.getElementById('equipo-filter-cargo').value;
+    const filterStatus = document.getElementById('equipo-filter-status').value;
+    const listDiv = document.getElementById('equipo-list');
+    
+    const filteredEquipo = allEquipo.filter(member => {
+        const matchesSearch = (member.name || '').toLowerCase().includes(searchTerm) || 
+                              (member.cargo || '').toLowerCase().includes(searchTerm);
+        const matchesCargo = filterCargo === '' || (member.cargo || '').includes(filterCargo);
+        // Filtrar por estado: 'active' por defecto, 'inactive' para inactivos, '' para todos
+        let matchesStatus = true;
+        if (filterStatus === 'active') {
+            // Solo activos (por defecto)
+            matchesStatus = member.active === true;
+        } else if (filterStatus === 'inactive') {
+            // Solo inactivos
+            matchesStatus = member.active === false;
+        } else if (filterStatus === '') {
+            // Todos (cuando se selecciona "Todos")
+            matchesStatus = true; // Mostrar todos sin filtrar
+        }
+        return matchesSearch && matchesCargo && matchesStatus;
+    });
+    
+    updateEquipoDisplay(filteredEquipo);
+    updateEquipoStats(filteredEquipo);
+}
+
+function updateEquipoDisplay(equipoToDisplay) {
+    const listDiv = document.getElementById('equipo-list');
+    if (!listDiv) return;
+    
+    if (equipoToDisplay.length === 0) {
+        listDiv.innerHTML = `
+            <div style="text-align: center; padding: 40px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 10px;">
+                <p style="color: #667eea; font-size: 1.1rem; margin: 0;">No se encontraron miembros del equipo</p>
+                <p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Ajusta tus filtros o haz clic en "Agregar Miembro" para comenzar</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<table class="equipo-list-table"><thead><tr><th>Nombre</th><th>Cargo</th><th>PIN</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+    equipoToDisplay.forEach(member => {
+        const memberId = String(member.id);
+        const memberName = (member.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        
+        html += `
+            <tr>
+                <td><strong style="color: #e8e8e8;">${member.name || 'Sin nombre'}</strong></td>
+                <td>${member.cargo || 'N/A'}</td>
+                <td>${member.pin ? '****' : '<span style="color: #aaa;">No configurado</span>'}</td>
+                <td><span class="${member.active ? 'status-active' : 'status-inactive'}">${member.active ? 'Activo' : 'Inactivo'}</span></td>
+                <td>
+                    <div class="equipo-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="/admin/equipo/ficha/${memberId}" class="btn-ficha" style="padding: 6px 12px; font-size: 0.85rem;">
+                            📄 Ficha
+                        </a>
+                        <button onclick="editEquipo('${memberId}')" class="btn-edit" style="padding: 6px 12px; font-size: 0.85rem;">
+                            ✏️ Editar
+                        </button>
+                        <button onclick="deleteEquipo('${memberId}', '${memberName}')" class="btn-delete" style="padding: 6px 12px; font-size: 0.85rem;">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    html += '</tbody></table>';
+    listDiv.innerHTML = html;
+}
+
+function updateEquipoStats(equipoToDisplay) {
+    const total = equipoToDisplay.length;
+    const active = equipoToDisplay.filter(m => m.active).length;
+    const inactive = total - active;
+    
+    const totalEquipo = document.getElementById('total-equipo');
+    if (totalEquipo) totalEquipo.textContent = total;
+    const activeEquipo = document.getElementById('active-equipo');
+    if (activeEquipo) activeEquipo.textContent = active;
+    const inactiveEquipo = document.getElementById('inactive-equipo');
+    if (inactiveEquipo) inactiveEquipo.textContent = inactive;
+}
+
+function getCargoIcon(cargo) {
+    if (!cargo) return '👤';
+    const lowerCargo = cargo.toLowerCase();
+    if (lowerCargo.includes('barra') || lowerCargo.includes('bartender')) return '🍸';
+    if (lowerCargo.includes('caja')) return '💰';
+    if (lowerCargo.includes('guardia')) return '🛡️';
+    if (lowerCargo.includes('anfitriona')) return '👋';
+    if (lowerCargo.includes('aseo')) return '🧹';
+    if (lowerCargo.includes('guardarrop')) return '🧥';
+    if (lowerCargo.includes('técnica')) return '🔧';
+    if (lowerCargo.includes('drag')) return '👑';
+    if (lowerCargo.includes('dj')) return '🎧';
+    if (lowerCargo.includes('supervisor')) return '👔';
+    if (lowerCargo.includes('administrador')) return '⚙️';
+    return '👤';
+}
+
+function showEquipoMessage(message, type) {
+    const messageDiv = document.getElementById('equipo-message');
+    if (messageDiv) {
+        messageDiv.textContent = message;
+        messageDiv.className = `employee-message ${type}`;
+        messageDiv.style.display = 'block';
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Validación del PIN
+document.addEventListener('DOMContentLoaded', function() {
+    const pinInput = document.getElementById('equipo-pin');
+    if (pinInput) {
+        pinInput.addEventListener('input', function(e) {
+            // Solo permitir números
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            // Limitar a 4 dígitos
+            if (e.target.value.length > 4) {
+                e.target.value = e.target.value.slice(0, 4);
+            }
+        });
+    }
+    
+    // Actualizar estadísticas iniciales si hay datos renderizados del servidor
+    {% if employees %}
+    const initialEquipo = [
+        {% for emp in employees %}
+        {
+            id: '{{ emp.id }}',
+            name: '{{ emp.name|replace("'", "\\'")|replace('"', '&quot;') }}',
+            cargo: '{{ emp.cargo|replace("'", "\\'")|replace('"', '&quot;') if emp.cargo else "" }}',
+            pin: '{{ emp.pin if emp.pin else "" }}',
+            active: {% if emp.is_active %}true{% else %}false{% endif %}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    allEquipo = initialEquipo;
+    filterEquipo(); // Aplicar filtros y mostrar (incluye el filtro por defecto de solo activos)
+    updateEquipoStats(initialEquipo);
+    {% else %}
+    // Si no hay datos iniciales, cargar desde la API
+    loadEquipo();
+    {% endif %}
+    
+    // Cargar cargos al inicio para poblar los selectores del formulario
+    loadCargos();
+    
+    // La sección de cargos ya está visible por defecto, cargar los cargos automáticamente
+    setTimeout(() => {
+        loadCargos();
+    }, 500);
+    
+    // Verificar si hay hash en la URL para hacer scroll a la sección
+    if (window.location.hash === "#cargos-sueldos" || window.location.hash === "#cargos") {
+        setTimeout(() => {
+            const section = document.getElementById('cargos-sueldos-section');
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 500);
+    }
+});
+
+// Funciones para gestión de cargos
+let allCargos = [];
+
+function openCargosSueldosSection() {
+    const section = document.getElementById('cargos-sueldos-section');
+    if (section) {
+        section.style.display = 'block';
+        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        loadCargos(); // Cargar cargos al abrir la sección
+    }
+}
+
+function closeCargosSueldosSection() {
+    const section = document.getElementById('cargos-sueldos-section');
+    if (section) {
+        section.style.display = 'none';
+    }
+}
+
+function loadCargos() {
+    const cargosListDiv = document.getElementById('cargos-list');
+    
+    // Mostrar indicador de carga solo si el div existe
+    if (cargosListDiv) {
+        try {
+            cargosListDiv.innerHTML = '<p style="text-align: center; color: #aaa; padding: 20px;">Cargando cargos...</p>';
+        } catch (e) {
+            console.warn('No se pudo actualizar cargos-list:', e);
+        }
+    }
+    
+    console.log('📥 Cargando cargos desde /admin/equipo/api/cargos...');
+    fetch('/admin/equipo/api/cargos', {
+        method: 'GET',
+        credentials: 'same-origin',  // Incluir cookies de sesión
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+        .then(response => {
+            console.log('📡 Respuesta recibida:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📦 Cargos recibidos:', data);
+            if (data.success && data.cargos && Array.isArray(data.cargos)) {
+                allCargos = (data.cargos || []).filter(c => c && c.nombre); // Filtrar cargos inválidos
+                console.log(`✅ ${allCargos.length} cargos cargados:`, allCargos.map(c => c.nombre || 'Sin nombre'));
+                
+                // Actualizar selectores de cargo siempre (para formulario y filtros)
+                // Esto es lo más importante - debe funcionar siempre
+                if (allCargos.length > 0) {
+                    updateCargoSelectors(allCargos);
+                } else {
+                    console.warn('⚠️ No hay cargos válidos para actualizar selectores');
+                }
+                
+                // Solo mostrar en la lista si la sección está abierta y el div existe
+                // Esto es opcional - solo para mostrar la lista de cargos
+                if (cargosListDiv) {
+                    try {
+                        displayCargos(allCargos);
+                    } catch (e) {
+                        console.warn('Error al mostrar cargos en lista (no crítico):', e);
+                        // No es crítico si falla, los selectores ya se actualizaron
+                    }
+                } else {
+                    console.log('ℹ️ Div cargos-list no existe, pero los selectores se actualizaron correctamente');
+                }
+            } else {
+                const errorMsg = data.message || 'Error desconocido';
+                console.error('❌ Error al cargar cargos:', errorMsg);
+                if (cargosListDiv) {
+                    try {
+                        cargosListDiv.innerHTML = `
+                            <div style="text-align: center; padding: 20px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 10px;">
+                                <p style="color: #f44336; margin: 0;">Error al cargar cargos: ${errorMsg}</p>
+                            </div>
+                        `;
+                    } catch (e) {
+                        console.warn('No se pudo mostrar error en cargos-list:', e);
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error de conexión al cargar cargos:', error);
+            if (cargosListDiv) {
+                try {
+                    cargosListDiv.innerHTML = `
+                        <div style="text-align: center; padding: 20px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 10px;">
+                            <p style="color: #f44336; margin: 0;">Error de conexión al cargar cargos: ${error.message}</p>
+                            <button onclick="loadCargos()" style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">Reintentar</button>
+                        </div>
+                    `;
+                } catch (e) {
+                    console.warn('No se pudo mostrar error en cargos-list:', e);
+                }
+            }
+            // Aún así, intentar actualizar selectores si hay cargos en caché
+            if (allCargos && allCargos.length > 0) {
+                console.log('Usando cargos en caché para actualizar selectores');
+                updateCargoSelectors(allCargos);
+            }
+        });
+}
+
+function updateCargoSelectors(cargos) {
+    if (!cargos || !Array.isArray(cargos) || cargos.length === 0) {
+        console.warn('⚠️ No hay cargos para actualizar selectores');
+        return;
+    }
+    
+    console.log(`🔄 Actualizando selectores con ${cargos.length} cargos`);
+    
+    // Actualizar selector de filtro
+    const filterSelect = document.getElementById('equipo-filter-cargo');
+    if (filterSelect) {
+        try {
+            // Mantener la primera opción "Todos los cargos"
+            const firstOption = filterSelect.querySelector('option[value=""]');
+            filterSelect.innerHTML = '';
+            if (firstOption) {
+                filterSelect.appendChild(firstOption);
+            } else {
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Todos los cargos';
+                filterSelect.appendChild(defaultOption);
+            }
+            
+            cargos.forEach(cargo => {
+                if (!cargo || !cargo.nombre) {
+                    console.warn('⚠️ Cargo inválido omitido:', cargo);
+                    return;
+                }
+                const option = document.createElement('option');
+                option.value = cargo.nombre;
+                option.textContent = cargo.nombre || 'Sin nombre';
+                filterSelect.appendChild(option);
+            });
+            console.log(`✅ Selector de filtro actualizado con ${cargos.length} opciones`);
+        } catch (e) {
+            console.error('Error al actualizar selector de filtro:', e);
+        }
+    } else {
+        console.warn('⚠️ Selector de filtro (equipo-filter-cargo) no encontrado');
+    }
+    
+    // Actualizar selector del formulario
+    const formSelect = document.getElementById('equipo-cargo');
+    if (formSelect) {
+        try {
+            // Mantener la primera opción "Seleccionar cargo..."
+            const firstOption = formSelect.querySelector('option[value=""]');
+            formSelect.innerHTML = '';
+            if (firstOption) {
+                formSelect.appendChild(firstOption);
+            } else {
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Seleccionar cargo...';
+                formSelect.appendChild(defaultOption);
+            }
+            
+            cargos.forEach(cargo => {
+                if (!cargo || !cargo.nombre) {
+                    console.warn('⚠️ Cargo inválido omitido:', cargo);
+                    return;
+                }
+                const option = document.createElement('option');
+                option.value = cargo.nombre;
+                option.textContent = cargo.nombre || 'Sin nombre';
+                formSelect.appendChild(option);
+            });
+            console.log(`✅ Selector de formulario actualizado con ${cargos.length} opciones`);
+        } catch (e) {
+            console.error('Error al actualizar selector de formulario:', e);
+        }
+    } else {
+        console.warn('⚠️ Selector de formulario (equipo-cargo) no encontrado');
+    }
+}
+
+function displayCargos(cargos) {
+    const cargosListDiv = document.getElementById('cargos-list');
+    if (!cargosListDiv) {
+        console.warn('⚠️ Div cargos-list no encontrado, no se puede mostrar la lista');
+        return;
+    }
+    
+    try {
+        if (!cargos || cargos.length === 0) {
+            cargosListDiv.innerHTML = `
+                <div style="text-align: center; padding: 40px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 10px;">
+                    <p style="color: #667eea; font-size: 1.1rem; margin: 0;">No hay cargos configurados</p>
+                    <p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Haz clic en "Agregar Cargo" para comenzar</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Usar grid de tarjetas en lugar de tabla
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">';
+        
+        cargos.forEach(cargo => {
+            if (!cargo || !cargo.nombre) {
+                console.warn('⚠️ Cargo inválido encontrado:', cargo);
+                return;
+            }
+            
+            try {
+                const totalSueldo = parseFloat(cargo.sueldo_por_turno || 0) + parseFloat(cargo.bono_fijo || 0);
+                const cargoNombre = (cargo.nombre || '').replace(/'/g, "\\'");
+                const cargoId = cargo.id || 0;
+                const cargoIcon = getCargoIcon(cargo.nombre) || '👤';
+                
+                html += `
+                    <div style="background: linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(22, 33, 62, 0.8) 100%); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 12px; padding: 20px; transition: all 0.3s ease; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                            <div style="font-size: 2rem; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: rgba(102, 126, 234, 0.2); border-radius: 10px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                                ${cargoIcon}
+                            </div>
+                            <div style="flex: 1;">
+                                <h3 style="color: #e8e8e8; margin: 0; font-size: 1.2rem; font-weight: 600;">${cargo.nombre}</h3>
+                                ${cargo.descripcion ? `<p style="color: #aaa; margin: 5px 0 0 0; font-size: 0.85rem;">${cargo.descripcion}</p>` : ''}
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div style="padding: 12px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border: 1px solid rgba(76, 175, 80, 0.3); text-align: center;">
+                                <div style="color: #aaa; font-size: 0.75rem; margin-bottom: 5px;">Sueldo/Turno</div>
+                                <div style="color: #4caf50; font-size: 1.1rem; font-weight: bold;">$${parseFloat(cargo.sueldo_por_turno || 0).toLocaleString('es-CL')}</div>
+                            </div>
+                            <div style="padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3); text-align: center;">
+                                <div style="color: #aaa; font-size: 0.75rem; margin-bottom: 5px;">Bono Fijo</div>
+                                <div style="color: #667eea; font-size: 1.1rem; font-weight: bold;">$${parseFloat(cargo.bono_fijo || 0).toLocaleString('es-CL')}</div>
+                            </div>
+                        </div>
+                        ${totalSueldo > 0 ? `
+                        <div style="padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border: 1px solid rgba(255, 193, 7, 0.3); text-align: center; margin-bottom: 15px;">
+                            <div style="color: #aaa; font-size: 0.75rem; margin-bottom: 3px;">Total por Turno</div>
+                            <div style="color: #ffc107; font-size: 1.2rem; font-weight: bold;">$${totalSueldo.toLocaleString('es-CL')}</div>
+                        </div>
+                        ` : ''}
+                        <div style="display: flex; gap: 8px; padding-top: 15px; border-top: 1px solid rgba(102, 126, 234, 0.2);">
+                            <button onclick="editCargo(${cargoId})" style="flex: 1; padding: 10px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.4); color: #667eea; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease;">
+                                ✏️ Editar
+                            </button>
+                            <button onclick="deleteCargo(${cargoId}, '${cargoNombre}')" style="flex: 1; padding: 10px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.4); color: #f44336; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease;">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                console.error('Error al procesar cargo:', cargo, e);
+            }
+        });
+        
+        html += '</div>';
+        cargosListDiv.innerHTML = html;
+    } catch (e) {
+        console.error('Error al mostrar cargos:', e);
+        if (cargosListDiv) {
+            cargosListDiv.innerHTML = `
+                <div style="text-align: center; padding: 20px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 10px;">
+                    <p style="color: #f44336; margin: 0;">Error al mostrar cargos: ${e.message}</p>
+                </div>
+            `;
+        }
+    }
+}
+
+function openAddCargoModal() {
+    const modal = document.getElementById('cargo-modal');
+    const form = document.getElementById('cargo-form');
+    const title = document.getElementById('cargo-modal-title');
+    
+    form.reset();
+    document.getElementById('cargo-id').value = '';
+    document.getElementById('cargo-sueldo-turno').value = '0';
+    document.getElementById('cargo-bono-fijo').value = '0';
+    document.getElementById('cargo-orden').value = '0';
+    title.textContent = 'Agregar Cargo';
+    
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeCargoModal() {
+    const modal = document.getElementById('cargo-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function editCargo(cargoId) {
+    const cargo = allCargos.find(c => c.id === cargoId);
+    if (!cargo) {
+        showEquipoMessage('❌ Cargo no encontrado', 'error');
+        return;
+    }
+    
+    const modal = document.getElementById('cargo-modal');
+    const form = document.getElementById('cargo-form');
+    const title = document.getElementById('cargo-modal-title');
+    
+    document.getElementById('cargo-id').value = cargo.id;
+    document.getElementById('cargo-nombre').value = cargo.nombre;
+    document.getElementById('cargo-descripcion').value = cargo.descripcion || '';
+    document.getElementById('cargo-orden').value = cargo.orden || 0;
+    document.getElementById('cargo-sueldo-turno').value = cargo.sueldo_por_turno || 0;
+    document.getElementById('cargo-bono-fijo').value = cargo.bono_fijo || 0;
+    title.textContent = 'Editar Cargo';
+    
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function saveCargo(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const cargoId = document.getElementById('cargo-id').value;
+    const nombre = document.getElementById('cargo-nombre').value.trim();
+    const descripcion = document.getElementById('cargo-descripcion').value.trim();
+    const orden = parseInt(document.getElementById('cargo-orden').value) || 0;
+    const sueldoPorTurno = parseFloat(document.getElementById('cargo-sueldo-turno').value) || 0;
+    const bonoFijo = parseFloat(document.getElementById('cargo-bono-fijo').value) || 0;
+    
+    if (!nombre) {
+        showEquipoMessage('❌ El nombre del cargo es obligatorio', 'error');
+        return;
+    }
+    
+    const data = {
+        nombre: nombre,
+        descripcion: descripcion,
+        orden: orden,
+        sueldo_por_turno: sueldoPorTurno,
+        bono_fijo: bonoFijo
+    };
+    
+    if (cargoId) {
+        data.id = parseInt(cargoId);
+    }
+    
+    const url = cargoId ? '/admin/equipo/api/cargos' : '/admin/equipo/api/cargos';
+    const method = cargoId ? 'PUT' : 'POST';
+    
+    const submitBtn = form.querySelector('.btn-save');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ Guardando...';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+        .then(response => response.json())
+        .then(result => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            
+            if (result.success) {
+                showEquipoMessage('✅ Cargo guardado correctamente', 'success');
+                closeCargoModal();
+                loadCargos();
+                // Recargar equipo para actualizar los selectores de cargo
+                loadEquipo();
+            } else {
+                showEquipoMessage('❌ Error al guardar: ' + (result.message || 'Error desconocido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            showEquipoMessage('❌ Error de conexión al guardar el cargo', 'error');
+        });
+}
+
+function deleteCargo(cargoId, cargoNombre) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el cargo "${cargoNombre}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    fetch('/admin/equipo/api/cargos', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: cargoId })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showEquipoMessage('✅ Cargo eliminado correctamente', 'success');
+                loadCargos();
+                // Recargar equipo para actualizar los selectores de cargo
+                loadEquipo();
+            } else {
+                showEquipoMessage('❌ Error al eliminar: ' + (data.message || 'Error desconocido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showEquipoMessage('❌ Error de conexión al eliminar el cargo', 'error');
+        });
+}
+
+// Funciones para gestión de sueldos por cargo (mantener para compatibilidad)
+function openCargoSalaryModal() {
+    const modal = document.getElementById('cargo-salary-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        loadCargoSalaryForm();
+    }
+}
+
+function closeCargoSalaryModal() {
+    const modal = document.getElementById('cargo-salary-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function loadCargoSalaries() {
+    const listDiv = document.getElementById('cargo-salary-list');
+    if (!listDiv) return;
+    
+    fetch('/admin/equipo/api/cargo-salaries')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const salaries = data.salaries || {};
+                const cargos = ['BARRA', 'COPERX', 'CAJA', 'GUARDIA', 'ANFITRIONA', 'ASEO', 'GUARDARROP', 'TÉCNICA', 'DRAG', 'DJ', 'Supervisor', 'Administrador', 'Otro'];
+                
+                let html = '';
+                cargos.forEach(cargo => {
+                    const salary = salaries[cargo] || { sueldo_por_turno: 0, bono_fijo: 0 };
+                    html += `
+                        <div class="cargo-salary-card">
+                            <div class="cargo-name">${cargo}</div>
+                            <div class="cargo-salary">$${salary.sueldo_por_turno.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+                            ${salary.bono_fijo > 0 ? `<div style="color: #aaa; font-size: 0.85rem; margin-top: 5px;">Bono: $${salary.bono_fijo.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>` : ''}
+                        </div>
+                    `;
+                });
+                listDiv.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar sueldos por cargo:', error);
+        });
+}
+
+function loadCargoSalaryForm() {
+    const container = document.getElementById('cargo-salary-form-container');
+    if (!container) return;
+    
+    fetch('/admin/equipo/api/cargo-salaries')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const salaries = data.salaries || {};
+                const cargos = ['BARRA', 'COPERX', 'CAJA', 'GUARDIA', 'ANFITRIONA', 'ASEO', 'GUARDARROP', 'TÉCNICA', 'DRAG', 'DJ', 'Supervisor', 'Administrador', 'Otro'];
+                
+                let html = '<form id="cargo-salary-form" onsubmit="saveCargoSalaries(event)">';
+                cargos.forEach(cargo => {
+                    const salary = salaries[cargo] || { sueldo_por_turno: 0, bono_fijo: 0 };
+                    html += `
+                        <div class="cargo-salary-item">
+                            <label for="cargo-${cargo}">${cargo} - Sueldo por Turno ($):</label>
+                            <input type="number" id="cargo-${cargo}" name="${cargo}" step="0.01" min="0" 
+                                   value="${salary.sueldo_por_turno}" placeholder="0">
+                            <label for="bono-${cargo}" style="margin-top: 10px;">Bono Fijo ($):</label>
+                            <input type="number" id="bono-${cargo}" name="bono_${cargo}" step="0.01" min="0" 
+                                   value="${salary.bono_fijo}" placeholder="0">
+                        </div>
+                    `;
+                });
+                html += `
+                    <div class="form-actions">
+                        <button type="button" onclick="closeCargoSalaryModal()" class="btn-cancel">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-save">
+                            💾 Guardar Sueldos
+                        </button>
+                    </div>
+                </form>`;
+                container.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar formulario de sueldos:', error);
+        });
+}
+
+function saveCargoSalaries(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const cargos = ['BARRA', 'COPERX', 'CAJA', 'GUARDIA', 'ANFITRIONA', 'ASEO', 'GUARDARROP', 'TÉCNICA', 'DRAG', 'DJ', 'Supervisor', 'Administrador', 'Otro'];
+    
+    const data = {};
+    cargos.forEach(cargo => {
+        const sueldoInput = document.getElementById(`cargo-${cargo}`);
+        const bonoInput = document.getElementById(`bono-${cargo}`);
+        if (sueldoInput && bonoInput) {
+            data[cargo] = {
+                sueldo_por_turno: parseFloat(sueldoInput.value) || 0,
+                bono_fijo: parseFloat(bonoInput.value) || 0
+            };
+        }
+    });
+    
+    const submitBtn = form.querySelector('.btn-save');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ Guardando...';
+    
+    fetch('/admin/equipo/api/cargo-salaries', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+        .then(response => response.json())
+        .then(result => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            
+            if (result.success) {
+                showEquipoMessage('✅ Sueldos por cargo guardados correctamente', 'success');
+                closeCargoSalaryModal();
+                loadCargoSalaries();
+            } else {
+                showEquipoMessage('❌ Error al guardar: ' + (result.message || 'Error desconocido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            showEquipoMessage('❌ Error de conexión al guardar sueldos', 'error');
+        });
+}
+</script>
+{% endblock %}

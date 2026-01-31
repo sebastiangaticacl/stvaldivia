@@ -1,0 +1,112 @@
+Quiero que ajustes el flujo de las cajas en stvaldivia.cl para integrar el pago con Getnet de forma MUY simple, así:
+
+- La caja se abre por login en rutas como:
+/caja1
+/caja2
+/caja3
+
+- Esas cajas se usan en TÓTEMS locales (PC con Windows + POS Getnet).
+- La negociación de pago con Getnet se hace SIEMPRE local en el tótem.
+- El backend de stvaldivia.cl (BIMBAVERSO) SOLO registra la venta si Getnet devuelve OK.
+- Si Getnet devuelve error/rechazo, la venta NO se registra como venta, solo queda un log de intento fallido.
+
+No quiero una arquitectura complicada, quiero:
+
+1) Frontend claro
+2) 2 endpoints simples en el backend:
+   - uno para ventas OK
+   - uno para log de ventas fallidas
+
+---
+
+## 1. FRONTEND DE CAJA (/caja1, /caja2, /caja3)
+
+Asume que:
+
+- Las vistas de caja ya existen en el proyecto (Flask / Django / lo que corresponda a stvaldivia.cl).
+- En cada vista de caja el usuario:
+  - selecciona productos,
+  - ve un total,
+  - y al final puede elegir "Pagar con tarjeta (Getnet)".
+
+Quiero que hagas:
+
+1. En el template de la caja (HTML/JS), agrega:
+   - Un botón claro: **"Pagar con tarjeta (Getnet)"**.
+   - Una función JS `pagarConTarjeta()` que haga EXACTAMENTE este flujo:
+
+   Pseudocódigo:
+
+   ```js
+   async function pagarConTarjeta() {
+     const total = obtenerTotalActual(); // ya existe o lo implementas
+     const payloadVenta = construirPayloadVenta(); // detalles de la venta: productos, cantidades, etc.
+     
+     // 1) Llamar a la integración local de Getnet
+     // IMPORTANTE:
+     // - La negociación real con el POS Getnet se hace LOCAL en el tótem.
+     // - Aquí NO implementes el protocolo Getnet.
+     // - Solo llama a una función o endpoint local y espera true/false.
+
+     // Opción A: stub para Getnet que luego reemplazaremos:
+     const resultadoGetnet = await simularPagoGetnet(total);
+
+     // Opción B (comentada): llamada real si existe un servicio local:
+     // const resp = await fetch("http://localhost:5001/pago", { ... });
+
+     if (resultadoGetnet.ok) {
+       // 2) Si el pago es OK → mandamos la venta completa al backend Bimbaverso
+       const respBackend = await fetch("/api/caja/venta-ok", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+           total: total,
+           venta: payloadVenta,
+           getnet: resultadoGetnet
+         })
+       });
+
+       const data = await respBackend.json();
+       if (data.ok) {
+         // Mostrar ticket, redirigir a pantalla de voucher, etc.
+         mostrarConfirmacionVenta(data);
+       } else {
+         alert("Error registrando venta en el servidor. Revisa el log.");
+       }
+     } else {
+       // 3) Si el pago es rechazado → solo log en el backend
+       await fetch("/api/caja/venta-fallida-log", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+           total: total,
+           venta: payloadVenta,
+           motivo: resultadoGetnet.error || resultadoGetnet.responseMessage
+         })
+       });
+
+       alert("Pago rechazado por Getnet. No se registró la venta.");
+     }
+   }
+
+   // Función stub de Getnet para desarrollo:
+   async function simularPagoGetnet(total) {
+     // Deja esto para pruebas: luego lo reemplazamos por la llamada real al POS.
+     const aprobado = confirm("Simular pago Getnet por $" + total + " ? Aceptar = APROBADO, Cancelar = RECHAZADO");
+     if (aprobado) {
+       return {
+         ok: true,
+         responseCode: "0",
+         responseMessage: "Aprobado",
+         authorizationCode: "SIM-" + Date.now()
+       };
+     } else {
+       return {
+         ok: false,
+         responseCode: "XX",
+         responseMessage: "Rechazado",
+         error: "Simulación de rechazo"
+       };
+     }
+   }
+   ```

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Abrir Turno - Guardarropía{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 50px auto;
+        background: #222;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #e8e8e8;
+        font-weight: bold;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #444;
+        border-radius: 6px;
+        background: #18181a;
+        color: #e8e8e8;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+    
+    .btn-submit {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        margin-top: 20px;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+    }
+    
+    .info-box {
+        background: #2a2a2a;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border-left: 4px solid #4caf50;
+    }
+    
+    .info-box h3 {
+        color: #4caf50;
+        margin-top: 0;
+    }
+    
+    .info-box p {
+        color: #888;
+        margin: 5px 0;
+    }
+</style>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+    <h1 style="margin-bottom: 30px; color: #e8e8e8;">
+        🧥 Abrir Turno de Guardarropía
+    </h1>
+    
+    <div class="info-box">
+        <h3>ℹ️ Información</h3>
+        <p>Al abrir el turno de guardarropía, se desplegará automáticamente la interfaz POS para comenzar a vender espacios.</p>
+        <p><strong>Precio por prenda:</strong> $500</p>
+        <p><strong>Funcionalidad:</strong> Se generará automáticamente un código de ticket con QR para cada depósito.</p>
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('guardarropia.abrir_turno') }}">
+            <div class="form-group">
+                <label for="fiesta_nombre">Nombre del Evento/Turno</label>
+                <input 
+                    type="text" 
+                    id="fiesta_nombre" 
+                    name="fiesta_nombre" 
+                    value="Guardarropía"
+                    placeholder="Ej: Guardarropía - Sábado"
+                    autofocus
+                >
+            </div>
+            
+            <button type="submit" class="btn-submit">
+                ✅ Abrir Turno y Comenzar
+            </button>
+        </form>
+        
+        <a href="{{ url_for('guardarropia.index') }}" 
+           style="display: block; text-align: center; margin-top: 20px; padding: 12px; background: #444; color: #e8e8e8; text-decoration: none; border-radius: 8px;">
+            ← Volver
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

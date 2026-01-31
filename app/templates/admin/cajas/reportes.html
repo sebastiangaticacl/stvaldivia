@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Reportes de Cajas - Administración BIMBA{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tables-responsive.css') }}">
+<style>
+    .reports-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+    
+    .reports-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .reports-header h1 {
+        color: #e8e8e8;
+        margin: 0;
+    }
+    
+    .table-responsive-wrapper {
+        overflow-x: auto;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #e8e8e8;
+    }
+    
+    th {
+        background: rgba(102, 126, 234, 0.2);
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #667eea;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    
+    .status-open {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+    
+    .status-closed {
+        background: rgba(158, 158, 158, 0.2);
+        color: #9e9e9e;
+        border: 1px solid rgba(158, 158, 158, 0.3);
+    }
+    
+    .status-pending {
+        background: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+        border: 1px solid rgba(255, 152, 0, 0.3);
+    }
+    
+    .difference-positive {
+        color: #4caf50;
+    }
+    
+    .difference-negative {
+        color: #f44336;
+    }
+    
+    .difference-zero {
+        color: #9e9e9e;
+    }
+    
+    .no-data {
+        text-align: center;
+        padding: 2rem;
+        color: #aaa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="reports-header">
+        <a href="{{ url_for('register_admin.list_registers') }}" 
+           style="color: #667eea; text-decoration: none; font-size: 0.9rem; margin-bottom: 10px; display: block;">
+            ← Volver a Cajas
+        </a>
+        <h1>📊 Reportes de Cajas</h1>
+    </div>
+    
+    <div class="table-responsive-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Caja</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Última Sesión</th>
+                    <th>Status</th>
+                    <th>Total Efectivo</th>
+                    <th>Total Débito</th>
+                    <th>Total Crédito</th>
+                    <th>Tickets</th>
+                    <th>Diferencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if registers_data %}
+                    {% for data in registers_data %}
+                    <tr>
+                        <td>
+                            <strong>{{ data.register.name }}</strong><br>
+                            <small style="color: #aaa;">{{ data.register.code }}</small>
+                        </td>
+                        <td>{{ data.register.register_type or data.register.tpv_type or 'N/A' }}</td>
+                        <td>
+                            <span class="status-badge status-{{ data.register.operational_status or 'active' }}">
+                                {{ data.register.operational_status or 'active' }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if data.last_session %}
+                                {{ data.last_session.opened_at.strftime('%Y-%m-%d %H:%M') if data.last_session.opened_at else 'N/A' }}<br>
+                                <small style="color: #aaa;">por {{ data.last_session.opened_by_employee_name }}</small>
+                            {% else %}
+                                <span class="no-data">Sin sesiones</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if data.last_session %}
+                                {% if data.last_session.status == 'OPEN' %}
+                                    <span class="status-badge status-open">Abierta</span>
+                                {% elif data.last_session.status == 'CLOSED' %}
+                                    <span class="status-badge status-closed">Cerrada</span>
+                                {% elif data.last_session.status == 'PENDING_CLOSE' %}
+                                    <span class="status-badge status-pending">Pendiente</span>
+                                {% else %}
+                                    {{ data.last_session.status }}
+                                {% endif %}
+                            {% else %}
+                                <span class="no-data">-</span>
+                            {% endif %}
+                        </td>
+                        <td>${{ "{:,.0f}".format(data.payment_totals.cash) }}</td>
+                        <td>${{ "{:,.0f}".format(data.payment_totals.debit) }}</td>
+                        <td>${{ "{:,.0f}".format(data.payment_totals.credit) }}</td>
+                        <td>{{ data.ticket_count }}</td>
+                        <td>
+                            {% if data.cash_difference is not none %}
+                                {% if data.cash_difference > 0 %}
+                                    <span class="difference-positive">+${{ "{:,.0f}".format(data.cash_difference) }}</span>
+                                {% elif data.cash_difference < 0 %}
+                                    <span class="difference-negative">-${{ "{:,.0f}".format(abs(data.cash_difference)) }}</span>
+                                {% else %}
+                                    <span class="difference-zero">$0</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="no-data">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="10" class="no-data">No hay datos disponibles</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+

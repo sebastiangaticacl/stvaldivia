@@ -1,0 +1,1168 @@
+
+###############################################################################
+# 0) FECHA / HOST / USUARIO
+###############################################################################
+2026-01-03T07:34:19+00:00
+stvaldivia
+root
+ 07:34:19 up 17 days, 10:20,  2 users,  load average: 0.20, 1.25, 1.15
+OS:
+Distributor ID:	Ubuntu
+Description:	Ubuntu 22.04.5 LTS
+Release:	22.04
+Codename:	jammy
+KERNEL:
+Linux stvaldivia 6.8.0-1045-gcp #48~22.04.1-Ubuntu SMP Tue Nov 25 13:07:56 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+
+###############################################################################
+# 1) INVENTARIO DE SERVICIOS CLAVE
+###############################################################################
+active
+nginx: active
+failed
+apache2: inactive
+active
+stvaldivia: active
+active
+cloud-sql-proxy: active
+active
+mysql: active
+active
+postgresql: active
+
+###############################################################################
+# 2) PUERTOS ESCUCHANDO (ss -tulpen)
+###############################################################################
+Netid State  Recv-Q Send-Q   Local Address:Port  Peer Address:PortProcess                                                                                                                                                                                                                               
+udp   UNCONN 0      0        127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=429,fd=13)) uid:101 ino:2872 sk:102d cgroup:/system.slice/systemd-resolved.service <->                                                                                                                 
+udp   UNCONN 0      0      10.194.0.2%ens4:68         0.0.0.0:*    users:(("systemd-network",pid=427,fd=15)) uid:100 ino:41936033 sk:1b cgroup:/system.slice/systemd-networkd.service <->                                                                                                               
+udp   UNCONN 0      0            127.0.0.1:323        0.0.0.0:*    users:(("chronyd",pid=475,fd=5)) ino:3037 sk:102f cgroup:/system.slice/chrony.service <->                                                                                                                                            
+udp   UNCONN 0      0                [::1]:323           [::]:*    users:(("chronyd",pid=475,fd=6)) ino:3038 sk:16 cgroup:/system.slice/chrony.service v6only:1 <->                                                                                                                                     
+tcp   LISTEN 0      511            0.0.0.0:80         0.0.0.0:*    users:(("nginx",pid=2806682,fd=6),("nginx",pid=2806681,fd=6),("nginx",pid=951822,fd=6)) ino:10333893 sk:13 cgroup:/system.slice/nginx.service <->                                                                                    
+tcp   LISTEN 0      128            0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=820,fd=3)) ino:4968 sk:2 cgroup:/system.slice/ssh.service <->                                                                                                                                                     
+tcp   LISTEN 0      4096     127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=429,fd=14)) uid:101 ino:2873 sk:3 cgroup:/system.slice/systemd-resolved.service <->                                                                                                                    
+tcp   LISTEN 0      151          127.0.0.1:3306       0.0.0.0:*    users:(("mysqld",pid=931786,fd=23)) uid:115 ino:10148195 sk:1029 cgroup:/system.slice/mysql.service <->                                                                                                                              
+tcp   LISTEN 0      511            0.0.0.0:443        0.0.0.0:*    users:(("nginx",pid=2806682,fd=17),("nginx",pid=2806681,fd=17),("nginx",pid=951822,fd=17)) ino:41786853 sk:1033 cgroup:/system.slice/nginx.service <->                                                                               
+tcp   LISTEN 0      2048         127.0.0.1:5001       0.0.0.0:*    users:(("gunicorn",pid=2837803,fd=7),("gunicorn",pid=2837802,fd=7),("gunicorn",pid=2837801,fd=7),("gunicorn",pid=2837800,fd=7),("gunicorn",pid=2837797,fd=7)) uid:1003 ino:41956404 sk:41 cgroup:/system.slice/stvaldivia.service <->
+tcp   LISTEN 0      128            0.0.0.0:20202      0.0.0.0:*    users:(("fluent-bit",pid=852,fd=263)) ino:5049 sk:6 cgroup:/system.slice/google-cloud-ops-agent-fluent-bit.service <->                                                                                                               
+tcp   LISTEN 0      70           127.0.0.1:33060      0.0.0.0:*    users:(("mysqld",pid=931786,fd=21)) uid:115 ino:10149181 sk:102b cgroup:/system.slice/mysql.service <->                                                                                                                              
+tcp   LISTEN 0      4096         127.0.0.1:5432       0.0.0.0:*    users:(("cloud-sql-proxy",pid=2831331,fd=7)) uid:1003 ino:41923368 sk:1d cgroup:/system.slice/cloud-sql-proxy.service <->                                                                                                            
+tcp   LISTEN 0      511               [::]:80            [::]:*    users:(("nginx",pid=2806682,fd=15),("nginx",pid=2806681,fd=15),("nginx",pid=951822,fd=15)) ino:41607959 sk:1031 cgroup:/system.slice/nginx.service v6only:1 <->                                                                      
+tcp   LISTEN 0      128               [::]:22            [::]:*    users:(("sshd",pid=820,fd=4)) ino:4970 sk:7 cgroup:/system.slice/ssh.service v6only:1 <->                                                                                                                                            
+tcp   LISTEN 0      511               [::]:443           [::]:*    users:(("nginx",pid=2806682,fd=18),("nginx",pid=2806681,fd=18),("nginx",pid=951822,fd=18)) ino:41786854 sk:1034 cgroup:/system.slice/nginx.service v6only:1 <->                                                                      
+tcp   LISTEN 0      4096                 *:20201            *:*    users:(("otelopscol",pid=828,fd=3)) ino:6269 sk:8 cgroup:/system.slice/google-cloud-ops-agent-opentelemetry-collector.service v6only:0 <->                                                                                           
+
+###############################################################################
+# 3) PROCESOS (gunicorn/nginx/db/proxy)
+###############################################################################
+mysql     931786  0.4  5.9 1820124 483040 ?      Ssl   2025  55:51 /usr/sbin/mysqld
+root      951822  0.0  0.1 107712 10100 ?        Ss    2025   0:00 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+www-data 2806681  0.0  0.4 135156 36900 ?        S    04:34   0:00 nginx: worker process
+www-data 2806682  0.0  0.4 136152 38436 ?        S    04:34   0:08 nginx: worker process
+deploy   2831331  0.7  0.3 1251232 27980 ?       Ssl  07:06   0:12 /opt/cloud-sql/cloud-sql-proxy --address 127.0.0.1 --port 5432 stvaldivia:southamerica-west1:stvaldivia-db
+deploy   2837797  0.1  0.3  42264 32092 ?        Ss   07:30   0:00 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+deploy   2837800  2.1  1.4 163024 119184 ?       S    07:30   0:04 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+deploy   2837801  1.6  1.4 159696 115432 ?       S    07:30   0:03 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+deploy   2837802  1.8  1.4 164684 120932 ?       S    07:30   0:03 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+deploy   2837803  1.6  1.4 158568 115268 ?       S    07:30   0:03 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+root     2838532  0.0  0.0   7040  2560 ?        S    07:34   0:00 grep -E -i gunicorn|nginx|cloud-sql-proxy|postgres|mysql
+
+###############################################################################
+# 4) systemd: stvaldivia (unit + overrides) [SIN SECRETOS]
+###############################################################################
+# /etc/systemd/system/stvaldivia.service
+[Unit]
+Description=stvaldivia gunicorn
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+Group=www-data
+WorkingDirectory=/var/www/stvaldivia
+EnvironmentFile=/etc/stvaldivia/stvaldivia.env
+Environment="PATH=/var/www/stvaldivia/venv/bin"
+ExecStart=/var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
+# /etc/systemd/system/stvaldivia.service.d/agent.conf
+[Service]
+Environment="AGENT_API_KEY=<redacted>
+
+# /etc/systemd/system/stvaldivia.service.d/override.conf
+[Service]
+Environment="FLASK_ENV=production"
+Environment="DATABASE_URL=postgresql://stvaldivia_user:fvt37Kf3LZtbZ0YCIRO6JGMA4DVHAO@127.0.0.1:5432/stvaldivia"
+
+###############################################################################
+# 5) systemd: variables que ve stvaldivia (redactadas)
+###############################################################################
+Environment=PATH=/var/www/stvaldivia/venv/bin AGENT_API_KEY=<redacted> FLASK_ENV=production DATABASE_URL=postgresql://stvaldivia_user:fvt37Kf3LZtbZ0YCIRO6JGMA4DVHAO@127.0.0.1:5432/stvaldivia
+
+###############################################################################
+# 6) CONFIRMACION REAL: conexiones gunicorn -> postgres (5432)
+###############################################################################
+ESTAB    0      0                127.0.0.1:5432                127.0.0.1:45702 users:(("cloud-sql-proxy",pid=2831331,fd=8))               
+ESTAB    0      0                127.0.0.1:45702               127.0.0.1:5432  users:(("gunicorn",pid=2837800,fd=14))                     
+ESTAB    0      0                127.0.0.1:5432                127.0.0.1:50464 users:(("cloud-sql-proxy",pid=2831331,fd=16))              
+ESTAB    0      0                127.0.0.1:50464               127.0.0.1:5432  users:(("gunicorn",pid=2837800,fd=15))                     
+ESTAB    0      0                127.0.0.1:45716               127.0.0.1:5432  users:(("gunicorn",pid=2837801,fd=14))                     
+ESTAB    0      0                127.0.0.1:5432                127.0.0.1:45736 users:(("cloud-sql-proxy",pid=2831331,fd=14))              
+ESTAB    0      0                127.0.0.1:45736               127.0.0.1:5432  users:(("gunicorn",pid=2837803,fd=14))                     
+ESTAB    0      0                127.0.0.1:5432                127.0.0.1:45730 users:(("cloud-sql-proxy",pid=2831331,fd=12))              
+ESTAB    0      0                127.0.0.1:45730               127.0.0.1:5432  users:(("gunicorn",pid=2837802,fd=14))                     
+ESTAB    0      0                127.0.0.1:5432                127.0.0.1:45716 users:(("cloud-sql-proxy",pid=2831331,fd=10))              
+MainPID: 2837797
+ENV keys del proceso (solo nombres):
+FLASK_ENV
+DATABASE_URL
+FLASK_SECRET_KEY
+DATABASE_PROD_URL
+
+###############################################################################
+# 7) NGINX: config efectiva + site enabled
+###############################################################################
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+-- sites-enabled --
+total 8
+drwxr-xr-x 2 root root 4096 Jan  3 03:33 .
+drwxr-xr-x 8 root root 4096 Jan  3 04:35 ..
+lrwxrwxrwx 1 root root   37 Jan  3 03:33 stvaldivia -> /etc/nginx/sites-available/stvaldivia
+
+-- stvaldivia site (si existe) --
+# Upstream para balanceo
+upstream stvaldivia_backend {
+    server 127.0.0.1:5001 max_fails=3 fail_timeout=30s;
+    keepalive 32;
+}
+
+# Redirección HTTP a HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name stvaldivia.cl www.stvaldivia.cl;
+    
+    # Para certbot
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+    
+    # Redirigir todo lo demás a HTTPS
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+# Servidor HTTPS
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name stvaldivia.cl www.stvaldivia.cl;
+
+    # Certificados SSL
+    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+    
+    # Configuración SSL moderna
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+    
+    # Logging
+    access_log /var/log/nginx/stvaldivia_access.log combined buffer=32k flush=5s;
+    error_log /var/log/nginx/stvaldivia_error.log warn;
+
+    # Tamaño máximo
+    client_max_body_size 50M;
+    client_body_timeout 60s;
+    client_header_timeout 60s;
+    send_timeout 60s;
+
+    # Buffer sizes optimizados
+    client_body_buffer_size 128k;
+    client_header_buffer_size 2k;
+    large_client_header_buffers 4 16k;
+    output_buffers 2 32k;
+    postpone_output 1460;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_min_length 1000;
+    gzip_disable "msie6";
+    gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Rate limiting para rutas de login
+    location ~ ^/(.*login|caja/login|login_admin) {
+        limit_req zone=login burst=3 nodelay;
+        limit_conn conn_limit_per_ip 10;
+        
+        proxy_pass http://stvaldivia_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header Connection "";
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 8 4k;
+        proxy_busy_buffers_size 8k;
+        proxy_temp_file_write_size 16k;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # API endpoints
+    location /api/ {
+        limit_req zone=api burst=50 nodelay;
+        limit_conn conn_limit_per_ip 30;
+        
+        proxy_pass http://stvaldivia_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+    }
+
+    # Location principal
+    location / {
+        limit_conn conn_limit_per_ip 20;
+        limit_req zone=general burst=20 nodelay;
+        
+        proxy_pass http://stvaldivia_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header Connection "";
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 8 4k;
+        proxy_busy_buffers_size 8k;
+        proxy_temp_file_write_size 16k;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Healthcheck
+    location /health {
+        access_log off;
+        proxy_pass http://stvaldivia_backend/health;
+        proxy_set_header Host $host;
+    }
+
+    # Denegar archivos sensibles
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    
+    location ~ \.(env|log|sql|bak|backup)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+}
+
+###############################################################################
+# 8) SSL: certificados referenciados + permisos (si hay)
+###############################################################################
+/etc/nginx/sites-enabled/stvaldivia:31:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-enabled/stvaldivia:32:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:19:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:20:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:72:    ssl_certificate /etc/ssl/certs/ip_34.176.144.166.crt;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:73:    ssl_certificate_key /etc/ssl/private/ip_34.176.144.166.key;
+/etc/nginx/sites-available/stvaldivia:31:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia:32:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005330:33:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005330:34:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005620:13:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005620:14:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251226_000618:13:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251226_000618:14:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup_20251217_224220:13:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup_20251217_224220:14:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup:13:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup:14:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/snippets/snakeoil.conf:4:ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;
+/etc/nginx/snippets/snakeoil.conf:5:ssl_certificate_key /etc/ssl/private/ssl-cert-snakeoil.key;
+
+Permisos comunes LetsEncrypt (si existe):
+drwxr-xr-x 9 root root 4096 Jan  3 04:35 /etc/letsencrypt
+drwx------ 3 root root 4096 Dec 14 07:11 /etc/letsencrypt/live
+lrwxrwxrwx 1 root root 40 Dec 14 07:11 /etc/letsencrypt/live/stvaldivia.cl/privkey.pem -> ../../archive/stvaldivia.cl/privkey1.pem
+
+###############################################################################
+# 9) HEALTHCHECK (interno y vía nginx)
+###############################################################################
+-- gunicorn directo (localhost:5001) --
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Sat, 03 Jan 2026 07:34:20 GMT
+Connection: keep-alive
+Content-Type: text/html; charset=utf-8
+Content-Length: 38528
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws: wss: https://stvaldivia.cl wss://stvaldivia.cl; frame-ancestors 'self';
+Permissions-Policy: geolocation=(), microphone=(), camera=()
+Vary: Cookie
+Set-Cookie: session=eyJjc3JmX3Rva2VuIjoiYTE4MDA3NDk0MGFiYTdhZTk1ZjlmNTI2MTExYmE4YzgzNTg0ZDFhOSJ9.aVjGfA.cH7x7G-NUBjxI-ba8-_53JP21wU; HttpOnly; Path=/
+
+
+-- nginx (localhost:80) --
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Date: Sat, 03 Jan 2026 07:34:20 GMT
+Content-Type: text/html
+Content-Length: 178
+Connection: keep-alive
+Location: https://stvaldivia.cl/
+
+
+###############################################################################
+# 10) LOGS: stvaldivia (journalctl) últimas 200 líneas
+###############################################################################
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [parameters: {'estado_apertura_1': 'abierto', 'param_1': 1}]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: (Background on this error at: https://sqlalche.me/e/20/2j85)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: Traceback (most recent call last):
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self.dialect.do_execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     cursor.execute(statement, parameters)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: The above exception was the direct cause of the following exception:
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: Traceback (most recent call last):
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 197, in _get_ventas_metrics
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     ).order_by(Jornada.fecha_jornada.desc()).first()
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2759, in first
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self.limit(1)._iter().first()  # type: ignore
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self._execute_internal(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result: Result[Any] = compile_state_cls.orm_execute_statement(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result = conn.execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return meth(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return connection._execute_clauseelement(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     ret = self._execute_context(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self._exec_single_context(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self._handle_dbapi_exception(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self.dialect.do_execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     cursor.execute(statement, parameters)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: sqlalchemy.exc.InternalError: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [SQL: SELECT jornadas.id AS jornadas_id, jornadas.fecha_jornada AS jornadas_fecha_jornada, jornadas.fecha_cierre_programada AS jornadas_fecha_cierre_programada, jornadas.tipo_turno AS jornadas_tipo_turno, jornadas.nombre_fiesta AS jornadas_nombre_fiesta, jornadas.horario_apertura_programado AS jornadas_horario_apertura_programado, jornadas.horario_cierre_programado AS jornadas_horario_cierre_programado, jornadas.horario_apertura_real AS jornadas_horario_apertura_real, jornadas.responsable_cajas AS jornadas_responsable_cajas, jornadas.responsable_puerta AS jornadas_responsable_puerta, jornadas.responsable_seguridad AS jornadas_responsable_seguridad, jornadas.responsable_admin AS jornadas_responsable_admin, jornadas.estado_apertura AS jornadas_estado_apertura, jornadas.checklist_tecnico AS jornadas_checklist_tecnico, jornadas.checklist_apertura AS jornadas_checklist_apertura, jornadas.djs AS jornadas_djs, jornadas.barras_disponibles AS jornadas_barras_disponibles, jornadas.creado_en AS jornadas_creado_en, jornadas.abierto_en AS jornadas_abierto_en, jornadas.abierto_por AS jornadas_abierto_por, jornadas.eliminado_en AS jornadas_eliminado_en, jornadas.eliminado_por AS jornadas_eliminado_por, jornadas.razon_eliminacion AS jornadas_razon_eliminacion
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: FROM jornadas
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: WHERE jornadas.estado_apertura = %(estado_apertura_1)s AND jornadas.eliminado_en IS NULL ORDER BY jornadas.fecha_jornada DESC
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:  LIMIT %(param_1)s]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [parameters: {'estado_apertura_1': 'abierto', 'param_1': 1}]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: (Background on this error at: https://sqlalche.me/e/20/2j85)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [2026-01-03 07:34:03,589] ERROR in dashboard_metrics_service: Error obteniendo métricas de entregas: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [SQL: SELECT jornadas.id AS jornadas_id, jornadas.fecha_jornada AS jornadas_fecha_jornada, jornadas.fecha_cierre_programada AS jornadas_fecha_cierre_programada, jornadas.tipo_turno AS jornadas_tipo_turno, jornadas.nombre_fiesta AS jornadas_nombre_fiesta, jornadas.horario_apertura_programado AS jornadas_horario_apertura_programado, jornadas.horario_cierre_programado AS jornadas_horario_cierre_programado, jornadas.horario_apertura_real AS jornadas_horario_apertura_real, jornadas.responsable_cajas AS jornadas_responsable_cajas, jornadas.responsable_puerta AS jornadas_responsable_puerta, jornadas.responsable_seguridad AS jornadas_responsable_seguridad, jornadas.responsable_admin AS jornadas_responsable_admin, jornadas.estado_apertura AS jornadas_estado_apertura, jornadas.checklist_tecnico AS jornadas_checklist_tecnico, jornadas.checklist_apertura AS jornadas_checklist_apertura, jornadas.djs AS jornadas_djs, jornadas.barras_disponibles AS jornadas_barras_disponibles, jornadas.creado_en AS jornadas_creado_en, jornadas.abierto_en AS jornadas_abierto_en, jornadas.abierto_por AS jornadas_abierto_por, jornadas.eliminado_en AS jornadas_eliminado_en, jornadas.eliminado_por AS jornadas_eliminado_por, jornadas.razon_eliminacion AS jornadas_razon_eliminacion
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: FROM jornadas
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: WHERE jornadas.estado_apertura = %(estado_apertura_1)s AND jornadas.eliminado_en IS NULL ORDER BY jornadas.fecha_jornada DESC
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:  LIMIT %(param_1)s]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [parameters: {'estado_apertura_1': 'abierto', 'param_1': 1}]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: (Background on this error at: https://sqlalche.me/e/20/2j85)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: Traceback (most recent call last):
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self.dialect.do_execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     cursor.execute(statement, parameters)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: The above exception was the direct cause of the following exception:
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: Traceback (most recent call last):
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 291, in _get_entregas_metrics
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     ).order_by(Jornada.fecha_jornada.desc()).first()
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2759, in first
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self.limit(1)._iter().first()  # type: ignore
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self._execute_internal(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result: Result[Any] = compile_state_cls.orm_execute_statement(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result = conn.execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return meth(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return connection._execute_clauseelement(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     ret = self._execute_context(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self._exec_single_context(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self._handle_dbapi_exception(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self.dialect.do_execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     cursor.execute(statement, parameters)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: sqlalchemy.exc.InternalError: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [SQL: SELECT jornadas.id AS jornadas_id, jornadas.fecha_jornada AS jornadas_fecha_jornada, jornadas.fecha_cierre_programada AS jornadas_fecha_cierre_programada, jornadas.tipo_turno AS jornadas_tipo_turno, jornadas.nombre_fiesta AS jornadas_nombre_fiesta, jornadas.horario_apertura_programado AS jornadas_horario_apertura_programado, jornadas.horario_cierre_programado AS jornadas_horario_cierre_programado, jornadas.horario_apertura_real AS jornadas_horario_apertura_real, jornadas.responsable_cajas AS jornadas_responsable_cajas, jornadas.responsable_puerta AS jornadas_responsable_puerta, jornadas.responsable_seguridad AS jornadas_responsable_seguridad, jornadas.responsable_admin AS jornadas_responsable_admin, jornadas.estado_apertura AS jornadas_estado_apertura, jornadas.checklist_tecnico AS jornadas_checklist_tecnico, jornadas.checklist_apertura AS jornadas_checklist_apertura, jornadas.djs AS jornadas_djs, jornadas.barras_disponibles AS jornadas_barras_disponibles, jornadas.creado_en AS jornadas_creado_en, jornadas.abierto_en AS jornadas_abierto_en, jornadas.abierto_por AS jornadas_abierto_por, jornadas.eliminado_en AS jornadas_eliminado_en, jornadas.eliminado_por AS jornadas_eliminado_por, jornadas.razon_eliminacion AS jornadas_razon_eliminacion
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: FROM jornadas
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: WHERE jornadas.estado_apertura = %(estado_apertura_1)s AND jornadas.eliminado_en IS NULL ORDER BY jornadas.fecha_jornada DESC
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:  LIMIT %(param_1)s]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [parameters: {'estado_apertura_1': 'abierto', 'param_1': 1}]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: (Background on this error at: https://sqlalche.me/e/20/2j85)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [2026-01-03 07:34:03,593] ERROR in dashboard_metrics_service: Error obteniendo datos de gráficos: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [SQL: SELECT jornadas.id AS jornadas_id, jornadas.fecha_jornada AS jornadas_fecha_jornada, jornadas.fecha_cierre_programada AS jornadas_fecha_cierre_programada, jornadas.tipo_turno AS jornadas_tipo_turno, jornadas.nombre_fiesta AS jornadas_nombre_fiesta, jornadas.horario_apertura_programado AS jornadas_horario_apertura_programado, jornadas.horario_cierre_programado AS jornadas_horario_cierre_programado, jornadas.horario_apertura_real AS jornadas_horario_apertura_real, jornadas.responsable_cajas AS jornadas_responsable_cajas, jornadas.responsable_puerta AS jornadas_responsable_puerta, jornadas.responsable_seguridad AS jornadas_responsable_seguridad, jornadas.responsable_admin AS jornadas_responsable_admin, jornadas.estado_apertura AS jornadas_estado_apertura, jornadas.checklist_tecnico AS jornadas_checklist_tecnico, jornadas.checklist_apertura AS jornadas_checklist_apertura, jornadas.djs AS jornadas_djs, jornadas.barras_disponibles AS jornadas_barras_disponibles, jornadas.creado_en AS jornadas_creado_en, jornadas.abierto_en AS jornadas_abierto_en, jornadas.abierto_por AS jornadas_abierto_por, jornadas.eliminado_en AS jornadas_eliminado_en, jornadas.eliminado_por AS jornadas_eliminado_por, jornadas.razon_eliminacion AS jornadas_razon_eliminacion
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: FROM jornadas
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: WHERE jornadas.estado_apertura = %(estado_apertura_1)s AND jornadas.eliminado_en IS NULL ORDER BY jornadas.fecha_jornada DESC
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:  LIMIT %(param_1)s]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [parameters: {'estado_apertura_1': 'abierto', 'param_1': 1}]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: (Background on this error at: https://sqlalche.me/e/20/2j85)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: Traceback (most recent call last):
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self.dialect.do_execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     cursor.execute(statement, parameters)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: The above exception was the direct cause of the following exception:
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: Traceback (most recent call last):
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 493, in _get_graficos_data
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     ).order_by(Jornada.fecha_jornada.desc()).first()
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2759, in first
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self.limit(1)._iter().first()  # type: ignore
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self._execute_internal(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result: Result[Any] = compile_state_cls.orm_execute_statement(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result = conn.execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return meth(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return connection._execute_clauseelement(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     ret = self._execute_context(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self._exec_single_context(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self._handle_dbapi_exception(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self.dialect.do_execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     cursor.execute(statement, parameters)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: sqlalchemy.exc.InternalError: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [SQL: SELECT jornadas.id AS jornadas_id, jornadas.fecha_jornada AS jornadas_fecha_jornada, jornadas.fecha_cierre_programada AS jornadas_fecha_cierre_programada, jornadas.tipo_turno AS jornadas_tipo_turno, jornadas.nombre_fiesta AS jornadas_nombre_fiesta, jornadas.horario_apertura_programado AS jornadas_horario_apertura_programado, jornadas.horario_cierre_programado AS jornadas_horario_cierre_programado, jornadas.horario_apertura_real AS jornadas_horario_apertura_real, jornadas.responsable_cajas AS jornadas_responsable_cajas, jornadas.responsable_puerta AS jornadas_responsable_puerta, jornadas.responsable_seguridad AS jornadas_responsable_seguridad, jornadas.responsable_admin AS jornadas_responsable_admin, jornadas.estado_apertura AS jornadas_estado_apertura, jornadas.checklist_tecnico AS jornadas_checklist_tecnico, jornadas.checklist_apertura AS jornadas_checklist_apertura, jornadas.djs AS jornadas_djs, jornadas.barras_disponibles AS jornadas_barras_disponibles, jornadas.creado_en AS jornadas_creado_en, jornadas.abierto_en AS jornadas_abierto_en, jornadas.abierto_por AS jornadas_abierto_por, jornadas.eliminado_en AS jornadas_eliminado_en, jornadas.eliminado_por AS jornadas_eliminado_por, jornadas.razon_eliminacion AS jornadas_razon_eliminacion
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: FROM jornadas
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: WHERE jornadas.estado_apertura = %(estado_apertura_1)s AND jornadas.eliminado_en IS NULL ORDER BY jornadas.fecha_jornada DESC
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:  LIMIT %(param_1)s]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [parameters: {'estado_apertura_1': 'abierto', 'param_1': 1}]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: (Background on this error at: https://sqlalche.me/e/20/2j85)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [2026-01-03 07:34:03,598] ERROR in dashboard_metrics_service: Error obteniendo alertas: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [SQL: SELECT jornadas.id AS jornadas_id, jornadas.fecha_jornada AS jornadas_fecha_jornada, jornadas.fecha_cierre_programada AS jornadas_fecha_cierre_programada, jornadas.tipo_turno AS jornadas_tipo_turno, jornadas.nombre_fiesta AS jornadas_nombre_fiesta, jornadas.horario_apertura_programado AS jornadas_horario_apertura_programado, jornadas.horario_cierre_programado AS jornadas_horario_cierre_programado, jornadas.horario_apertura_real AS jornadas_horario_apertura_real, jornadas.responsable_cajas AS jornadas_responsable_cajas, jornadas.responsable_puerta AS jornadas_responsable_puerta, jornadas.responsable_seguridad AS jornadas_responsable_seguridad, jornadas.responsable_admin AS jornadas_responsable_admin, jornadas.estado_apertura AS jornadas_estado_apertura, jornadas.checklist_tecnico AS jornadas_checklist_tecnico, jornadas.checklist_apertura AS jornadas_checklist_apertura, jornadas.djs AS jornadas_djs, jornadas.barras_disponibles AS jornadas_barras_disponibles, jornadas.creado_en AS jornadas_creado_en, jornadas.abierto_en AS jornadas_abierto_en, jornadas.abierto_por AS jornadas_abierto_por, jornadas.eliminado_en AS jornadas_eliminado_en, jornadas.eliminado_por AS jornadas_eliminado_por, jornadas.razon_eliminacion AS jornadas_razon_eliminacion
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: FROM jornadas
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: WHERE jornadas.estado_apertura = %(estado_apertura_1)s AND jornadas.eliminado_en IS NULL ORDER BY jornadas.fecha_jornada DESC
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:  LIMIT %(param_1)s]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [parameters: {'estado_apertura_1': 'abierto', 'param_1': 1}]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: (Background on this error at: https://sqlalche.me/e/20/2j85)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: Traceback (most recent call last):
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self.dialect.do_execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     cursor.execute(statement, parameters)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: The above exception was the direct cause of the following exception:
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: Traceback (most recent call last):
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 655, in _get_alertas_proactivas
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     ).order_by(Jornada.fecha_jornada.desc()).first()
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2759, in first
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self.limit(1)._iter().first()  # type: ignore
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self._execute_internal(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result: Result[Any] = compile_state_cls.orm_execute_statement(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     result = conn.execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return meth(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return connection._execute_clauseelement(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     ret = self._execute_context(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     return self._exec_single_context(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self._handle_dbapi_exception(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     self.dialect.do_execute(
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:   File "/var/www/stvaldivia/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:     cursor.execute(statement, parameters)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: sqlalchemy.exc.InternalError: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [SQL: SELECT jornadas.id AS jornadas_id, jornadas.fecha_jornada AS jornadas_fecha_jornada, jornadas.fecha_cierre_programada AS jornadas_fecha_cierre_programada, jornadas.tipo_turno AS jornadas_tipo_turno, jornadas.nombre_fiesta AS jornadas_nombre_fiesta, jornadas.horario_apertura_programado AS jornadas_horario_apertura_programado, jornadas.horario_cierre_programado AS jornadas_horario_cierre_programado, jornadas.horario_apertura_real AS jornadas_horario_apertura_real, jornadas.responsable_cajas AS jornadas_responsable_cajas, jornadas.responsable_puerta AS jornadas_responsable_puerta, jornadas.responsable_seguridad AS jornadas_responsable_seguridad, jornadas.responsable_admin AS jornadas_responsable_admin, jornadas.estado_apertura AS jornadas_estado_apertura, jornadas.checklist_tecnico AS jornadas_checklist_tecnico, jornadas.checklist_apertura AS jornadas_checklist_apertura, jornadas.djs AS jornadas_djs, jornadas.barras_disponibles AS jornadas_barras_disponibles, jornadas.creado_en AS jornadas_creado_en, jornadas.abierto_en AS jornadas_abierto_en, jornadas.abierto_por AS jornadas_abierto_por, jornadas.eliminado_en AS jornadas_eliminado_en, jornadas.eliminado_por AS jornadas_eliminado_por, jornadas.razon_eliminacion AS jornadas_razon_eliminacion
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: FROM jornadas
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: WHERE jornadas.estado_apertura = %(estado_apertura_1)s AND jornadas.eliminado_en IS NULL ORDER BY jornadas.fecha_jornada DESC
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]:  LIMIT %(param_1)s]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: [parameters: {'estado_apertura_1': 'abierto', 'param_1': 1}]
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: (Background on this error at: https://sqlalche.me/e/20/2j85)
+Jan 03 07:34:03 stvaldivia gunicorn[2837803]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 07:34:13 stvaldivia gunicorn[2837800]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 07:34:13 stvaldivia gunicorn[2837801]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 07:34:13 stvaldivia gunicorn[2837802]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 07:34:13 stvaldivia gunicorn[2837803]: emitting event "metrics_update" to all [/admin_stats]
+
+###############################################################################
+# 11) LOGS: nginx últimas 120 líneas
+###############################################################################
+-- /var/log/nginx/error.log --
+2026/01/03 00:08:18 [crit] 998488#998488: *1774691 SSL_do_handshake() failed (SSL: error:0A00006C:SSL routines::bad key share) while SSL handshaking, client: 64.62.156.29, server: 0.0.0.0:443
+2026/01/03 03:29:39 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:10 [error] 998488#998488: *1831451 connect() failed (111: Unknown error) while connecting to upstream, client: 104.28.63.191, server: stvaldivia.cl, request: "GET /socket.io/?EIO=4&transport=polling&t=Pk1vydR HTTP/2.0", upstream: "http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling&t=Pk1vydR", host: "stvaldivia.cl", referrer: "https://stvaldivia.cl/admin/panel_control"
+2026/01/03 03:30:10 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:10 [error] 998488#998488: *1832766 connect() failed (111: Unknown error) while connecting to upstream, client: 191.114.73.136, server: stvaldivia.cl, request: "GET /socket.io/?EIO=4&transport=polling&t=Pk1vybI HTTP/2.0", upstream: "http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling&t=Pk1vybI", host: "stvaldivia.cl", referrer: "https://stvaldivia.cl/admin/ecommerce/compras"
+2026/01/03 03:30:11 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:11 [error] 998488#998488: *1831451 connect() failed (111: Unknown error) while connecting to upstream, client: 104.28.63.191, server: stvaldivia.cl, request: "GET /socket.io/?EIO=4&transport=polling&t=Pk1vy-p HTTP/2.0", upstream: "http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling&t=Pk1vy-p", host: "stvaldivia.cl", referrer: "https://stvaldivia.cl/admin/panel_control"
+2026/01/03 03:30:11 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:12 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:13 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:13 [error] 998488#998488: *1832766 connect() failed (111: Unknown error) while connecting to upstream, client: 191.114.73.136, server: stvaldivia.cl, request: "GET /socket.io/?EIO=4&transport=polling&t=Pk1vzZn HTTP/2.0", upstream: "http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling&t=Pk1vzZn", host: "stvaldivia.cl", referrer: "https://stvaldivia.cl/admin/ecommerce/compras"
+2026/01/03 03:30:14 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:15 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:15 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:16 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:16 [error] 998488#998488: *1831451 connect() failed (111: Unknown error) while connecting to upstream, client: 104.28.63.191, server: stvaldivia.cl, request: "GET /socket.io/?EIO=4&transport=polling&t=Pk1v-F0 HTTP/2.0", upstream: "http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling&t=Pk1v-F0", host: "stvaldivia.cl", referrer: "https://stvaldivia.cl/admin/panel_control"
+2026/01/03 03:30:16 [error] 998488#998488: *1832766 connect() failed (111: Unknown error) while connecting to upstream, client: 191.114.73.136, server: stvaldivia.cl, request: "GET /socket.io/?EIO=4&transport=polling&t=Pk1v-Ie HTTP/2.0", upstream: "http://127.0.0.1:5001/socket.io/?EIO=4&transport=polling&t=Pk1v-Ie", host: "stvaldivia.cl", referrer: "https://stvaldivia.cl/admin/ecommerce/compras"
+2026/01/03 03:30:17 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:18 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:19 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:19 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:30:20 [error] 998488#998488: *1832714 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:33:05 [error] 998488#998488: *1833105 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:33:06 [error] 998488#998488: *1833105 connect() failed (111: Unknown error) while connecting to upstream, client: 34.176.144.166, server: stvaldivia.cl, request: "GET /caja/api/payment/agent/pending?register_id=1 HTTP/1.1", upstream: "http://127.0.0.1:5001/caja/api/payment/agent/pending?register_id=1", host: "stvaldivia.cl"
+2026/01/03 03:33:06 [notice] 2792221#2792221: signal process started
+2026/01/03 03:37:01 [notice] 2793272#2793272: signal process started
+2026/01/03 03:40:20 [notice] 2794241#2794241: signal process started
+2026/01/03 04:26:06 [notice] 2805471#2805471: signal process started
+2026/01/03 04:27:20 [notice] 2805967#2805967: signal process started
+2026/01/03 04:34:52 [notice] 2806676#2806676: signal process started
+2026/01/03 04:34:58 [notice] 2806680#2806680: signal process started
+2026/01/03 07:16:03 [error] 2806682#2806682: *1844456 "/var/www/html/.well-known/acme-challenge/index.html" is not found (2: No such file or directory), client: 74.225.216.240, server: stvaldivia.cl, request: "GET /.well-known/acme-challenge/ HTTP/1.1", host: "stvaldivia.cl", referrer: "https://www.google.de/"
+
+-- /var/log/nginx/access.log (últimas 40) --
+35.191.235.209 - - [03/Jan/2026:07:33:16 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:18 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:33:20 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:33:21 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:23 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:33:25 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:33:26 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:28 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:33:30 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:33:31 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:33 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:33:35 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:33:36 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:38 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:33:40 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:33:41 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:43 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:33:45 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:33:46 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:48 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:33:50 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:33:51 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:53 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:33:55 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:33:56 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:33:58 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:34:00 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:34:01 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:34:03 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:34:05 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:34:06 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:34:08 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:34:10 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:34:11 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:34:13 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.213 - - [03/Jan/2026:07:34:15 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.209 - - [03/Jan/2026:07:34:16 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+35.191.235.210 - - [03/Jan/2026:07:34:18 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+127.0.0.1 - - [03/Jan/2026:07:34:20 +0000] "HEAD / HTTP/1.1" 301 0 "-" "curl/7.81.0"
+35.191.235.213 - - [03/Jan/2026:07:34:20 +0000] "GET / HTTP/1.1" 301 178 "-" "GoogleHC/1.0"
+
+###############################################################################
+# 12) APP: estructura + entrypoint + DB hints (sin secretos)
+###############################################################################
+PWD: /var/www/stvaldivia
+total 1696
+drwxrwxr-x  2 deploy deploy    4096 Jan  3 06:23 $TMP_DIR
+drwxrwxr-x 18 deploy deploy   20480 Jan  3 06:24 .
+drwxr-xr-x  7 deploy deploy    4096 Dec 26 04:51 ..
+drwxrwxr-x  2 deploy deploy    4096 Jan  3 06:23 .cursor
+-rw-rw-r--  1 deploy deploy     694 Jan  3 06:23 .dockerignore
+-rw-rw-r--  1 deploy deploy      66 Jan  3 06:23 .gitattributes
+-rw-rw-r--  1 deploy deploy     127 Jan  3 06:23 .gitignore
+drwxrwxr-x  2 deploy deploy    4096 Jan  3 06:23 .vscode
+-rw-rw-r--  1 deploy deploy    2702 Jan  3 06:23 ACTUALIZAR_CLOUD_RUN.md
+-rw-rw-r--  1 deploy deploy   21064 Jan  3 06:23 ANALISIS_ARQUITECTURA_APP_MOVIL.md
+-rw-rw-r--  1 deploy deploy    7807 Jan  3 06:23 ANALISIS_CHATBOT_FALTANTE.md
+-rw-rw-r--  1 deploy deploy   11218 Jan  3 06:23 ANALISIS_MIGRACION_MYSQL.md
+-rw-rw-r--  1 deploy deploy   14342 Jan  3 06:23 ANALISIS_RENDIMIENTO_Y_APIS.md
+-rw-rw-r--  1 deploy deploy   25286 Jan  3 06:23 ARQUITECTURA_BD_ANALISIS_SENIOR.md
+-rw-rw-r--  1 deploy deploy   19860 Jan  3 06:23 AUDITORIA_COMPLETA_SISTEMA.md
+-rw-rw-r--  1 deploy deploy    5171 Jan  3 06:23 AUDITORIA_CSS_RESPONSIVE.md
+-rw-rw-r--  1 deploy deploy   15079 Jan  3 06:23 AUDITORIA_ENLACES_ROTOS.md
+-rw-rw-r--  1 deploy deploy   11994 Jan  3 06:23 AUDITORIA_INVENTARIO_CAJAS.md
+-rw-rw-r--  1 deploy deploy   27706 Jan  3 06:23 AUDITORIA_POS.md
+-rw-rw-r--  1 deploy deploy    1861 Jan  3 06:23 AUTENTICACION_MANUAL.md
+-rw-rw-r--  1 deploy deploy    2510 Jan  3 06:23 CHANGELOG_CSS_FIX.md
+-rw-rw-r--  1 deploy deploy    3209 Jan  3 06:23 CHECKLIST_PRODUCCION.md
+-rw-rw-r--  1 deploy deploy    5318 Jan  3 06:23 CHECKLIST_STVALDIVIA_CL_ONLINE.md
+-rw-rw-r--  1 deploy deploy    5458 Jan  3 06:23 CLOUD_RUN_SETUP_COMPLETO.md
+-rw-rw-r--  1 deploy deploy    1002 Jan  3 06:23 COMANDOS_DEPLOY.md
+-rw-rw-r--  1 deploy deploy    1975 Jan  3 06:23 COMANDOS_SERVIDOR.md
+-rw-rw-r--  1 deploy deploy    2835 Jan  3 06:23 COMANDO_CURL_OPENAI_CORRECTO.md
+-rw-rw-r--  1 deploy deploy    2337 Jan  3 06:23 COMMITS_RESPONSIVE.md
+-rw-rw-r--  1 deploy deploy    5395 Jan  3 06:23 COMO_ACCEDER_API_OPERACIONAL.md
+-rw-rw-r--  1 deploy deploy    4110 Jan  3 06:23 COMO_PROBAR_BIMBA.md
+-rw-rw-r--  1 deploy deploy    5510 Jan  3 06:23 COMO_PROBAR_PAYMENT_INTENT.md
+-rw-rw-r--  1 deploy deploy    8090 Jan  3 06:23 CONFIGURACION_CORREO_STVALDIVIA.md
+-rw-rw-r--  1 deploy deploy    6404 Jan  3 06:23 CONFIGURACION_SUMUP_KIOSKO.md
+-rw-rw-r--  1 deploy deploy    5455 Jan  3 06:23 CONFIGURAR_API_OPERACIONAL.md
+-rw-rw-r--  1 deploy deploy    9262 Jan  3 06:23 CONFIGURAR_BASES_DATOS_SERVIDOR.md
+-rw-rw-r--  1 deploy deploy    5092 Jan  3 06:23 CONFIGURAR_BASES_DATOS_VM.md
+-rw-rw-r--  1 deploy deploy    5518 Jan  3 06:23 CONFIGURAR_DIALOGFLOW.md
+-rw-rw-r--  1 deploy deploy    5750 Jan  3 06:23 CONFIGURAR_DNS.md
+-rw-rw-r--  1 deploy deploy    3841 Jan  3 06:23 CONFIGURAR_DNS_GOOGLE_DOMAINS.md
+-rw-rw-r--  1 deploy deploy    6669 Jan  3 06:23 CONFIGURAR_DNS_NIC_CL.md
+-rw-rw-r--  1 deploy deploy    4195 Jan  3 06:23 CONFIGURAR_EMAIL.md
+-rw-rw-r--  1 deploy deploy    1841 Jan  3 06:23 CONFIGURAR_EMAIL_RAPIDO.md
+-rw-rw-r--  1 deploy deploy    5940 Jan  3 06:23 CONFIGURAR_EMAIL_VM.md
+-rw-rw-r--  1 deploy deploy    4381 Jan  3 06:23 CONFIGURAR_GOOGLE_DOMAINS_PASO_A_PASO.md
+-rw-rw-r--  1 deploy deploy    4897 Jan  3 06:23 CONFIGURAR_MX_GOOGLE_DOMAINS.md
+-rw-rw-r--  1 deploy deploy    4998 Jan  3 06:23 CONFIGURAR_OPENAI_IA_GENERATIVA.md
+-rw-rw-r--  1 deploy deploy    5104 Jan  3 06:23 CONFIGURAR_REDIRECCION_EMAIL.md
+-rw-rw-r--  1 deploy deploy    8220 Jan  3 06:23 CONFIGURAR_REDIRECCION_EMAIL_GOOGLE.md
+-rw-rw-r--  1 deploy deploy    3455 Jan  3 06:23 CONFIGURAR_REMOTE_SSH.md
+-rw-rw-r--  1 deploy deploy    7053 Jan  3 06:23 CONFIGURAR_SPF_GOOGLE_DOMAINS.md
+-rw-rw-r--  1 deploy deploy    5862 Jan  3 06:23 CORRECCIONES_APLICADAS.md
+-rw-rw-r--  1 deploy deploy    5407 Jan  3 06:23 CORRECCION_USA_RECETA.md
+-rw-rw-r--  1 deploy deploy    2526 Jan  3 06:23 DATOS_SSH.md
+-rw-rw-r--  1 deploy deploy    6353 Jan  3 06:23 DEPLOY_CLOUD_RUN_COMPLETO.md
+-rw-rw-r--  1 deploy deploy    5825 Jan  3 06:23 DEPLOY_CLOUD_RUN_CONSOLE.md
+-rw-rw-r--  1 deploy deploy    8987 Jan  3 06:23 DEPLOY_CLOUD_RUN_PASO_A_PASO.md
+-rw-rw-r--  1 deploy deploy    2458 Jan  3 06:23 DEPLOY_CON_OPENAI.md
+-rw-rw-r--  1 deploy deploy    2784 Jan  3 06:23 DEPLOY_GITHUB.md
+-rw-rw-r--  1 deploy deploy    2018 Jan  3 06:23 DEPLOY_INMEDIATO.md
+-rw-rw-r--  1 deploy deploy    3308 Jan  3 06:23 DEPLOY_VM.md
+-rw-rw-r--  1 deploy deploy   14027 Jan  3 06:23 DIAGNOSTICO_ESTRUCTURA_BD.md
+-rw-rw-r--  1 deploy deploy    1425 Jan  3 06:23 Dockerfile
+-rw-rw-r--  1 deploy deploy    2480 Jan  3 06:23 EJECUTAR_DEPLOY.md
+-rw-rw-r--  1 deploy deploy    1940 Jan  3 06:23 ESTADO_ACTUAL.md
+-rw-rw-r--  1 deploy deploy    3011 Jan  3 06:23 ESTADO_DEPLOY_CLOUD_RUN.md
+-rw-rw-r--  1 deploy deploy    6772 Jan  3 06:23 ESTRATEGIA_IMPRESORAS_TPV.md
+-rw-rw-r--  1 deploy deploy   11500 Jan  3 06:23 ESTRATEGIA_PASARELAS_PAGO.md
+-rw-rw-r--  1 deploy deploy    8318 Jan  3 06:23 ESTRATEGIA_TPV_PUNTOS_VENTA.md
+-rw-rw-r--  1 deploy deploy   10708 Jan  3 06:23 EVALUACION_ARQUITECTURA_BD.md
+-rw-rw-r--  1 deploy deploy   12519 Jan  3 06:23 EVALUACION_SUMUP_KIOSKO.md
+-rw-rw-r--  1 deploy deploy    1564 Jan  3 06:23 FIX_MENU_MOVIL.md
+-rw-rw-r--  1 deploy deploy    5800 Jan  3 06:23 GUIA_BASE_DATOS_DESARROLLO_PRODUCCION.md
+-rw-rw-r--  1 deploy deploy    3376 Jan  3 06:23 GUIA_CONFIGURAR_OPENAI.md
+-rw-rw-r--  1 deploy deploy    4293 Jan  3 06:23 GUIA_CONFIGURAR_SUMUP_PRODUCCION.md
+-rw-rw-r--  1 deploy deploy    3611 Jan  3 06:23 GUIA_EJECUTAR_MIGRACION_SUMUP.md
+-rw-rw-r--  1 deploy deploy    2987 Jan  3 06:23 GUIA_OBTENER_SUMUP_API_KEY.md
+-rw-rw-r--  1 deploy deploy    8694 Jan  3 06:23 GUIA_PONER_STVALDIVIA_CL_ONLINE.md
+-rw-rw-r--  1 deploy deploy    5887 Jan  3 06:23 GUIA_PRUEBA_RESPONSIVE.md
+-rw-rw-r--  1 deploy deploy    7171 Jan  3 06:23 GUIA_PUSH_VSCODE.md
+-rw-rw-r--  1 deploy deploy    3020 Jan  3 06:23 GUIA_TRABAJAR_DESDE_WINDOWS.md
+-rw-rw-r--  1 deploy deploy    3828 Jan  3 06:23 INSPECCION_REPO_FASE0.md
+-rw-rw-r--  1 deploy deploy    7549 Jan  3 06:23 INSTRUCCIONES_COMPLETAR_P0.md
+-rw-rw-r--  1 deploy deploy    3177 Jan  3 06:23 INSTRUCCIONES_DEPLOY_AHORA.md
+-rw-rw-r--  1 deploy deploy    4129 Jan  3 06:23 INSTRUCCIONES_DEPLOY_CLOUD_RUN.md
+-rw-rw-r--  1 deploy deploy    3954 Jan  3 06:23 INSTRUCCIONES_MIGRACION_SUMUP_PRODUCCION.md
+-rw-rw-r--  1 deploy deploy    1363 Jan  3 06:23 INSTRUCCIONES_RAPIDAS_DNS.md
+-rw-rw-r--  1 deploy deploy    1937 Jan  3 06:23 INSTRUCCIONES_SSH.md
+-rw-rw-r--  1 deploy deploy    2823 Jan  3 06:23 INTEGRACION_BIMBA_MINIMALISTA.md
+-rw-rw-r--  1 deploy deploy    2565 Jan  3 06:23 LIMPIEZA_PASARELAS_PAGO.md
+-rw-rw-r--  1 deploy deploy    5158 Jan  3 06:23 LOAD_BALANCER_COMPLETO.md
+-rw-rw-r--  1 deploy deploy    3846 Jan  3 06:23 LOAD_BALANCER_CREADO.md
+-rw-rw-r--  1 deploy deploy    5951 Jan  3 06:23 MEJORAS_APLICADAS.md
+-rw-rw-r--  1 deploy deploy    5453 Jan  3 06:23 MEJORAS_INVENTARIO.md
+-rw-rw-r--  1 deploy deploy    2382 Jan  3 06:23 MIGRACION_SUMUP_EJECUTADA.md
+-rw-rw-r--  1 deploy deploy    4958 Jan  3 06:23 NOTAS_SUMUP_API.md
+-rw-rw-r--  1 deploy deploy    8432 Jan  3 06:23 PLAN_RESPONSIVE_COMPLETO.md
+-rw-rw-r--  1 deploy deploy    6049 Jan  3 06:23 PLAN_RESPONSIVE_MOBILE_FIRST.md
+-rw-rw-r--  1 deploy deploy    5092 Jan  3 06:23 POS_RESPONSIVE_IMPLEMENTATION.md
+-rw-rw-r--  1 deploy deploy    2848 Jan  3 06:23 PROMPT_CURSOR_WINDOWS.md
+-rw-rw-r--  1 deploy deploy     721 Jan  3 06:23 README.md
+-rw-rw-r--  1 deploy deploy    9615 Jan  3 06:23 REPORTE_REVISION_LOGICA.md
+-rw-rw-r--  1 deploy deploy    7419 Jan  3 06:23 RESPONSIVE_CSS_FIX.md
+-rw-rw-r--  1 deploy deploy    5693 Jan  3 06:23 RESPONSIVE_QA.md
+-rw-rw-r--  1 deploy deploy    4508 Jan  3 06:23 RESUMEN_CATEGORIAS_TPV.md
+-rw-rw-r--  1 deploy deploy    4275 Jan  3 06:23 RESUMEN_CONFIGURACION_COMPLETA.md
+-rw-rw-r--  1 deploy deploy    2494 Jan  3 06:23 RESUMEN_CONFIGURACION_SUMUP.md
+-rw-rw-r--  1 deploy deploy    6539 Jan  3 06:23 RESUMEN_IMPLEMENTACION_AUDITORIA.md
+-rw-rw-r--  1 deploy deploy    5837 Jan  3 06:23 RESUMEN_IMPLEMENTACION_COMPLETA.md
+-rw-rw-r--  1 deploy deploy    6286 Jan  3 06:23 RESUMEN_IMPLEMENTACION_TPV.md
+-rw-rw-r--  1 deploy deploy    5324 Jan  3 06:23 RESUMEN_IMPRESORAS_TPV.md
+-rw-rw-r--  1 deploy deploy    5537 Jan  3 06:23 RESUMEN_MEJORAS_INVENTARIO.md
+-rw-rw-r--  1 deploy deploy    3294 Jan  3 06:23 RESUMEN_MIGRACION_MYSQL.txt
+-rw-rw-r--  1 deploy deploy    3643 Jan  3 06:23 RESUMEN_PRUEBAS_DATABASE_TOGGLE.md
+-rw-rw-r--  1 deploy deploy    5662 Jan  3 06:23 RESUMEN_PRUEBAS_SUMUP.md
+-rw-rw-r--  1 deploy deploy    1699 Jan  3 06:23 RESUMEN_REDIRECCION_EMAIL.md
+-rw-rw-r--  1 deploy deploy    6072 Jan  3 06:23 REVISION_CLOUD_RUN.md
+-rw-rw-r--  1 deploy deploy    5247 Jan  3 06:23 REVISION_PROCESOS.md
+-rw-rw-r--  1 deploy deploy   11090 Jan  3 06:23 SECURITY_CSP.md
+-rw-rw-r--  1 deploy deploy    1501 Jan  3 06:23 SERVIDOR_LOCAL_INICIADO.md
+
+-- wsgi.py (si existe) --
+"""
+WSGI entry point for Gunicorn
+"""
+import sys
+import os
+
+# Add the project directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+
+from app import create_app
+
+application = create_app()
+
+
+-- app/__init__.py (si existe) --
+
+# BIMBA POS System - Dashboard Rewritten v4.0
+import os
+from flask import Flask
+from flask_socketio import SocketIO
+from dotenv import load_dotenv
+from datetime import datetime
+import pytz
+
+# Configurar zona horaria de Chile
+CHILE_TZ = pytz.timezone('America/Santiago')
+
+# Cache thread-safe para context processor (optimización)
+from .helpers.thread_safe_cache import (
+    get_cached_shift_info,
+    set_cached_shift_info,
+    invalidate_shift_cache
+)
+
+
+socketio = SocketIO(cors_allowed_origins="*")
+
+def create_app():
+    # Cargar variables de entorno
+    # En producción, solo cargar desde variables de entorno del sistema, no desde archivos
+    is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
+    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+    
+    # VALIDACIÓN CRÍTICA ANTES de crear la app Flask
+    if is_production:
+        secret_key = os.environ.get('FLASK_SECRET_KEY')
+        if not secret_key or secret_key == 'dev_key':
+            import sys
+            print("❌ CRÍTICO: FLASK_SECRET_KEY debe estar configurado en producción", file=sys.stderr)
+            raise ValueError("❌ CRÍTICO: FLASK_SECRET_KEY debe estar configurado en producción")
+        
+        database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            import sys
+            print("❌ ERROR: DATABASE_URL no configurado en producción. La aplicación no puede funcionar sin base de datos.", file=sys.stderr)
+            raise ValueError("DATABASE_URL debe estar configurado en producción. No se permite SQLite en producción.")
+    
+    if is_production:
+        # En producción, solo usar variables de entorno del sistema
+        load_dotenv()  # Cargar desde variables de entorno, no desde archivos
+        env_loaded = True
+    else:
+        # En desarrollo: intentar cargar desde archivos .env
+        env_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'),  # Raíz del proyecto
+            '/var/www/flask_app/.env',  # Servidor producción común (solo si no es Cloud Run)
+            os.path.expanduser('~/.env'),  # Home del usuario
+            '.env'  # Directorio actual
+        ]
+        
+        env_loaded = False
+        for env_path in env_paths:
+            if os.path.exists(env_path):
+                load_dotenv(env_path)
+                env_loaded = True
+                app_logger = None
+                try:
+                    from flask import current_app
+                    if current_app:
+                        app_logger = current_app.logger
+                except:
+                    import logging
+                    app_logger = logging.getLogger(__name__)
+                if app_logger:
+                    app_logger.info(f"✅ Variables de entorno cargadas desde: {env_path}")
+                break
+        
+        # Si no se encontró ningún .env, intentar cargar desde el directorio actual
+        if not env_loaded:
+            load_dotenv()  # Buscar en directorio actual y padres
+
+    app = Flask(__name__)
+    
+    # Configurar logging a archivo
+    import logging
+    from logging.handlers import RotatingFileHandler
+    from datetime import datetime
+    
+    # Crear directorio de logs si no existe
+    logs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+    
+    # Configurar archivo de log con rotación
+    log_file = os.path.join(logs_dir, 'app.log')
+    file_handler = RotatingFileHandler(
+        log_file, 
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=10
+    )
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    
+    # Agregar handler solo si no está en producción o si se especifica
+    if not is_production or os.environ.get('ENABLE_FILE_LOGGING', '').lower() == 'true':
+        app.logger.addHandler(file_handler)
+        app.logger.setLevel(logging.INFO)
+        app.logger.info(f'✅ Logging configurado: {log_file}')
+    
+    # También configurar logging para GetNet específicamente
+    getnet_log_file = os.path.join(logs_dir, 'getnet.log')
+    getnet_handler = RotatingFileHandler(
+        getnet_log_file,
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=10
+    )
+    getnet_handler.setLevel(logging.INFO)
+    getnet_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    
+    # Logger específico para GetNet
+    getnet_logger = logging.getLogger('app.helpers.getnet_web_helper')
+    if not is_production or os.environ.get('ENABLE_FILE_LOGGING', '').lower() == 'true':
+        getnet_logger.addHandler(getnet_handler)
+        getnet_logger.setLevel(logging.INFO)
+
+    # Configuración - Validar ANTES de crear app si estamos en producción
+    secret_key = os.environ.get('FLASK_SECRET_KEY')
+    if is_production:
+        if not secret_key or secret_key == 'dev_key':
+            import sys
+            print("❌ CRÍTICO: FLASK_SECRET_KEY debe estar configurado en producción", file=sys.stderr)
+            raise ValueError("❌ CRÍTICO: FLASK_SECRET_KEY debe estar configurado en producción")
+    
+    if not secret_key or secret_key == 'dev_key':
+        app.logger.warning("⚠️ Usando SECRET_KEY por defecto (solo desarrollo)")
+    app.secret_key = secret_key or 'dev_key'
+    
+    # Validación de variables críticas en producción
+    if is_production:
+        app.logger.info("🔍 Validando variables de entorno críticas para producción...")
+        
+        # DATABASE_URL se valida más abajo, pero loggeamos aquí
+        if not os.environ.get('DATABASE_URL'):
+            app.logger.error("❌ CRÍTICO: DATABASE_URL no configurado en producción")
+            # El error se lanzará más abajo, pero loggeamos aquí
+        
+        # Variables opcionales pero importantes
+        if not os.environ.get('OPENAI_API_KEY'):
+            app.logger.warning("⚠️ OPENAI_API_KEY no configurada. Bot funcionará solo con RuleEngine.")
+        
+        if not os.environ.get('BIMBA_INTERNAL_API_KEY'):
+            app.logger.warning("⚠️ BIMBA_INTERNAL_API_KEY no configurada. API operational no funcionará.")
+        
+        if not os.environ.get('BIMBA_INTERNAL_API_BASE_URL'):
+            app.logger.warning("⚠️ BIMBA_INTERNAL_API_BASE_URL no configurada. Bot no usará contexto operativo en producción.")
+        
+        app.logger.info("✅ Validación de variables de entorno completada")
+    
+    # Configurar CSRF Protection
+    csrf = None
+    try:
+        from flask_wtf.csrf import CSRFProtect, CSRFError
+        
+        # Verificar si estamos en desarrollo (antes de inicializar CSRFProtect)
+        # Verificar tanto variables de entorno como configuración de la app
+        flask_env = os.environ.get('FLASK_ENV', '').lower()
+        flask_debug = os.environ.get('FLASK_DEBUG', '').lower()
+        
+        # Si no es producción ni Cloud Run, asumimos que es desarrollo
+        # Esto es más seguro: solo habilitamos CSRF en producción explícita
+        is_development = not is_production and not is_cloud_run
+        
+        # También verificar variables de entorno explícitas
+        if flask_env == 'production':
+            is_development = False
+        elif flask_env == 'development':
+            is_development = True
+        elif flask_debug == 'true':
+            is_development = True
+        
+        csrf = CSRFProtect(app)
+        
+        if is_development:
+            # En desarrollo: deshabilitar CSRF para facilitar testing
+            app.config['WTF_CSRF_ENABLED'] = False
+            app.logger.info("🔓 CSRF deshabilitado en modo desarrollo")
+        else:
+            # En producción: habilitar CSRF pero eximir ecommerce
+            app.config['WTF_CSRF_ENABLED'] = True
+            app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hora
+            app.config['WTF_CSRF_CHECK_DEFAULT'] = True
+            app.config['WTF_CSRF_HEADERS'] = ['X-CSRFToken', 'X-CSRF-Token']  # Headers para AJAX
+            # Eximir rutas de ecommerce de CSRF (se manejará después de registrar blueprint)
+            app.config['WTF_CSRF_EXEMPT_LIST'] = ['ecommerce.checkout', 'ecommerce.payment_callback', 'ecommerce.getnet_webhook']
+        
+        # Hacer csrf disponible globalmente para usar @csrf.exempt
+        app.csrf = csrf
+        
+        # Registrar handler de errores CSRF
+        @app.errorhandler(CSRFError)
+        def handle_csrf_error(e):
+            from flask import request, jsonify, flash, redirect, url_for
+
+-- referencias a sqlite/bimba.db/DATABASE_URL --
+
+###############################################################################
+# 13) BD local (debería estar apagada si ya migraste) + uso de disco
+###############################################################################
+-- servicios BD --
+active
+active
+
+-- tamaño de sqlite legacy (si existe) --
+-rwxr-xr-x 1 deploy deploy 2.0M Jan  3 05:50 /var/www/stvaldivia/instance/bimba.db
+
+-- uso disco --
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        29G   14G   15G  49% /
+tmpfs           3.9G     0  3.9G   0% /dev/shm
+tmpfs           1.6G  1.1M  1.6G   1% /run
+tmpfs           5.0M     0  5.0M   0% /run/lock
+efivarfs         56K   24K   27K  48% /sys/firmware/efi/efivars
+/dev/sda15      105M  6.1M   99M   6% /boot/efi
+tmpfs           794M  4.0K  794M   1% /run/user/1002
+tmpfs           794M  4.0K  794M   1% /run/user/1001
+
+###############################################################################
+# 14) FIREWALL LOCAL (ufw) y reglas iptables (resumen)
+###############################################################################
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp (OpenSSH)           ALLOW IN    Anywhere                  
+80,443/tcp (Nginx Full)    ALLOW IN    Anywhere                  
+5432/tcp                   ALLOW IN    Anywhere                  
+22/tcp                     ALLOW IN    Anywhere                  
+80/tcp                     ALLOW IN    Anywhere                  
+443/tcp                    ALLOW IN    Anywhere                  
+22/tcp (OpenSSH (v6))      ALLOW IN    Anywhere (v6)             
+80,443/tcp (Nginx Full (v6)) ALLOW IN    Anywhere (v6)             
+5432/tcp (v6)              ALLOW IN    Anywhere (v6)             
+22/tcp (v6)                ALLOW IN    Anywhere (v6)             
+80/tcp (v6)                ALLOW IN    Anywhere (v6)             
+443/tcp (v6)               ALLOW IN    Anywhere (v6)             
+
+587/tcp                    ALLOW OUT   Anywhere                  
+587/tcp (v6)               ALLOW OUT   Anywhere (v6)             
+
+
+-P INPUT DROP
+-P FORWARD DROP
+-P OUTPUT ACCEPT
+-N f2b-sshd
+-N ufw-after-forward
+-N ufw-after-input
+-N ufw-after-logging-forward
+-N ufw-after-logging-input
+-N ufw-after-logging-output
+-N ufw-after-output
+-N ufw-before-forward
+-N ufw-before-input
+-N ufw-before-logging-forward
+-N ufw-before-logging-input
+-N ufw-before-logging-output
+-N ufw-before-output
+-N ufw-logging-allow
+-N ufw-logging-deny
+-N ufw-not-local
+-N ufw-reject-forward
+-N ufw-reject-input
+-N ufw-reject-output
+-N ufw-skip-to-policy-forward
+-N ufw-skip-to-policy-input
+-N ufw-skip-to-policy-output
+-N ufw-track-forward
+-N ufw-track-input
+-N ufw-track-output
+-N ufw-user-forward
+-N ufw-user-input
+-N ufw-user-limit
+-N ufw-user-limit-accept
+-N ufw-user-logging-forward
+-N ufw-user-logging-input
+-N ufw-user-logging-output
+-N ufw-user-output
+-A INPUT -p tcp -m multiport --dports 22 -j f2b-sshd
+-A INPUT -j ufw-before-logging-input
+-A INPUT -j ufw-before-input
+-A INPUT -j ufw-after-input
+-A INPUT -j ufw-after-logging-input
+-A INPUT -j ufw-reject-input
+-A INPUT -j ufw-track-input
+-A FORWARD -j ufw-before-logging-forward
+-A FORWARD -j ufw-before-forward
+-A FORWARD -j ufw-after-forward
+-A FORWARD -j ufw-after-logging-forward
+-A FORWARD -j ufw-reject-forward
+-A FORWARD -j ufw-track-forward
+-A OUTPUT -j ufw-before-logging-output
+-A OUTPUT -j ufw-before-output
+-A OUTPUT -j ufw-after-output
+-A OUTPUT -j ufw-after-logging-output
+-A OUTPUT -j ufw-reject-output
+-A OUTPUT -j ufw-track-output
+-A f2b-sshd -s 217.154.106.153/32 -j REJECT --reject-with icmp-port-unreachable
+-A f2b-sshd -s 200.73.135.75/32 -j REJECT --reject-with icmp-port-unreachable
+-A f2b-sshd -s 43.163.123.45/32 -j REJECT --reject-with icmp-port-unreachable
+-A f2b-sshd -s 113.141.171.139/32 -j REJECT --reject-with icmp-port-unreachable
+-A f2b-sshd -j RETURN
+-A ufw-after-input -p udp -m udp --dport 137 -j ufw-skip-to-policy-input
+-A ufw-after-input -p udp -m udp --dport 138 -j ufw-skip-to-policy-input
+-A ufw-after-input -p tcp -m tcp --dport 139 -j ufw-skip-to-policy-input
+-A ufw-after-input -p tcp -m tcp --dport 445 -j ufw-skip-to-policy-input
+-A ufw-after-input -p udp -m udp --dport 67 -j ufw-skip-to-policy-input
+-A ufw-after-input -p udp -m udp --dport 68 -j ufw-skip-to-policy-input
+-A ufw-after-input -m addrtype --dst-type BROADCAST -j ufw-skip-to-policy-input
+-A ufw-after-logging-forward -m limit --limit 3/min --limit-burst 10 -j LOG --log-prefix "[UFW BLOCK] "
+-A ufw-after-logging-input -m limit --limit 3/min --limit-burst 10 -j LOG --log-prefix "[UFW BLOCK] "
+-A ufw-before-forward -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A ufw-before-forward -p icmp -m icmp --icmp-type 3 -j ACCEPT
+-A ufw-before-forward -p icmp -m icmp --icmp-type 11 -j ACCEPT
+-A ufw-before-forward -p icmp -m icmp --icmp-type 12 -j ACCEPT
+-A ufw-before-forward -p icmp -m icmp --icmp-type 8 -j ACCEPT
+-A ufw-before-forward -j ufw-user-forward
+-A ufw-before-input -i lo -j ACCEPT
+-A ufw-before-input -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A ufw-before-input -m conntrack --ctstate INVALID -j ufw-logging-deny
+-A ufw-before-input -m conntrack --ctstate INVALID -j DROP
+-A ufw-before-input -p icmp -m icmp --icmp-type 3 -j ACCEPT
+-A ufw-before-input -p icmp -m icmp --icmp-type 11 -j ACCEPT
+-A ufw-before-input -p icmp -m icmp --icmp-type 12 -j ACCEPT
+-A ufw-before-input -p icmp -m icmp --icmp-type 8 -j ACCEPT
+-A ufw-before-input -p udp -m udp --sport 67 --dport 68 -j ACCEPT
+-A ufw-before-input -j ufw-not-local
+-A ufw-before-input -d 224.0.0.251/32 -p udp -m udp --dport 5353 -j ACCEPT
+-A ufw-before-input -d 239.255.255.250/32 -p udp -m udp --dport 1900 -j ACCEPT
+-A ufw-before-input -j ufw-user-input
+-A ufw-before-output -o lo -j ACCEPT
+-A ufw-before-output -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A ufw-before-output -j ufw-user-output
+-A ufw-logging-allow -m limit --limit 3/min --limit-burst 10 -j LOG --log-prefix "[UFW ALLOW] "
+-A ufw-logging-deny -m conntrack --ctstate INVALID -m limit --limit 3/min --limit-burst 10 -j RETURN
+-A ufw-logging-deny -m limit --limit 3/min --limit-burst 10 -j LOG --log-prefix "[UFW BLOCK] "
+-A ufw-not-local -m addrtype --dst-type LOCAL -j RETURN
+-A ufw-not-local -m addrtype --dst-type MULTICAST -j RETURN
+-A ufw-not-local -m addrtype --dst-type BROADCAST -j RETURN
+-A ufw-not-local -m limit --limit 3/min --limit-burst 10 -j ufw-logging-deny
+-A ufw-not-local -j DROP
+-A ufw-skip-to-policy-forward -j DROP
+-A ufw-skip-to-policy-input -j DROP
+-A ufw-skip-to-policy-output -j ACCEPT
+-A ufw-track-output -p tcp -m conntrack --ctstate NEW -j ACCEPT
+-A ufw-track-output -p udp -m conntrack --ctstate NEW -j ACCEPT
+-A ufw-user-input -p tcp -m tcp --dport 22 -m comment --comment "\'dapp_OpenSSH\'" -j ACCEPT
+-A ufw-user-input -p tcp -m multiport --dports 80,443 -m comment --comment "\'dapp_Nginx%20Full\'" -j ACCEPT
+-A ufw-user-input -p tcp -m tcp --dport 5432 -j ACCEPT
+-A ufw-user-input -p tcp -m tcp --dport 22 -j ACCEPT
+-A ufw-user-input -p tcp -m tcp --dport 80 -j ACCEPT
+-A ufw-user-input -p tcp -m tcp --dport 443 -j ACCEPT
+-A ufw-user-limit -m limit --limit 3/min -j LOG --log-prefix "[UFW LIMIT BLOCK] "
+-A ufw-user-limit -j REJECT --reject-with icmp-port-unreachable
+-A ufw-user-limit-accept -j ACCEPT
+-A ufw-user-output -p tcp -m tcp --dport 587 -j ACCEPT
+
+###############################################################################
+# 15) METADATA GCE (red) + IPs
+###############################################################################
+10.194.0.2 
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: ens4: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1460 qdisc mq state UP group default qlen 1000
+    link/ether 42:01:0a:c2:00:02 brd ff:ff:ff:ff:ff:ff
+    inet 10.194.0.2/32 metric 100 scope global dynamic ens4
+       valid_lft 2345sec preferred_lft 2345sec
+    inet6 fe80::4001:aff:fec2:2/64 scope link 
+       valid_lft forever preferred_lft forever
+
+== FIN AUDITORIA ==

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard BIMBA 🔥</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body style="background:#111;color:white;font-family:Arial;padding:20px;">
+<h1>DASHBOARD BIMBA 💜</h1>
+
+<canvas id="ventasPorHora" width="400" height="150"></canvas>
+<canvas id="satisfaccionChart" width="400" height="150"></canvas>
+
+<script>
+async function loadMetricas(){
+  const res = await fetch("http://localhost:5002/api/panel/metricas");
+  const data = await res.json();
+
+  // mock ventas por hora
+  const horas = ["23","00","01","02","03","04"];
+  const ventas = [200000, 350000, 540000, 300000, 180000, 90000];
+
+  new Chart(document.getElementById("ventasPorHora"),{
+      type:"line",
+      data:{
+          labels: horas,
+          datasets:[{
+              label:"Ventas por hora 💸",
+              data: ventas
+          }]
+      }
+  });
+
+  // satisfaccion
+  const sat = data.satisfaccion;
+  new Chart(document.getElementById("satisfaccionChart"),{
+      type:"bar",
+      data:{
+          labels:["Excelente","Buena","Regular","Mala"],
+          datasets:[{
+              label:"Encuestas 😄",
+              data:[sat.excelente,sat.buena,sat.regular,sat.mala]
+          }]
+      }
+  });
+}
+
+loadMetricas();
+</script>
+</body>
+</html>

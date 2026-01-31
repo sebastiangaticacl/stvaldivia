@@ -1,0 +1,741 @@
+{% extends "base.html" %}
+{% block title %}Inventario del Turno - Control de Stock BIMBA{% endblock %}
+{% block meta_description %}Control y gestión de inventario en tiempo real. Monitoreo de ingredientes, productos y consumo durante el turno activo en el sistema BIMBA.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .inventory-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-md, 1rem);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    
+    @media (min-width: 768px) {
+        .header-section {
+            padding: var(--spacing-lg, 1.5rem);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .header-section h1 {
+        color: #00ff00;
+        margin-bottom: var(--spacing-xs, 0.5rem);
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+    }
+
+    .header-section p {
+        color: #aaa;
+        font-size: 1.1rem;
+    }
+
+    .bar-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .bar-card h2 {
+        color: #667eea;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        padding-bottom: 10px;
+    }
+
+    .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stat-box {
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .stat-box .label {
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .stat-box .value {
+        color: #fff;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .stat-box.positive .value {
+        color: #00ff00;
+    }
+
+    .stat-box.negative .value {
+        color: #ff4444;
+    }
+
+    .stat-box.warning .value {
+        color: #ffaa00;
+    }
+
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .items-table th {
+        background: #2a2a3e;
+        color: #667eea;
+        padding: 15px;
+        text-align: left;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        font-weight: bold;
+    }
+
+    .items-table td {
+        padding: 15px;
+        border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+        color: #ccc;
+    }
+
+    .items-table tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .items-table .number {
+        text-align: right;
+        font-weight: bold;
+        color: #00ff00;
+    }
+
+    .items-table td strong {
+        color: #fff;
+        font-size: 1.05rem;
+    }
+
+    .items-table tr.stock-out {
+        background: rgba(255, 68, 68, 0.1);
+    }
+
+    .items-table tr.stock-low {
+        background: rgba(255, 170, 0, 0.1);
+    }
+
+    .items-table tr.stock-out:hover {
+        background: rgba(255, 68, 68, 0.2);
+    }
+
+    .items-table tr.stock-low:hover {
+        background: rgba(255, 170, 0, 0.2);
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+    }
+
+    .btn-sm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+    }
+
+    .no-inventory {
+        text-align: center;
+        padding: 40px;
+        color: #aaa;
+    }
+
+    .no-inventory h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+
+    .btn {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        min-height: 44px;
+        border: none;
+        border-radius: 8px;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 768px) {
+        .btn {
+            width: auto;
+            padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-success {
+        background: #00ff00;
+        color: #000;
+    }
+
+    .btn-success:hover {
+        background: #00cc00;
+    }
+
+    .actions-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    .badge-success {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+        border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+
+    .badge-warning {
+        background: rgba(255, 170, 0, 0.2);
+        color: #ffaa00;
+        border: 1px solid rgba(255, 170, 0, 0.3);
+    }
+
+    /* Modal Styles - Responsive */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: var(--spacing-sm, 0.75rem);
+        box-sizing: border-box;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-content {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        margin: var(--spacing-sm, 0.75rem) auto;
+        padding: var(--spacing-md, 1rem);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        width: 100%;
+        max-width: 90%;
+        max-height: calc(100vh - var(--spacing-md, 1rem) * 2);
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    
+    @media (min-width: 768px) {
+        .modal-content {
+            max-width: 600px;
+            padding: var(--spacing-lg, 1.5rem);
+            margin: 5% auto;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .modal-content {
+            max-width: 700px;
+        }
+    }
+
+    .modal-header {
+        margin-bottom: var(--spacing-md, 1rem);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--spacing-xs, 0.5rem);
+    }
+    
+    .modal-header h2 {
+        color: #00ff00;
+        font-size: clamp(1.25rem, 4vw, 1.8rem);
+        margin: 0;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .close-modal {
+        color: #aaa;
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        font-weight: bold;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: var(--spacing-xs, 0.5rem);
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .close-modal:hover,
+    .close-modal:focus {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-form-group {
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+
+    .modal-form-group label {
+        display: block;
+        color: #ccc;
+        margin-bottom: var(--spacing-xs, 0.5rem);
+        font-weight: bold;
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+    }
+
+    .modal-form-group input,
+    .modal-form-group select {
+        width: 100%;
+        padding: var(--spacing-sm, 0.75rem);
+        min-height: 44px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .modal-form-group input:focus,
+    .modal-form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .modal-form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm, 0.75rem);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+    
+    @media (min-width: 768px) {
+        .modal-form-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-md, 1rem);
+        }
+    }
+
+    .modal-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.75rem);
+        justify-content: flex-end;
+        margin-top: var(--spacing-md, 1rem);
+    }
+    
+    @media (min-width: 768px) {
+        .modal-actions {
+            flex-direction: row;
+            gap: var(--spacing-md, 1rem);
+            margin-top: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .modal-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .modal-checkbox input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inventory-container">
+    <div class="header-section">
+        <h1>📦 Gestión de Productos</h1>
+        <p>Productos organizados por categoría - Total: {{ total_productos }} productos en {{ total_categorias }} categorías</p>
+        <div class="actions-bar">
+            <button onclick="showAddProductModal()" class="btn btn-primary">
+                ➕ Agregar Producto
+            </button>
+            <a href="{{ url_for('ingredients.list_ingredients') }}" class="btn" style="background: #555; color: #e8e8e8;">
+                🥤 Ingredientes
+            </a>
+            <a href="{{ url_for('ingredients.list_recipes') }}" class="btn" style="background: #555; color: #e8e8e8;">
+                📝 Recetas
+            </a>
+            <a href="{{ url_for('routes.register_inventory') }}" class="btn" style="background: #555; color: #e8e8e8;">
+                📦 Registrar Inventario Inicial
+            </a>
+            <a href="{{ url_for('routes.admin_dashboard') }}" class="btn" style="background: #444; color: #e8e8e8;">
+                ← Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% if productos_por_categoria %}
+        {% for categoria, productos in productos_por_categoria.items() %}
+        <div class="bar-card">
+            <h2>
+                📂 {{ categoria }}
+                <span class="badge badge-success">{{ productos|length }} producto{{ 's' if productos|length != 1 else '' }}</span>
+            </h2>
+
+            <div class="table-responsive-wrapper">
+            <table class="table-responsive items-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th class="number">Precio</th>
+                        <th class="number">Costo</th>
+                        <th class="number">Ganancia</th>
+                        <th class="number">Stock Actual</th>
+                        <th class="number">Stock Mínimo</th>
+                        <th>Estado</th>
+                        <th class="actions-cell">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    {% set ganancia = producto.price - producto.cost_price if producto.cost_price else None %}
+                    {% set ganancia_percent = ((producto.price - producto.cost_price) / producto.cost_price * 100) if producto.cost_price and producto.cost_price > 0 else None %}
+                    {% set stock_qty = producto.stock_quantity if producto.stock_quantity is not none else 0 %}
+                    {% set stock_min = producto.stock_minimum if producto.stock_minimum is not none else 0 %}
+                    {% set stock_status = 'out' if stock_qty <= 0 else ('low' if stock_min > 0 and stock_qty <= stock_min else 'ok') %}
+                    <tr class="{% if stock_status == 'out' %}stock-out{% elif stock_status == 'low' %}stock-low{% endif %}">
+                        <td data-label="Producto"><strong>{{ producto.name }}</strong></td>
+                        <td class="number" data-label="Precio">${{ producto.price | currency }}</td>
+                        <td class="number" data-label="Costo">
+                            {% if producto.cost_price %}
+                                ${{ producto.cost_price | currency }}
+                            {% else %}
+                                <span style="color: #888;">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="number" data-label="Ganancia">
+                            {% if ganancia is not none %}
+                                <span style="color: #00ff00;">${{ ganancia | currency }}</span>
+                                {% if ganancia_percent %}
+                                    <br><small style="color: #aaa; font-size: 0.85rem;">({{ ganancia_percent | round(1) }}%)</small>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #888;">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="number" data-label="Stock Actual">
+                            {% if stock_status == 'out' %}
+                                <span style="color: #ff4444; font-weight: bold;">{{ producto.stock_quantity }}</span>
+                            {% elif stock_status == 'low' %}
+                                <span style="color: #ffaa00; font-weight: bold;">{{ producto.stock_quantity }}</span>
+                            {% else %}
+                                <span style="color: #00ff00;">{{ producto.stock_quantity }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="number" data-label="Stock Mínimo">
+                            {% if producto.stock_minimum > 0 %}
+                                {{ producto.stock_minimum }}
+                            {% else %}
+                                <span style="color: #888;">-</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Estado">
+                            {% if producto.is_active %}
+                            <span class="badge badge-success">Activo</span>
+                            {% else %}
+                            <span class="badge badge-warning">Inactivo</span>
+                            {% endif %}
+                            {% if producto.is_kit %}
+                            {% set has_recipe = recipe_exists(producto.id) %}
+                            <span class="badge" style="background: {% if has_recipe %}rgba(0, 255, 0, 0.2){% else %}rgba(255, 170, 0, 0.2){% endif %}; color: {% if has_recipe %}#00ff00{% else %}#ffaa00{% endif %}; border: 1px solid {% if has_recipe %}rgba(0, 255, 0, 0.3){% else %}rgba(255, 170, 0, 0.3){% endif %}; margin-left: 5px;">
+                                {% if has_recipe %}✅ Con Receta{% else %}⚠️ Sin Receta{% endif %}
+                            </span>
+                            {% endif %}
+                            {% if stock_status == 'out' %}
+                            <span class="badge" style="background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); margin-left: 5px;">Sin Stock</span>
+                            {% elif stock_status == 'low' %}
+                            <span class="badge" style="background: rgba(255, 170, 0, 0.2); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); margin-left: 5px;">Stock Bajo</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell" data-label="Acciones">
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <button onclick="quickEditProduct({{ producto.id }}, '{{ producto.name }}', {{ producto.price }}, {{ producto.cost_price or 0 }}, {{ producto.stock_quantity }}, {{ producto.stock_minimum }}, '{{ producto.category or '' }}', {{ 'true' if producto.is_active else 'false' }}, {{ 'true' if producto.is_kit else 'false' }})" 
+                                        class="btn btn-sm" 
+                                        style="background: #667eea; color: white; padding: 6px 12px; font-size: 0.85rem; border-radius: 5px; border: none; cursor: pointer;">
+                                    ✏️ Editar
+                                </button>
+                                {% if producto.is_kit %}
+                                <a href="{{ url_for('ingredients.manage_recipe', product_id=producto.id) }}" 
+                                   class="btn btn-sm" 
+                                   style="background: #00ff00; color: #000; padding: 6px 12px; font-size: 0.85rem; border-radius: 5px; text-decoration: none; display: inline-block;">
+                                    📝 Receta
+                                </a>
+                                {% endif %}
+                                <button onclick="toggleProductStatus({{ producto.id }}, '{{ producto.name }}', {{ 'true' if producto.is_active else 'false' }})" 
+                                        class="btn btn-sm" 
+                                        style="background: {% if producto.is_active %}#ff4444{% else %}#00ff00{% endif %}; color: {% if producto.is_active %}white{% else %}#000{% endif %}; padding: 6px 12px; font-size: 0.85rem; border-radius: 5px; border: none; cursor: pointer;">
+                                    {% if producto.is_active %}🚫 Desactivar{% else %}✅ Activar{% endif %}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="bar-card">
+            <div class="no-inventory">
+                <h3>📭 No hay productos registrados</h3>
+                <p>Los productos se importan automáticamente desde el sistema base.</p>
+                <a href="{{ url_for('routes.admin_dashboard') }}" class="btn btn-primary" style="margin-top: 20px;">
+                    Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Agregar/Editar Producto -->
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">➕ Agregar Producto</h2>
+            <button class="close-modal" onclick="closeProductModal()">&times;</button>
+        </div>
+        <form id="productForm" onsubmit="saveProduct(event)">
+            <input type="hidden" id="productId" name="product_id">
+            
+            <div class="modal-form-group">
+                <label for="modalName">Nombre del Producto <span style="color: #ff4444;">*</span></label>
+                <input type="text" id="modalName" name="name" required>
+            </div>
+
+            <div class="modal-form-group">
+                <label for="modalCategory">Categoría</label>
+                <select id="modalCategory" name="category">
+                    <option value="">Sin Categoría</option>
+                    {% for cat in productos_por_categoria.keys() %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="modal-form-grid">
+                <div class="modal-form-group">
+                    <label for="modalPrice">Precio <span style="color: #ff4444;">*</span></label>
+                    <input type="number" id="modalPrice" name="price" required min="0" step="100" min-height="44px">
+                </div>
+
+                <div class="modal-form-group">
+                    <label for="modalCostPrice">Costo</label>
+                    <input type="number" id="modalCostPrice" name="cost_price" min="0" step="100" min-height="44px">
+                </div>
+            </div>
+
+            <div class="modal-form-grid">
+                <div class="modal-form-group">
+                    <label for="modalStock">Stock Actual</label>
+                    <input type="number" id="modalStock" name="stock_quantity" min="0" step="1" value="0" min-height="44px">
+                </div>
+
+                <div class="modal-form-group">
+                    <label for="modalStockMin">Stock Mínimo</label>
+                    <input type="number" id="modalStockMin" name="stock_minimum" min="0" step="1" value="0" min-height="44px">
+                </div>
+            </div>
+
+            <div class="modal-form-group">
+                <div class="modal-checkbox">
+                    <input type="checkbox" id="modalIsActive" name="is_active" checked>
+                    <label for="modalIsActive" style="margin: 0;">Producto activo</label>
+                </div>
+            </div>
+
+            <div class="modal-form-group">
+                <div class="modal-checkbox">
+                    <input type="checkbox" id="modalIsKit" name="is_kit">
+                    <label for="modalIsKit" style="margin: 0;">Usa receta (consume ingredientes)</label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" onclick="closeProductModal()" class="btn btn-secondary">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    💾 Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Modal de Producto
+function showAddProductModal() {
+    document.getElementById('productId').value = '';
+    document.getElementById('modalTitle').textContent = '➕ Agregar Producto';
+    document.getElementById('productForm').reset();
+    document.getElementById('modalIsActive').checked = true;
+    document.getElementById('productModal').style.display = 'block';
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+}
+
+function quickEditProduct(id, name, price, costPrice, stock, stockMin, category, isActive, isKit) {
+    document.getElementById('productId').value = id;
+    document.getElementById('modalTitle').textContent = '✏️ Editar Producto';
+    document.getElementById('modalName').value = name;
+    document.getElementById('modalPrice').value = price;
+    document.getElementById('modalCostPrice').value = costPrice || '';
+    document.getElementById('modalStock').value = stock;
+    document.getElementById('modalStockMin').value = stockMin;
+    document.getElementById('modalCategory').value = category || '';
+    document.getElementById('modalIsActive').checked = isActive === 'true';
+    document.getElementById('modalIsKit').checked = isKit === 'true';
+    document.getElementById('productModal').style.display = 'block';
+}
+
+function saveProduct(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const productId = formData.get('product_id');
+    const url = productId 
+        ? `/admin/products/${productId}/edit`
+        : '/admin/products/create';
+    
+    showLoading('Guardando producto...');
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        }
+        throw new Error('Error al guardar');
+    })
+    .then(data => {
+        hideLoading();
+        closeProductModal();
+        showSuccess('✅ Producto guardado correctamente');
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error:', error);
+        showError('❌ Error al guardar producto');
+    });
+}
+
+function toggleProductStatus(productId, productName, isActive) {
+    const action = isActive === 'true' ? 'desactivar' : 'activar';
+    if (!confirm(`¿Estás seguro de que deseas ${action} el producto "${productName}"?`)) {
+        return;
+    }
+
+    showLoading(`${action === 'desactivar' ? 'Desactivando' : 'Activando'} producto...`);
+
+    fetch(`/admin/products/${productId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showSuccess('✅ ' + data.message);
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showError('❌ ' + (data.error || 'Error al cambiar estado'));
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error:', error);
+        showError('❌ Error de conexión');
+    });
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('productModal');
+    if (event.target == modal) {
+        closeProductModal();
+    }
+}
+</script>
+
+{% endblock %}
+
+

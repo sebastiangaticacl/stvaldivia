@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}{% if producto %}{{ producto.nombre }} - BIMBA{% else %}Entradas BIMBA{% endif %}{% endblock %}
+
+{% block head_extra %}
+{% set CSS_VERSION = current_app.config.get('CSS_VERSION', '20250115-01') if current_app else '20250115-01' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}?v={{ CSS_VERSION }}">
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Forzar fondo oscuro para landing */
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+        background-attachment: fixed;
+        min-height: 100vh;
+    }
+    
+    .container {
+        background: transparent !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    /* Asegurar que landing-page sea visible */
+    .landing-page {
+        min-height: 100vh;
+        width: 100%;
+        display: block;
+    }
+    
+    /* Mejoras de responsividad */
+    @media (max-width: 968px) {
+        .landing-hero-compact {
+            min-height: auto;
+            padding: 1.5rem 1rem;
+        }
+    }
+    
+    @media (max-width: 640px) {
+        body {
+            overflow-x: hidden;
+        }
+        
+        .landing-page {
+            padding: 0.5rem;
+        }
+    }
+</style>
+
+<div class="landing-page" style="min-height: 100vh; padding: 2rem; color: #f8fafc;">
+    {% if producto %}
+    <!-- Hero Section Compacto -->
+    <section class="landing-hero-compact">
+        <div class="hero-compact-content">
+            <div class="hero-logo">
+                <img src="{{ url_for('static', filename='img/bimba-logo.png') }}" alt="BIMBA" class="bimba-logo" onerror="this.style.display='none';">
+            </div>
+            
+            <div class="hero-message">
+                <h1 class="hero-title-compact">¡No te pierdas la mejor fiesta!</h1>
+                <p class="hero-description">Vive una noche inolvidable en BIMBA. Música, ambiente único y momentos que recordarás para siempre. Asegura tu entrada ahora y sé parte de esta experiencia única.</p>
+            </div>
+            
+            <div class="hero-pricing-compact">
+                <div class="price-main-compact">
+                    <span class="price-currency">$</span>
+                    <span class="price-amount-compact">{{ "{:,.0f}".format(producto.precio) }}</span>
+                </div>
+                <div class="price-label">por entrada</div>
+            </div>
+            
+            {% if producto.disponible %}
+            <div class="hero-availability">
+                <p class="availability-text">
+                    {% if producto.stock_ilimitado %}
+                        ✅ Disponible
+                    {% elif producto.stock_quantity and producto.stock_quantity > 0 %}
+                        ✅ {{ producto.stock_quantity }} disponible(s)
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Form Section Integrado -->
+        {% if producto and producto.disponible %}
+        <div class="form-section-compact">
+            <form method="POST" action="{{ url_for('ecommerce.landing') }}" class="purchase-form-compact" id="purchaseForm">
+                {% if csrf_token() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>{% endif %}
+                <input type="hidden" name="producto_id" value="{{ producto.id }}">
+                <input type="hidden" name="precio_unitario" id="precio_unitario" value="{{ producto.precio_unitario }}">
+                <input type="hidden" name="precio_total" id="precio_total" value="{{ producto.precio_unitario }}">
+                
+                <div class="quantity-selector">
+                    <label for="cantidad" class="quantity-label">Cantidad de entradas:</label>
+                    <div class="quantity-controls">
+                        <button type="button" class="quantity-btn" id="decrease-qty">−</button>
+                        <input type="number" id="cantidad" name="cantidad" value="1" min="1" max="2"
+                               class="quantity-input" required>
+                        <button type="button" class="quantity-btn" id="increase-qty">+</button>
+                    </div>
+                    <div class="total-display">
+                        <span class="total-label">Total:</span>
+                        <span class="total-amount" id="total-amount">${{ "{:,.0f}".format(producto.precio) }}</span>
+                    </div>
+                </div>
+                
+                <div class="form-fields-compact">
+                    <div class="form-group-compact">
+                        <label for="email" class="form-label-compact">
+                            Email <span class="required">*</span>
+                        </label>
+                        <input type="email" id="email" name="email" class="form-input-compact" 
+                               placeholder="tu@email.com" required>
+                    </div>
+                    
+                    <div class="form-row-compact">
+                        <div class="form-group-compact">
+                            <label for="nombre" class="form-label-compact">Nombre</label>
+                            <input type="text" id="nombre" name="nombre" class="form-input-compact" 
+                                   placeholder="Tu nombre">
+                        </div>
+                        
+                        <div class="form-group-compact">
+                            <label for="telefono" class="form-label-compact">Teléfono</label>
+                            <input type="tel" id="telefono" name="telefono" class="form-input-compact" 
+                                   placeholder="+56 9 1234 5678">
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="form-submit-button-compact">
+                    <span>Reservar Ahora</span>
+                    <span class="submit-arrow">→</span>
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </section>
+    {% else %}
+    <!-- Empty State -->
+    <section class="landing-hero" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+        <div class="hero-content" style="text-align: center; max-width: 600px;">
+            <div class="hero-badge" style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.4); padding: 0.5rem 1rem; border-radius: 50px; margin-bottom: 1.5rem; font-size: 0.9rem; color: #cbd5e1;">
+                <span style="font-size: 1.2rem;">🎫</span>
+                <span>Próximamente</span>
+            </div>
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; margin-bottom: 1rem; color: #f8fafc;">Entradas Disponibles Pronto</h1>
+            <p style="font-size: clamp(1rem, 2vw, 1.25rem); color: #94a3b8; margin-bottom: 2rem;">Estamos preparando algo increíble para ti</p>
+            <div style="margin-top: 2rem;">
+                <a href="{{ url_for('ecommerce.index') }}" 
+                   style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);">
+                    Ver Todas las Entradas
+                </a>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cantidadInput = document.getElementById('cantidad');
+    const precioUnitario = parseFloat(document.getElementById('precio_unitario').value);
+    const totalAmount = document.getElementById('total-amount');
+    const precioTotalInput = document.getElementById('precio_total');
+    const decreaseBtn = document.getElementById('decrease-qty');
+    const increaseBtn = document.getElementById('increase-qty');
+    
+    if (!cantidadInput || !totalAmount) return;
+    
+    function updateTotal() {
+        const cantidad = parseInt(cantidadInput.value) || 1;
+        const total = cantidad * precioUnitario;
+        totalAmount.textContent = '$' + total.toLocaleString('es-CL', {maximumFractionDigits: 0});
+        precioTotalInput.value = total;
+    }
+    
+    if (decreaseBtn) {
+        decreaseBtn.addEventListener('click', function() {
+            const current = parseInt(cantidadInput.value) || 1;
+            if (current > 1) {
+                cantidadInput.value = current - 1;
+                updateTotal();
+            }
+        });
+    }
+    
+    if (increaseBtn) {
+        increaseBtn.addEventListener('click', function() {
+            const current = parseInt(cantidadInput.value) || 1;
+            const max = 2; // Máximo 2 entradas por persona
+            if (current < max) {
+                cantidadInput.value = current + 1;
+                updateTotal();
+            } else {
+                alert('Solo se pueden comprar máximo 2 entradas por persona');
+            }
+        });
+    }
+    
+    // Actualizar cuando el usuario escribe directamente
+    cantidadInput.addEventListener('input', function() {
+        let value = parseInt(this.value) || 1;
+        const max = 2; // Máximo 2 entradas por persona
+        const min = parseInt(this.getAttribute('min')) || 1;
+        
+        // Validar y corregir el valor
+        if (isNaN(value) || value < min) {
+            value = min;
+            this.value = min;
+        } else if (value > max) {
+            value = max;
+            this.value = max;
+            alert('Solo se pueden comprar máximo 2 entradas por persona');
+        }
+        
+        updateTotal();
+    });
+    
+    // Actualizar cuando el input pierde el foco
+    cantidadInput.addEventListener('change', function() {
+        let value = parseInt(this.value) || 1;
+        const max = 2; // Máximo 2 entradas por persona
+        const min = parseInt(this.getAttribute('min')) || 1;
+        
+        // Validar y corregir el valor
+        if (isNaN(value) || value < min) {
+            value = min;
+            this.value = min;
+        } else if (value > max) {
+            value = max;
+            this.value = max;
+            alert('Solo se pueden comprar máximo 2 entradas por persona');
+        }
+        
+        updateTotal();
+    });
+    
+    // Actualizar cuando se usan las flechas del input number
+    cantidadInput.addEventListener('keyup', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            updateTotal();
+        }
+    });
+});
+</script>
+{% endblock %}
+

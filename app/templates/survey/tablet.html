@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="full-screen" content="yes">
+    <meta name="browsermode" content="application">
+    <title>Encuesta - Barra {{ barra }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 30px;
+            padding: 50px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(102, 126, 234, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #e8e8e8;
+            font-size: 2.8rem;
+            margin-bottom: 60px;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(102, 126, 234, 0.5);
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .rating-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 60px 0;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            flex-wrap: nowrap;
+        }
+
+        .rating-btn {
+            background: linear-gradient(135deg, #2a2a3e 0%, #1e1e2e 100%);
+            border: 3px solid rgba(102, 126, 234, 0.2);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 30px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 220px;
+            flex: 1;
+            max-width: 200px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .rating-btn:hover,
+        .rating-btn:active {
+            transform: translateY(-8px) scale(1.05);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3), 0 0 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .rating-btn.selected {
+            transform: translateY(-12px) scale(1.12);
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.6), 0 0 40px rgba(102, 126, 234, 0.4);
+            animation: pulseGlow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 20px 50px rgba(102, 126, 234, 0.6), 0 0 40px rgba(102, 126, 234, 0.4);
+            }
+            50% {
+                box-shadow: 0 25px 60px rgba(102, 126, 234, 0.8), 0 0 60px rgba(102, 126, 234, 0.6);
+            }
+        }
+
+        .rating-btn.selected .emoji {
+            transform: scale(1.4);
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5));
+        }
+
+        .rating-btn.selected .label {
+            color: #ffffff;
+            font-weight: bold;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .rating-btn .emoji {
+            font-size: 4.5rem;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            filter: grayscale(0.4) brightness(0.9);
+        }
+
+        .rating-btn:hover .emoji,
+        .rating-btn.selected .emoji {
+            filter: grayscale(0) brightness(1.2);
+            transform: scale(1.15);
+        }
+
+        .rating-btn .label {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #ccc;
+            transition: all 0.3s ease;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .rating-btn:hover .label {
+            color: #fff;
+        }
+
+
+        .success-message {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+            animation: fadeIn 0.5s;
+            padding: 40px;
+        }
+
+        .success-message.show {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+
+        .success-message .emoji {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        .success-message .title {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+        }
+
+        .success-message .subtitle {
+            font-size: 1.3rem;
+            color: #aaa;
+            margin-top: 10px;
+        }
+
+        .container.show-success {
+            background: linear-gradient(135deg, #2d5a2d 0%, #1a3a1a 100%);
+            border-color: rgba(76, 175, 80, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(76, 175, 80, 0.3);
+        }
+
+        .container.show-success h1,
+        .container.show-success .subtitle {
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .rating-label {
+            font-size: 2rem;
+            color: #333;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 30px 15px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+                margin-bottom: 30px;
+            }
+
+            .rating-container {
+                gap: 10px;
+                margin: 30px 0;
+                flex-wrap: nowrap;
+            }
+
+            .rating-btn {
+                min-height: 160px;
+                padding: 20px 10px;
+                max-width: none;
+                flex: 1;
+            }
+
+            .rating-btn .emoji {
+                font-size: 3.5rem;
+                margin-bottom: 10px;
+            }
+
+            .rating-btn .label {
+                font-size: 1rem;
+            }
+
+            .success-message .emoji {
+                font-size: 4rem;
+            }
+
+            .success-message .title {
+                font-size: 2.2rem;
+            }
+
+            .success-message .subtitle {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .rating-container {
+                gap: 15px;
+            }
+
+            .rating-btn {
+                min-height: 200px;
+                padding: 30px 15px;
+            }
+
+            .rating-btn .emoji {
+                font-size: 4.5rem;
+            }
+
+            .rating-btn .label {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .rating-container {
+                gap: 20px;
+                max-width: 1000px;
+            }
+
+            .rating-btn {
+                min-height: 240px;
+                padding: 40px 20px;
+                max-width: 220px;
+            }
+        }
+
+        /* Prevenir zoom en input focus */
+        input, textarea, select {
+            font-size: 16px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>¿CÓMO CALIFICARÍAS TU EXPERIENCIA DE ATENCIÓN?</h1>
+        
+        {% if not session_info %}
+        <div class="session-info" style="background: rgba(255, 193, 7, 0.2); padding: 30px; border-radius: 15px; margin-bottom: 30px; border: 2px solid rgba(255, 193, 7, 0.4); text-align: center;">
+            <div style="color: #ffc107; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px;">
+                ⚠️ Esperando inicio de sesión
+            </div>
+            <div style="color: #aaa; font-size: 1.1rem;">
+                Por favor, espera a que se inicie el turno.
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="rating-container">
+            <button class="rating-btn" data-rating="excelente" onclick="selectRating('excelente')">
+                <div class="emoji">😄</div>
+                <div class="label">Excelente</div>
+            </button>
+            <button class="rating-btn" data-rating="bueno" onclick="selectRating('bueno')">
+                <div class="emoji">🙂</div>
+                <div class="label">Regular</div>
+            </button>
+            <button class="rating-btn" data-rating="medio" onclick="selectRating('medio')">
+                <div class="emoji">😐</div>
+                <div class="label">Medio</div>
+            </button>
+            <button class="rating-btn" data-rating="deficiente" onclick="selectRating('deficiente')">
+                <div class="emoji">😞</div>
+                <div class="label">Deficiente</div>
+            </button>
+        </div>
+        </div>
+
+            <div class="success-message" id="success-message">
+                <div class="emoji">🙏</div>
+                <div class="title">¡Gracias!</div>
+                <div class="subtitle">Tu opinión es muy importante para nosotros</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedRating = null;
+        const barra = {{ barra }};
+        const sessionInfo = {{ session_info|tojson if session_info else 'null' }};
+        
+        // ========== MODO KIOSKO / PANTALLA COMPLETA ==========
+        const KIOSK_EXIT_CODE = '5435';
+        const STORAGE_KEY = 'kiosk_fullscreen_active';
+        let exitCodeSequence = '';
+        let kioskMode = false;
+        let fullscreenAttempted = false;
+        
+        // Guardar estado de pantalla completa en localStorage
+        function saveFullscreenState() {
+            localStorage.setItem(STORAGE_KEY, 'true');
+            console.log('Estado de pantalla completa guardado en localStorage');
+        }
+        
+        // Cargar estado de pantalla completa
+        function loadFullscreenState() {
+            const state = localStorage.getItem(STORAGE_KEY) === 'true';
+            console.log('Estado de pantalla completa cargado:', state);
+            return state;
+        }
+        
+        // Limpiar estado guardado
+        function clearFullscreenState() {
+            localStorage.removeItem(STORAGE_KEY);
+            console.log('Estado de pantalla completa limpiado');
+        }
+        
+        // Inicializar kioskMode desde localStorage al inicio - ESTO ES CRÍTICO
+        // Debe ejecutarse ANTES de cualquier otra cosa
+        (function() {
+            if (loadFullscreenState()) {
+                kioskMode = true;
+                fullscreenAttempted = true;
+                console.log('✓ Modo kiosko restaurado desde localStorage al inicio del script');
+            }
+        })();
+
+        // Función para entrar en modo pantalla completa
+        function enterKioskMode() {
+            const elem = document.documentElement;
+            const hasState = loadFullscreenState();
+            
+            // Si hay estado guardado, NO mostrar prompt, intentar directamente
+            if (hasState) {
+                fullscreenAttempted = true;
+                kioskMode = true;
+            }
+            
+            // Función auxiliar para intentar pantalla completa
+            const attemptFullscreen = () => {
+                // Chrome Android / Mobile Chrome
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().then(() => {
+                        kioskMode = true;
+                        saveFullscreenState(); // Guardar estado
+                        fullscreenAttempted = true;
+                        console.log('Modo kiosko activado (Fullscreen API)');
+                        hideFullscreenPrompt();
+                    }).catch(err => {
+                        console.log('Error al activar modo kiosko:', err);
+                        // Solo mostrar prompt si NO hay estado guardado
+                        if (!hasState) {
+                            showFullscreenPrompt();
+                        }
+                    });
+                } 
+                // WebKit (Safari iOS/Android, Chrome Android antiguo)
+                else if (elem.webkitRequestFullscreen) {
+                    try {
+                        elem.webkitRequestFullscreen();
+                        kioskMode = true;
+                        saveFullscreenState(); // Guardar estado
+                        fullscreenAttempted = true;
+                        hideFullscreenPrompt();
+                    } catch (err) {
+                        if (!hasState) showFullscreenPrompt();
+                    }
+                } 
+                // Android Chrome (método alternativo)
+                else if (elem.webkitEnterFullscreen) {
+                    try {
+                        elem.webkitEnterFullscreen();
+                        kioskMode = true;
+                        saveFullscreenState(); // Guardar estado
+                        fullscreenAttempted = true;
+                        hideFullscreenPrompt();
+                    } catch (err) {
+                        if (!hasState) showFullscreenPrompt();
+                    }
+                }
+                // Firefox
+                else if (elem.mozRequestFullScreen) {
+                    try {
+                        elem.mozRequestFullScreen();
+                        kioskMode = true;
+                        saveFullscreenState(); // Guardar estado
+                        fullscreenAttempted = true;
+                        hideFullscreenPrompt();
+                    } catch (err) {
+                        if (!hasState) showFullscreenPrompt();
+                    }
+                } 
+                // IE/Edge
+                else if (elem.msRequestFullscreen) {
+                    try {
+                        elem.msRequestFullscreen();
+                        kioskMode = true;
+                        saveFullscreenState(); // Guardar estado
+                        fullscreenAttempted = true;
+                        hideFullscreenPrompt();
+                    } catch (err) {
+                        if (!hasState) showFullscreenPrompt();
+                    }
+                }
+                else {
+                    // Solo mostrar prompt si NO hay estado guardado
+                    if (!hasState) {
+                        showFullscreenPrompt();
+                    }
+                }
+            };
+            
+            // Si hay estado guardado, intentar directamente sin mostrar prompt
+            if (hasState) {
+                attemptFullscreen();
+            } 
+            // En móviles sin estado, mostrar prompt
+            else if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                showFullscreenPrompt();
+            } 
+            // Desktop, intentar directamente
+            else {
+                attemptFullscreen();
+            }
+            
+            // Prevenir que el usuario salga accidentalmente
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        }
+
+        // Crear prompt para activar pantalla completa en móviles
+        function showFullscreenPrompt() {
+            // CRÍTICO: NO mostrar prompt si hay estado guardado (ya estaba en pantalla completa)
+            // Esto previene que aparezca después de recargar
+            const hasState = loadFullscreenState();
+            if (hasState) {
+                console.log('⚠️ NO mostrar prompt: hay estado guardado en localStorage');
+                // En lugar de mostrar prompt, intentar restaurar directamente
+                if (!isFullscreenActive()) {
+                    console.log('Intentando restaurar pantalla completa desde showFullscreenPrompt');
+                    setTimeout(() => {
+                        enterKioskMode();
+                    }, 100);
+                }
+                return;
+            }
+            
+            // O si ya se intentó activar, tampoco mostrar prompt
+            if (fullscreenAttempted) {
+                console.log('⚠️ NO mostrar prompt: ya se intentó activar');
+                return;
+            }
+            
+            console.log('✓ Mostrando prompt de pantalla completa (primera vez)');
+            
+            let prompt = document.getElementById('fullscreen-prompt');
+            if (!prompt) {
+                prompt = document.createElement('div');
+                prompt.id = 'fullscreen-prompt';
+                prompt.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.95);
+                    z-index: 10000;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 1.5rem;
+                    text-align: center;
+                    padding: 20px;
+                `;
+                prompt.innerHTML = `
+                    <div style="margin-bottom: 30px; font-size: 4rem;">📱</div>
+                    <h2 style="margin-bottom: 20px;">Activar Pantalla Completa</h2>
+                    <p style="margin-bottom: 30px; color: #aaa;">Toca el botón para activar el modo pantalla completa</p>
+                    <button id="activate-fullscreen-btn" style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border: none;
+                        color: white;
+                        padding: 20px 40px;
+                        font-size: 1.3rem;
+                        border-radius: 15px;
+                        cursor: pointer;
+                        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                    ">Activar Pantalla Completa</button>
+                    <p style="margin-top: 20px; font-size: 0.9rem; color: #666;">
+                        Presiona 5435 para salir del modo kiosko
+                    </p>
+                `;
+                document.body.appendChild(prompt);
+                
+                // Agregar evento al botón
+                document.getElementById('activate-fullscreen-btn').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const elem = document.documentElement;
+                    let fullscreenActivated = false;
+                    
+                    // Método 1: Fullscreen API estándar (Chrome Android)
+                    if (elem.requestFullscreen) {
+                        elem.requestFullscreen().then(() => {
+                            kioskMode = true;
+                            fullscreenActivated = true;
+                            hideFullscreenPrompt();
+                        }).catch(err => {
+                            console.log('Error requestFullscreen:', err);
+                        });
+                    }
+                    
+                    // Método 2: WebKit (Safari, Chrome Android antiguo)
+                    if (!fullscreenActivated && elem.webkitRequestFullscreen) {
+                        try {
+                            elem.webkitRequestFullscreen();
+                            kioskMode = true;
+                            fullscreenActivated = true;
+                            hideFullscreenPrompt();
+                        } catch (err) {
+                            console.log('Error webkitRequestFullscreen:', err);
+                        }
+                    }
+                    
+                    // Método 3: Mozilla Firefox
+                    if (!fullscreenActivated && elem.mozRequestFullScreen) {
+                        try {
+                            elem.mozRequestFullScreen();
+                            kioskMode = true;
+                            fullscreenActivated = true;
+                            hideFullscreenPrompt();
+                        } catch (err) {
+                            console.log('Error mozRequestFullScreen:', err);
+                        }
+                    }
+                    
+                    // Método 4: IE/Edge
+                    if (!fullscreenActivated && elem.msRequestFullscreen) {
+                        try {
+                            elem.msRequestFullscreen();
+                            kioskMode = true;
+                            fullscreenActivated = true;
+                            hideFullscreenPrompt();
+                        } catch (err) {
+                            console.log('Error msRequestFullscreen:', err);
+                        }
+                    }
+                    
+                    // Método 5: Intentar con body también
+                    if (!fullscreenActivated && document.body.requestFullscreen) {
+                        document.body.requestFullscreen().then(() => {
+                            kioskMode = true;
+                            fullscreenActivated = true;
+                            saveFullscreenState(); // Guardar estado
+                            hideFullscreenPrompt();
+                        }).catch(err => {
+                            console.log('Error body requestFullscreen:', err);
+                        });
+                    }
+                    
+                    // También intentar bloquear orientación landscape
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(err => {
+                            // Intentar portrait si landscape falla
+                            screen.orientation.lock('portrait').catch(() => {});
+                        });
+                    } else if (screen.lockOrientation) {
+                        screen.lockOrientation('landscape');
+                    } else if (screen.mozLockOrientation) {
+                        screen.mozLockOrientation('landscape');
+                    } else if (screen.msLockOrientation) {
+                        screen.msLockOrientation('landscape');
+                    }
+                    
+                    // Si nada funcionó, intentar ocultar la barra de direcciones
+                    if (!fullscreenActivated) {
+                        setTimeout(() => {
+                            window.scrollTo(0, 1);
+                        }, 100);
+                        hideFullscreenPrompt();
+                    }
+                }, { passive: false });
+            } else {
+                prompt.style.display = 'flex';
+            }
+        }
+
+        function hideFullscreenPrompt() {
+            const prompt = document.getElementById('fullscreen-prompt');
+            if (prompt) {
+                prompt.style.display = 'none';
+            }
+        }
+
+        // Manejar cambios en el estado de pantalla completa
+        function handleFullscreenChange() {
+            const isCurrentlyFullscreen = isFullscreenActive();
+            
+            if (isCurrentlyFullscreen) {
+                kioskMode = true;
+                saveFullscreenState(); // Guardar estado cuando se activa
+                hideFullscreenPrompt();
+            } else {
+                // Si salió del modo pantalla completa (excepto con el código), intentar volver a entrar
+                if (kioskMode) {
+                    // Intentar reactivar automáticamente después de un breve delay
+                    setTimeout(() => {
+                        if (kioskMode && !isFullscreenActive() && loadFullscreenState()) {
+                            // Restaurar pantalla completa si estaba activa antes
+                            enterKioskMode();
+                        }
+                    }, 500);
+                }
+            }
+        }
+
+        // Detectar código de salida (5435)
+        function handleExitCode(key) {
+            exitCodeSequence += key;
+            
+            // Mantener solo los últimos 4 caracteres
+            if (exitCodeSequence.length > 4) {
+                exitCodeSequence = exitCodeSequence.slice(-4);
+            }
+            
+            // Verificar si coincide con el código de salida
+            if (exitCodeSequence === KIOSK_EXIT_CODE) {
+                exitKioskMode();
+            }
+        }
+
+        // Función para salir del modo kiosko
+        function exitKioskMode() {
+            kioskMode = false;
+            clearFullscreenState(); // Limpiar estado guardado
+            
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            
+            // Mostrar mensaje
+            alert('Modo kiosko desactivado');
+            exitCodeSequence = '';
+        }
+
+        // Detectar teclas presionadas para el código de salida
+        document.addEventListener('keydown', function(e) {
+            // Solo detectar números
+            if (e.key >= '0' && e.key <= '9') {
+                handleExitCode(e.key);
+            }
+            // ESC también permite salir (pero solo si se presiona el código primero)
+            if (e.key === 'Escape' && exitCodeSequence === KIOSK_EXIT_CODE) {
+                exitKioskMode();
+            }
+        });
+
+        // Detectar si está en modo pantalla completa
+        function isFullscreenActive() {
+            return !!(document.fullscreenElement || 
+                     document.webkitFullscreenElement || 
+                     document.mozFullScreenElement || 
+                     document.msFullscreenElement);
+        }
+
+        // Ocultar barra de direcciones en móviles (truco)
+        function hideAddressBar() {
+            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                window.scrollTo(0, 1);
+                setTimeout(() => {
+                    window.scrollTo(0, 0);
+                }, 0);
+            }
+        }
+
+        // Activar modo kiosko al cargar la página
+        window.addEventListener('load', function() {
+            // Ocultar barra de direcciones primero
+            hideAddressBar();
+            
+            // Si había estado guardado, restaurar pantalla completa inmediatamente
+            if (loadFullscreenState()) {
+                kioskMode = true;
+                // No mostrar el prompt si hay estado guardado
+                fullscreenAttempted = true;
+                
+                // Restaurar pantalla completa inmediatamente después de cargar
+                // En Android, necesitamos una interacción del usuario, así que simularemos un click
+                setTimeout(() => {
+                    const elem = document.documentElement;
+                    
+                    // Crear un evento de click simulado para Android (requiere interacción del usuario)
+                    function tryRestoreFullscreen() {
+                        if (elem.requestFullscreen) {
+                            elem.requestFullscreen().then(() => {
+                                kioskMode = true;
+                                hideFullscreenPrompt();
+                                console.log('Pantalla completa restaurada después de recarga');
+                            }).catch((err) => {
+                                console.log('Error restaurando pantalla completa (requiere interacción):', err);
+                                // En Android, puede requerir interacción del usuario
+                                // Intentar con un click simulado
+                                const fakeEvent = new MouseEvent('click', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    view: window
+                                });
+                                document.body.dispatchEvent(fakeEvent);
+                                
+                                // Intentar nuevamente después del evento simulado
+                                setTimeout(() => {
+                                    elem.requestFullscreen().then(() => {
+                                        kioskMode = true;
+                                        hideFullscreenPrompt();
+                                    }).catch(() => {
+                                        // Si aún falla, no mostrar prompt (ya estaba activa)
+                                        kioskMode = true;
+                                        hideFullscreenPrompt();
+                                    });
+                                }, 100);
+                            });
+                        } else if (elem.webkitRequestFullscreen) {
+                            elem.webkitRequestFullscreen();
+                            kioskMode = true;
+                            hideFullscreenPrompt();
+                        } else if (elem.mozRequestFullScreen) {
+                            elem.mozRequestFullScreen();
+                            kioskMode = true;
+                            hideFullscreenPrompt();
+                        } else if (elem.msRequestFullscreen) {
+                            elem.msRequestFullscreen();
+                            kioskMode = true;
+                            hideFullscreenPrompt();
+                        } else {
+                            // Si no hay soporte, intentar método normal pero sin prompt
+                            kioskMode = true;
+                            hideFullscreenPrompt();
+                        }
+                    }
+                    
+                    // Intentar restaurar
+                    tryRestoreFullscreen();
+                    
+                    // Si está en Android, esperar a la primera interacción del usuario para restaurar
+                    // (Chrome Android requiere interacción del usuario para pantalla completa)
+                    if (/Android/i.test(navigator.userAgent)) {
+                        const restoreOnInteraction = () => {
+                            if (elem.requestFullscreen) {
+                                elem.requestFullscreen().then(() => {
+                                    kioskMode = true;
+                                    hideFullscreenPrompt();
+                                    console.log('Pantalla completa restaurada después de interacción');
+                                }).catch(() => {
+                                    kioskMode = true;
+                                    hideFullscreenPrompt();
+                                });
+                            }
+                        };
+                        // Escuchar la primera interacción para restaurar
+                        document.addEventListener('touchstart', restoreOnInteraction, { once: true, passive: true });
+                        document.addEventListener('click', restoreOnInteraction, { once: true });
+                    }
+                }, 100);
+            } else {
+                // Si no hay estado guardado, intentar activar normalmente
+                setTimeout(() => {
+                    enterKioskMode();
+                }, 500);
+            }
+        });
+        
+        // También intentar restaurar inmediatamente cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                if (loadFullscreenState()) {
+                    kioskMode = true;
+                    fullscreenAttempted = true;
+                }
+            });
+        } else {
+            // Ya está cargado
+            if (loadFullscreenState()) {
+                kioskMode = true;
+                fullscreenAttempted = true;
+            }
+        }
+
+        // Activar también con cualquier interacción del usuario (tap, click)
+        // Esto es importante para Chrome Android que requiere interacción del usuario
+        // PERO no mostrar prompt si hay estado guardado (ya estaba en pantalla completa)
+        document.addEventListener('touchstart', function activateOnTouch(e) {
+            if (!fullscreenAttempted && !isFullscreenActive()) {
+                // Si hay estado guardado, intentar restaurar directamente sin prompt
+                if (loadFullscreenState()) {
+                    enterKioskMode();
+                    fullscreenAttempted = true;
+                } else if (/Android/i.test(navigator.userAgent)) {
+                    // Solo mostrar prompt si NO hay estado guardado
+                    showFullscreenPrompt();
+                    fullscreenAttempted = true;
+                } else {
+                    enterKioskMode();
+                }
+            }
+        }, { once: true, passive: false });
+
+        document.addEventListener('click', function activateOnClick(e) {
+            if (!fullscreenAttempted && !isFullscreenActive()) {
+                // Si hay estado guardado, intentar restaurar directamente sin prompt
+                if (loadFullscreenState()) {
+                    enterKioskMode();
+                    fullscreenAttempted = true;
+                } else if (/Android/i.test(navigator.userAgent)) {
+                    // Solo mostrar prompt si NO hay estado guardado
+                    showFullscreenPrompt();
+                    fullscreenAttempted = true;
+                } else {
+                    enterKioskMode();
+                }
+            }
+        }, { once: true });
+        
+        // Ocultar barra de direcciones cuando se desplaza
+        window.addEventListener('scroll', hideAddressBar);
+        window.addEventListener('orientationchange', function() {
+            setTimeout(hideAddressBar, 500);
+        });
+
+        // Intentar reactivar si se detecta que salió
+        setInterval(() => {
+            if (kioskMode && !isFullscreenActive()) {
+                // No reactivar automáticamente en móviles si salió (para evitar spam)
+                if (!/Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                    enterKioskMode();
+                }
+            }
+        }, 3000);
+
+        // ========== BLOQUEO DE NAVEGACIÓN Y SALIDA ==========
+        
+        // Bloquear botón atrás
+        history.pushState(null, null, location.href);
+        window.addEventListener('popstate', function(e) {
+            e.preventDefault();
+            history.pushState(null, null, location.href);
+            // Intentar restaurar pantalla completa si se perdió
+            if (kioskMode && !isFullscreenActive()) {
+                setTimeout(() => enterKioskMode(), 100);
+            }
+        });
+        
+        // Reinicializar bloqueo de navegación periódicamente
+        setInterval(() => {
+            history.pushState(null, null, location.href);
+        }, 1000);
+
+        // Prevenir menú contextual (clic derecho) en tablets
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        }, false);
+
+        // Prevenir salir con teclas (Alt+F4, Ctrl+W, etc.)
+        document.addEventListener('keydown', function(e) {
+            // Bloquear Alt+F4, Ctrl+W, Ctrl+R, etc.
+            if (e.altKey && e.key === 'F4') {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            if (e.ctrlKey && (e.key === 'w' || e.key === 'W')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            if (e.ctrlKey && (e.key === 'r' || e.key === 'R')) {
+                // Permitir F5 pero bloquear Ctrl+R
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            if (e.key === 'F12') {
+                // Bloquear DevTools
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }, true); // Usar capture phase para interceptar antes
+
+        // Prevenir cerrar la ventana/navegador (solo si está en modo kiosko)
+        window.addEventListener('beforeunload', function(e) {
+            if (kioskMode && loadFullscreenState()) {
+                // Permitir recargas pero prevenir cerrar navegador
+                // Solo mostrar advertencia si se intenta cerrar (no recargar)
+                if (!e.target.location.reload) {
+                    e.preventDefault();
+                    e.returnValue = '¿Estás seguro de que quieres salir del modo kiosko?';
+                    return e.returnValue;
+                }
+            }
+        });
+
+        // Prevenir que se pierda el foco de la ventana
+        window.addEventListener('blur', function() {
+            if (kioskMode && loadFullscreenState()) {
+                // Intentar mantener el foco y restaurar pantalla completa
+                setTimeout(() => {
+                    if (!isFullscreenActive()) {
+                        enterKioskMode();
+                    }
+                    // Intentar volver a dar foco
+                    window.focus();
+                }, 500);
+            }
+        });
+        
+        // Mantener foco en la ventana
+        window.addEventListener('focus', function() {
+            if (kioskMode && loadFullscreenState() && !isFullscreenActive()) {
+                setTimeout(() => enterKioskMode(), 200);
+            }
+        });
+
+        // Bloquear intentos de cambiar la URL (excepto recargas de la misma página)
+        let lastUrl = location.href;
+        const allowedPath = '/encuesta/barra/';
+        setInterval(function() {
+            if (kioskMode && location.href) {
+                // Solo permitir navegación dentro de /survey/barra/
+                if (!location.href.includes(allowedPath)) {
+                    // Redirigir de vuelta a la barra
+                    const barraMatch = lastUrl.match(/\/encuesta\/barra\/(\d+)/);
+                    if (barraMatch) {
+                        location.href = `/encuesta/barra/${barraMatch[1]}`;
+                    } else {
+                        location.href = lastUrl;
+                    }
+                } else {
+                    lastUrl = location.href;
+                }
+            }
+        }, 500);
+
+        // Bloquear abrir nuevas pestañas/ventanas
+        window.addEventListener('click', function(e) {
+            // Si se hace clic en un enlace externo, prevenir
+            if (e.target.tagName === 'A' && e.target.href) {
+                const targetUrl = new URL(e.target.href);
+                const currentUrl = new URL(window.location.href);
+                if (targetUrl.origin !== currentUrl.origin || !targetUrl.pathname.includes('/encuesta/barra/')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }
+        }, true);
+
+        // Mapeo de rating a número para la API
+        const ratingMap = {
+            'excelente': 5,
+            'bueno': 3,
+            'medio': 2,
+            'deficiente': 1
+        };
+
+        // Si no hay sesión activa, deshabilitar botones
+        if (!sessionInfo) {
+            document.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            });
+        }
+
+        function selectRating(rating) {
+            // Validar que haya sesión activa
+            if (!sessionInfo) {
+                alert('No hay sesión activa. Por favor, espera a que se inicie el turno.');
+                return;
+            }
+
+            selectedRating = rating;
+
+            // Actualizar estilos de botones
+            document.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.dataset.rating === rating) {
+                    btn.classList.add('selected');
+                }
+            });
+
+            // Enviar automáticamente después de una breve pausa visual
+            setTimeout(() => {
+                submitSurvey();
+            }, 500);
+        }
+
+        async function submitSurvey() {
+            if (!selectedRating) return;
+
+            try {
+                const response = await fetch('/encuesta/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        barra: barra,
+                        rating: ratingMap[selectedRating],
+                        comment: '',
+                        fiesta_nombre: sessionInfo ? sessionInfo.fiesta_nombre : '',
+                        djs: sessionInfo ? sessionInfo.djs : '',
+                        bartender_nombre: '' // No se captura bartender del cliente
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // SIEMPRE guardar el estado ANTES de recargar
+                    // Esto asegura que después de recargar, se restaure automáticamente
+                    saveFullscreenState();
+                    console.log('Estado guardado ANTES de recargar');
+                    
+                    // Mostrar mensaje de agradecimiento
+                    document.querySelector('.container').classList.add('show-success');
+                    document.querySelector('.rating-container').style.display = 'none';
+                    document.getElementById('success-message').classList.add('show');
+                    
+                    // Recargar después de 2 segundos
+                    setTimeout(() => {
+                        // Asegurar que el estado esté guardado
+                        saveFullscreenState();
+                        console.log('Estado confirmado antes de recargar');
+                        
+                        // Recargar la página
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    alert('Error: ' + (data.error || 'Error al enviar. Intenta nuevamente.'));
+                    resetForm();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión. Intenta nuevamente.');
+                resetForm();
+            }
+        }
+
+        function resetForm() {
+            selectedRating = null;
+            document.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+        }
+
+        // Eliminado: verificación automática (las encuestas solo corren desde nuestro lado)
+
+        // Prevenir zoom con doble tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>
+

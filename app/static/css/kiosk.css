@@ -1,0 +1,825 @@
+/* ============================================================================
+   BIMBA KIOSK - Estilo McDonald's
+   Colores: Rojo #FF0000, Amarillo #FFC72C, Blanco
+   Diseño moderno, limpio y optimizado para pantalla táctil
+   ============================================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Colores McDonald's */
+    --mcd-red: #FF0000;
+    --mcd-red-dark: #CC0000;
+    --mcd-yellow: #FFC72C;
+    --mcd-yellow-dark: #FFB300;
+    --mcd-white: #FFFFFF;
+    --mcd-black: #000000;
+    --mcd-gray: #F5F5F5;
+    --mcd-gray-dark: #333333;
+    --mcd-gray-light: #E0E0E0;
+    
+    /* Variables de diseño */
+    --color-bg: var(--mcd-white);
+    --color-bg-secondary: var(--mcd-gray);
+    --color-bg-tertiary: var(--mcd-gray-light);
+    --color-text: var(--mcd-black);
+    --color-text-secondary: #666666;
+    --color-primary: var(--mcd-red);
+    --color-primary-hover: var(--mcd-red-dark);
+    --color-secondary: var(--mcd-yellow);
+    --color-secondary-hover: var(--mcd-yellow-dark);
+    --color-success: #4CAF50;
+    --color-border: var(--mcd-gray-light);
+    --font-size-large: 2.5rem;
+    --font-size-medium: 1.8rem;
+    --font-size-normal: 1.4rem;
+    --font-size-small: 1.2rem;
+    --spacing-large: 3rem;
+    --spacing-medium: 2rem;
+    --spacing-small: 1rem;
+    --border-radius: 1.5rem;
+    --transition: all 0.3s ease;
+}
+
+body.kiosk-body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, var(--mcd-white) 0%, var(--mcd-gray) 100%);
+    color: var(--color-text);
+    font-size: var(--font-size-normal);
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    min-height: 100vh;
+}
+
+.kiosk-container {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================================================
+   BOTONES - Estilo McDonald's
+   ============================================================================ */
+
+button {
+    font-family: inherit;
+    font-size: inherit;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--mcd-red) 0%, var(--mcd-red-dark) 100%);
+    color: var(--mcd-white);
+    padding: var(--spacing-medium) var(--spacing-large);
+    font-size: var(--font-size-medium);
+    border: 3px solid var(--mcd-red-dark);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--mcd-red-dark) 0%, var(--mcd-red) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 0, 0, 0.4);
+}
+
+.btn-primary:disabled {
+    background: var(--mcd-gray-light);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+    opacity: 0.6;
+    border-color: var(--mcd-gray-light);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--mcd-yellow) 0%, var(--mcd-yellow-dark) 100%);
+    color: var(--mcd-black);
+    padding: var(--spacing-small) var(--spacing-medium);
+    font-size: var(--font-size-normal);
+    border: 3px solid var(--mcd-yellow-dark);
+    font-weight: 700;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, var(--mcd-yellow-dark) 0%, var(--mcd-yellow) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 199, 44, 0.4);
+}
+
+.btn-large {
+    padding: var(--spacing-medium) var(--spacing-large);
+    font-size: var(--font-size-large);
+    min-height: 100px;
+    width: 100%;
+    max-width: 600px;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+}
+
+.btn-small {
+    padding: var(--spacing-small);
+    font-size: var(--font-size-small);
+    min-height: 50px;
+}
+
+.btn-quantity {
+    background: var(--mcd-white);
+    color: var(--mcd-red);
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    font-size: var(--font-size-large);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    border: 3px solid var(--mcd-red);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.btn-quantity:hover {
+    background: var(--mcd-red);
+    color: var(--mcd-white);
+    transform: scale(1.1);
+}
+
+.btn-quantity:active {
+    transform: scale(0.95);
+}
+
+/* ============================================================================
+   PANTALLA DE INICIO - Estilo McDonald's
+   ============================================================================ */
+
+.home-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-large);
+    text-align: center;
+    background: linear-gradient(135deg, var(--mcd-white) 0%, var(--mcd-gray) 100%);
+}
+
+.home-content {
+    max-width: 900px;
+    width: 100%;
+    background: var(--mcd-white);
+    padding: var(--spacing-large);
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 4px solid var(--mcd-red);
+}
+
+.home-title {
+    font-size: 5rem;
+    margin-bottom: var(--spacing-large);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    background: linear-gradient(135deg, var(--mcd-red) 0%, var(--mcd-yellow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.home-logo {
+    margin: var(--spacing-large) 0;
+}
+
+.logo-placeholder {
+    font-size: 10rem;
+    margin-bottom: var(--spacing-large);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+/* ============================================================================
+   PANTALLA DE PRODUCTOS - Estilo McDonald's
+   ============================================================================ */
+
+.products-screen {
+    padding: var(--spacing-medium);
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+    background: var(--mcd-white);
+}
+
+.screen-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-large);
+    padding: var(--spacing-medium);
+    background: linear-gradient(135deg, var(--mcd-red) 0%, var(--mcd-red-dark) 100%);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+}
+
+.screen-header h1 {
+    font-size: var(--font-size-large);
+    font-weight: 900;
+    color: var(--mcd-white);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.products-layout {
+    display: grid;
+    grid-template-columns: 1fr 450px;
+    gap: var(--spacing-large);
+}
+
+.products-main {
+    overflow-y: auto;
+    max-height: calc(100vh - 250px);
+    padding-right: var(--spacing-small);
+}
+
+.categoria-section {
+    margin-bottom: var(--spacing-large);
+}
+
+.categoria-title {
+    font-size: var(--font-size-medium);
+    margin-bottom: var(--spacing-medium);
+    color: var(--mcd-red);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: var(--spacing-small);
+    background: var(--mcd-yellow);
+    border-radius: calc(var(--border-radius) / 2);
+    text-align: center;
+}
+
+.productos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-medium);
+}
+
+.producto-card {
+    background: var(--mcd-white);
+    border: 3px solid var(--mcd-gray-light);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-medium);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-medium);
+    transition: var(--transition);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.producto-card:hover {
+    border-color: var(--mcd-red);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 0, 0, 0.3);
+}
+
+.producto-info {
+    flex: 1;
+}
+
+.producto-nombre {
+    font-size: var(--font-size-medium);
+    font-weight: 700;
+    margin-bottom: var(--spacing-small);
+    color: var(--mcd-black);
+}
+
+.producto-precio {
+    font-size: var(--font-size-large);
+    color: var(--mcd-red);
+    font-weight: 900;
+}
+
+.producto-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-medium);
+}
+
+.producto-cantidad {
+    font-size: var(--font-size-large);
+    font-weight: 900;
+    min-width: 80px;
+    text-align: center;
+    color: var(--mcd-red);
+    background: var(--mcd-gray);
+    padding: var(--spacing-small);
+    border-radius: calc(var(--border-radius) / 2);
+}
+
+/* ============================================================================
+   CARRITO - Estilo McDonald's
+   ============================================================================ */
+
+.carrito-sidebar {
+    background: var(--mcd-white);
+    border: 4px solid var(--mcd-yellow);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-medium);
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    max-height: calc(100vh - 250px);
+    position: sticky;
+    top: var(--spacing-medium);
+    box-shadow: 0 8px 25px rgba(255, 199, 44, 0.3);
+}
+
+.carrito-header {
+    margin-bottom: var(--spacing-medium);
+    padding-bottom: var(--spacing-small);
+    border-bottom: 3px solid var(--mcd-yellow);
+}
+
+.carrito-header h2 {
+    font-size: var(--font-size-medium);
+    font-weight: 900;
+    color: var(--mcd-red);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.carrito-items {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: var(--spacing-medium);
+    min-height: 200px;
+}
+
+.carrito-vacio {
+    text-align: center;
+    color: var(--color-text-secondary);
+    padding: var(--spacing-large);
+    font-size: var(--font-size-normal);
+}
+
+.carrito-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-small);
+    margin-bottom: var(--spacing-small);
+    background: var(--mcd-gray);
+    border-radius: calc(var(--border-radius) / 2);
+    border: 2px solid var(--mcd-gray-light);
+}
+
+.carrito-item-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.carrito-item-nombre {
+    font-weight: 700;
+    font-size: var(--font-size-normal);
+    color: var(--mcd-black);
+}
+
+.carrito-item-detalle {
+    font-size: var(--font-size-small);
+    color: var(--color-text-secondary);
+}
+
+.carrito-item-subtotal {
+    font-weight: 900;
+    font-size: var(--font-size-normal);
+    color: var(--mcd-red);
+}
+
+.carrito-footer {
+    border-top: 3px solid var(--mcd-yellow);
+    padding-top: var(--spacing-medium);
+}
+
+.carrito-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-size-large);
+    font-weight: 900;
+    margin-bottom: var(--spacing-medium);
+    padding: var(--spacing-medium);
+    background: linear-gradient(135deg, var(--mcd-red) 0%, var(--mcd-red-dark) 100%);
+    color: var(--mcd-white);
+    border-radius: calc(var(--border-radius) / 2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.carrito-total span:last-child {
+    font-size: var(--font-size-large);
+}
+
+/* ============================================================================
+   CHECKOUT - Estilo McDonald's
+   ============================================================================ */
+
+.checkout-screen {
+    padding: var(--spacing-large);
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    background: var(--mcd-white);
+}
+
+.checkout-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-large);
+}
+
+.checkout-items {
+    background: var(--mcd-white);
+    border: 4px solid var(--mcd-gray-light);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-medium);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.checkout-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-medium);
+    margin-bottom: var(--spacing-small);
+    border-bottom: 2px solid var(--mcd-gray-light);
+}
+
+.checkout-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.checkout-item-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.checkout-item-nombre {
+    font-weight: 700;
+    font-size: var(--font-size-medium);
+    margin-bottom: var(--spacing-small);
+    color: var(--mcd-black);
+}
+
+.checkout-item-detalle {
+    font-size: var(--font-size-normal);
+    color: var(--color-text-secondary);
+}
+
+.checkout-item-subtotal {
+    font-weight: 900;
+    font-size: var(--font-size-medium);
+    color: var(--mcd-red);
+}
+
+.checkout-total {
+    background: linear-gradient(135deg, var(--mcd-red) 0%, var(--mcd-red-dark) 100%);
+    border: 4px solid var(--mcd-red-dark);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-large);
+    box-shadow: 0 8px 25px rgba(255, 0, 0, 0.3);
+}
+
+.total-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-size-large);
+    font-weight: 900;
+    color: var(--mcd-white);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.total-line span:last-child {
+    font-size: 3.5rem;
+}
+
+.checkout-actions {
+    display: flex;
+    gap: var(--spacing-medium);
+}
+
+.checkout-actions button {
+    flex: 1;
+}
+
+/* ============================================================================
+   ESPERA DE PAGO - Estilo McDonald's
+   ============================================================================ */
+
+.waiting-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-large);
+    text-align: center;
+    background: var(--mcd-white);
+}
+
+.waiting-content {
+    max-width: 700px;
+    width: 100%;
+    background: var(--mcd-white);
+    padding: var(--spacing-large);
+    border-radius: var(--border-radius);
+    border: 4px solid var(--mcd-yellow);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.waiting-icon {
+    margin-bottom: var(--spacing-large);
+}
+
+.spinner {
+    width: 120px;
+    height: 120px;
+    border: 8px solid var(--mcd-gray-light);
+    border-top-color: var(--mcd-red);
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.waiting-content h1 {
+    font-size: var(--font-size-large);
+    margin-bottom: var(--spacing-medium);
+    color: var(--mcd-red);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.waiting-message {
+    font-size: var(--font-size-normal);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-medium);
+    line-height: 1.8;
+}
+
+.waiting-status {
+    font-size: var(--font-size-small);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-large);
+}
+
+.payment-qr-section {
+    margin: var(--spacing-large) 0;
+}
+
+.payment-qr-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-medium);
+    background-color: var(--mcd-white);
+    border: 4px solid var(--mcd-yellow);
+    border-radius: var(--border-radius);
+    margin: var(--spacing-medium) auto;
+    max-width: 450px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   ÉXITO - Estilo McDonald's
+   ============================================================================ */
+
+.success-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-large);
+    text-align: center;
+    background: var(--mcd-white);
+}
+
+.success-content {
+    max-width: 800px;
+    width: 100%;
+    background: var(--mcd-white);
+    padding: var(--spacing-large);
+    border-radius: var(--border-radius);
+    border: 4px solid var(--color-success);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.success-icon {
+    width: 150px;
+    height: 150px;
+    background: linear-gradient(135deg, var(--color-success) 0%, #45a049 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6rem;
+    color: var(--mcd-white);
+    margin: 0 auto var(--spacing-large);
+    font-weight: 900;
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+}
+
+.success-content h1 {
+    font-size: var(--font-size-large);
+    margin-bottom: var(--spacing-large);
+    color: var(--color-success);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.ticket-section {
+    margin: var(--spacing-large) 0;
+    padding: var(--spacing-large);
+    background: var(--mcd-gray);
+    border-radius: var(--border-radius);
+    border: 3px solid var(--mcd-red);
+}
+
+.ticket-label {
+    font-size: var(--font-size-normal);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-small);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.ticket-code {
+    font-size: 4.5rem;
+    font-weight: 900;
+    color: var(--mcd-red);
+    letter-spacing: 0.3em;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.qr-section {
+    margin-top: var(--spacing-large);
+    padding: var(--spacing-medium);
+}
+
+#qr-code {
+    display: inline-block;
+    padding: var(--spacing-medium);
+    background-color: var(--mcd-white);
+    border: 4px solid var(--mcd-yellow);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-medium);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.qr-instructions {
+    font-size: var(--font-size-normal);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-medium);
+}
+
+/* ============================================================================
+   CÓDIGO DE BARRAS - Estilo McDonald's
+   ============================================================================ */
+
+.barcode-section {
+    margin-top: var(--spacing-large);
+    padding: var(--spacing-medium);
+    background: var(--mcd-white);
+    border: 3px solid var(--mcd-red);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.barcode-label {
+    font-size: var(--font-size-normal);
+    color: var(--mcd-red);
+    margin-bottom: var(--spacing-small);
+    text-align: center;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.barcode-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-medium);
+    background-color: var(--mcd-white);
+    border: 2px solid var(--mcd-gray-light);
+    border-radius: calc(var(--border-radius) / 2);
+    margin-bottom: var(--spacing-small);
+}
+
+.barcode-image {
+    max-width: 100%;
+    height: auto;
+    min-height: 100px;
+    image-rendering: crisp-edges;
+}
+
+.barcode-instructions {
+    font-size: var(--font-size-small);
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-top: var(--spacing-small);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 1024px) {
+    .products-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .carrito-sidebar {
+        position: relative;
+        top: 0;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --font-size-large: 2rem;
+        --font-size-medium: 1.5rem;
+        --font-size-normal: 1.2rem;
+        --font-size-small: 1rem;
+    }
+    
+    .home-title {
+        font-size: 3rem;
+    }
+    
+    .productos-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkout-actions {
+        flex-direction: column;
+    }
+    
+    .ticket-code {
+        font-size: 2.5rem;
+    }
+}
+
+/* ============================================================================
+   SCROLLBAR PERSONALIZADA - Estilo McDonald's
+   ============================================================================ */
+
+::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--mcd-gray);
+    border-radius: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--mcd-red) 0%, var(--mcd-red-dark) 100%);
+    border-radius: 7px;
+    border: 2px solid var(--mcd-gray);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--mcd-red-dark) 0%, var(--mcd-red) 100%);
+}
+
+
+

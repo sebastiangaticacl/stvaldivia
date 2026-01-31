@@ -1,0 +1,585 @@
+{% extends "base.html" %}
+{% block title %}Máquinas de Pago - Panel de Control{% endblock %}
+
+{% block head_extra %}
+<style>
+    .payment-machines-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .page-title {
+        color: #fff;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+    }
+    
+    .page-subtitle {
+        color: #94a3b8;
+        font-size: 1rem;
+        margin: 0;
+    }
+    
+    .machines-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 768px) {
+        .machines-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    .machine-card {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .machine-card:hover {
+        border-color: rgba(102, 126, 234, 0.5);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    
+    .machine-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+    
+    .machine-name {
+        color: #fff;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .machine-code {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin: 0.25rem 0 0 0;
+    }
+    
+    .machine-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .machine-status.online {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+    
+    .machine-status.offline {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+        border: 1px solid rgba(244, 67, 54, 0.3);
+    }
+    
+    .machine-status.unknown {
+        background: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+        border: 1px solid rgba(255, 152, 0, 0.3);
+    }
+    
+    .machine-config {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .machine-config:first-of-type {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+    }
+    
+    .machine-config-title {
+        color: #667eea;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .config-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .config-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+    
+    .config-value {
+        color: #fff;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .machine-actions {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn-edit, .btn-test {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    
+    .btn-edit {
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-edit:hover {
+        background: rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.5);
+    }
+    
+    .btn-test {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+    
+    .btn-test:hover {
+        background: rgba(76, 175, 80, 0.3);
+        border-color: rgba(76, 175, 80, 0.5);
+    }
+    
+    .btn-test-payment {
+        background: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+        border: 1px solid rgba(255, 152, 0, 0.3);
+    }
+    
+    .btn-test-payment:hover {
+        background: rgba(255, 152, 0, 0.3);
+        border-color: rgba(255, 152, 0, 0.5);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #94a3b8;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state-title {
+        color: #fff;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-machines-container">
+    <div class="page-header">
+        <h1 class="page-title">💳 Máquinas de Pago</h1>
+        <p class="page-subtitle">Configuración de terminales de pago (Getnet, etc.)</p>
+    </div>
+    
+    {% if machines %}
+    <div class="machines-grid">
+        {% for machine in machines %}
+        <div class="machine-card">
+            <div class="machine-header">
+                <div>
+                    <h3 class="machine-name">{{ machine.register.name }}</h3>
+                    <p class="machine-code">Código: {{ machine.register.code }}</p>
+                </div>
+                {% if machine.agent %}
+                    {% if machine.agent.last_getnet_status == 'OK' %}
+                    <span class="machine-status online">✅ Online</span>
+                    {% elif machine.agent.last_getnet_status == 'ERROR' %}
+                    <span class="machine-status offline">❌ Error</span>
+                    {% else %}
+                    <span class="machine-status unknown">⚠️ Desconocido</span>
+                    {% endif %}
+                {% else %}
+                <span class="machine-status offline">❌ Sin agente</span>
+                {% endif %}
+            </div>
+            
+            {% if machine.getnet_config %}
+            <div class="machine-config">
+                <div class="machine-config-title">⚙️ Configuración Getnet</div>
+                <div class="config-row">
+                    <span class="config-label">Modo:</span>
+                    <span class="config-value">{{ machine.getnet_config.mode|upper }}</span>
+                </div>
+                {% if machine.getnet_config.mode == 'serial' %}
+                <div class="config-row">
+                    <span class="config-label">Puerto:</span>
+                    <span class="config-value">{{ machine.getnet_config.port }}</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Baudrate:</span>
+                    <span class="config-value">{{ machine.getnet_config.baudrate }}</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Timeout:</span>
+                    <span class="config-value">{{ machine.getnet_config.timeout_ms }}ms</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="machine-config">
+                <div class="machine-config-title">🏪 Caja Vinculada</div>
+                <div class="config-row">
+                    <span class="config-label">Nombre:</span>
+                    <span class="config-value">{{ machine.register.name }} ({{ machine.register.code }})</span>
+                </div>
+                {% if machine.register.location %}
+                <div class="config-row">
+                    <span class="config-label">Ubicación:</span>
+                    <span class="config-value">{{ machine.register.location }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if machine.agent %}
+            <div class="machine-config">
+                <div class="machine-config-title">🖥️ Agente</div>
+                <div class="config-row">
+                    <span class="config-label">Nombre:</span>
+                    <span class="config-value">{{ machine.agent.agent_name }}</span>
+                </div>
+                {% if machine.agent.last_ip %}
+                <div class="config-row">
+                    <span class="config-label">IP:</span>
+                    <span class="config-value" style="font-family: monospace;">{{ machine.agent.last_ip }}</span>
+                </div>
+                {% endif %}
+                <div class="config-row">
+                    <span class="config-label">Último heartbeat:</span>
+                    <span class="config-value" id="heartbeat-{{ machine.register.id }}">
+                        {% if machine.agent.last_heartbeat %}
+                            {% set heartbeat_str = machine.agent.last_heartbeat %}
+                            {% if 'T' in heartbeat_str %}
+                                {{ heartbeat_str.split('T')[1].split('.')[0][:8] }}
+                            {% else %}
+                                {{ heartbeat_str }}
+                            {% endif %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </span>
+                </div>
+                {% if machine.agent.last_getnet_message %}
+                <div class="config-row">
+                    <span class="config-label">Estado Getnet:</span>
+                    <span class="config-value" style="font-size: 0.85rem;">{{ machine.agent.last_getnet_message }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if machine.payments_stats and machine.payments_stats.total > 0 %}
+            <div class="machine-config">
+                <div class="machine-config-title">📊 Movimientos (Últimas 24h)</div>
+                <div class="config-row" style="margin-bottom: 0.5rem;">
+                    <span class="config-label">Total:</span>
+                    <span class="config-value">{{ machine.payments_stats.total }}</span>
+                </div>
+                <div class="config-row" style="margin-bottom: 0.5rem;">
+                    <span class="config-label">Total procesado:</span>
+                    <span class="config-value">${{ "{:,.0f}".format(machine.payments_stats.total_amount) }}</span>
+                </div>
+                <div class="config-row" style="margin-bottom: 0.5rem;">
+                    <span class="config-label">Aprobado:</span>
+                    <span class="config-value" style="color: #4caf50;">${{ "{:,.0f}".format(machine.payments_stats.approved_amount) }}</span>
+                </div>
+                {% if machine.payments_stats.declined_count > 0 %}
+                <div class="config-row">
+                    <span class="config-label">Rechazados:</span>
+                    <span class="config-value" style="color: #f44336;">{{ machine.payments_stats.declined_count }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if machine.last_payment %}
+            <div class="machine-config">
+                <div class="machine-config-title">🕐 Último Movimiento</div>
+                <div class="config-row" style="margin-bottom: 0.5rem;">
+                    <span class="config-label">Monto:</span>
+                    <span class="config-value">${{ "{:,.0f}".format(machine.last_payment.amount) }}</span>
+                </div>
+                <div class="config-row" style="margin-bottom: 0.5rem;">
+                    <span class="config-label">Estado:</span>
+                    <span class="config-value">
+                        {% if machine.last_payment.status == 'APPROVED' %}
+                            <span style="color: #4caf50;">✅ Aprobado</span>
+                        {% elif machine.last_payment.status == 'DECLINED' %}
+                            <span style="color: #f44336;">❌ Rechazado</span>
+                        {% else %}
+                            {{ machine.last_payment.status }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% if machine.last_payment.auth_code %}
+                <div class="config-row" style="margin-bottom: 0.5rem;">
+                    <span class="config-label">Código Auth:</span>
+                    <span class="config-value" style="font-family: monospace; font-size: 0.85rem;">{{ machine.last_payment.auth_code }}</span>
+                </div>
+                {% endif %}
+                <div class="config-row">
+                    <span class="config-label">Proveedor:</span>
+                    <span class="config-value">{{ machine.last_payment.provider }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="machine-actions">
+                <a href="{{ url_for('admin.payment_machines_edit', register_id=machine.register.id) }}" class="btn-edit">
+                    ⚙️ Configurar
+                </a>
+                <button class="btn-test" onclick="testConnection({{ machine.register.id }})">
+                    🔍 Probar Conexión
+                </button>
+                {% if machine.getnet_config and machine.getnet_config.mode == 'serial' and machine.agent and machine.agent.last_getnet_status == 'OK' %}
+                <button class="btn-test-payment" onclick="testPayment({{ machine.register.id }})">
+                    💳 Pago Prueba
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">💳</div>
+        <h2 class="empty-state-title">No hay máquinas de pago configuradas</h2>
+        <p>Configura una máquina de pago desde la edición de cajas.</p>
+        <a href="{{ url_for('register_admin.list_registers') }}" class="btn-edit" style="margin-top: 1rem; display: inline-block;">
+            Ir a Cajas
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+async function testConnection(registerId) {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ Probando...';
+    
+    try {
+        // Obtener token CSRF del meta tag o del formulario
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                         document.querySelector('input[name="csrf_token"]')?.value || '';
+        
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Agregar token CSRF si está disponible
+        if (csrfToken) {
+            headers['X-CSRFToken'] = csrfToken;
+        }
+        
+        const response = await fetch(`/admin/api/payment-machines/${registerId}/test-connection`, {
+            method: 'POST',
+            headers: headers
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`✅ Conexión exitosa\n\n${data.details}\nPuerto: ${data.port}`);
+        } else {
+            alert(`❌ Error de conexión\n\n${data.error}\n${data.details || ''}`);
+        }
+    } catch (error) {
+        alert(`❌ Error al probar conexión: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+async function testPayment(registerId) {
+    // Pedir monto al usuario
+    const amountStr = prompt('💳 Pago de Prueba\n\nIngresa el monto en pesos CLP (sin puntos ni comas):\nEjemplo: 1000 = $1,000 CLP', '100');
+    
+    if (!amountStr) {
+        return; // Usuario canceló
+    }
+    
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+        alert('❌ Monto inválido. Debe ser un número mayor a 0.');
+        return;
+    }
+    
+    // Confirmar
+    const confirmMsg = `¿Ejecutar pago de prueba por $${amount.toLocaleString('es-CL')} CLP?\n\n` +
+                      `⚠️ ADVERTENCIA: Este pago se procesará en Getnet.\n` +
+                      `El terminal mostrará el monto y deberás pasar una tarjeta.`;
+    
+    if (!confirm(confirmMsg)) {
+        return; // Usuario canceló
+    }
+    
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ Procesando...';
+    
+    try {
+        // Obtener token CSRF del meta tag o del formulario
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                         document.querySelector('input[name="csrf_token"]')?.value || '';
+        
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Agregar token CSRF si está disponible
+        if (csrfToken) {
+            headers['X-CSRFToken'] = csrfToken;
+        }
+        
+        const response = await fetch(`/admin/api/payment-machines/${registerId}/test-payment`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ amount: amount })
+        });
+        
+        // Verificar si la respuesta es JSON o HTML
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('❌ Respuesta no es JSON. Status:', response.status, 'Content:', text.substring(0, 200));
+            alert(`❌ Error al iniciar pago de prueba\n\nEl servidor respondió con un error (Status: ${response.status}).\n\nPor favor, verifica:\n- Que estés autenticado como administrador\n- Que el servidor esté funcionando correctamente\n- Los logs del servidor para más detalles`);
+            btn.disabled = false;
+            btn.textContent = originalText;
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            // Error HTTP (400, 401, 500, etc.)
+            alert(`❌ Error al iniciar pago de prueba\n\nStatus: ${response.status}\n${data.error || data.message || 'Error desconocido'}\n${data.details || ''}`);
+            btn.disabled = false;
+            btn.textContent = originalText;
+            return;
+        }
+        
+        if (data.success) {
+            // Pago iniciado, hacer polling del resultado
+            const intentId = data.intent_id;
+            pollPaymentResult(intentId, amount, btn);
+        } else {
+            alert(`❌ Error al iniciar pago de prueba\n\n${data.error || 'Error desconocido'}\n${data.details || ''}`);
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    } catch (error) {
+        console.error('❌ Error en testPayment:', error);
+        alert(`❌ Error al iniciar pago de prueba: ${error.message}\n\nPor favor, verifica la consola del navegador para más detalles.`);
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+async function pollPaymentResult(intentId, amount, btn) {
+    const maxAttempts = 60; // 60 intentos = 60 segundos aproximadamente
+    let attempts = 0;
+    
+    const pollInterval = setInterval(async () => {
+        attempts++;
+        
+        try {
+            const response = await fetch(`/caja/api/payment/intents/${intentId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const status = data.status || data.intent?.status;
+            
+            if (status === 'APPROVED') {
+                clearInterval(pollInterval);
+                const authCode = data.auth_code || data.intent?.auth_code || 'N/A';
+                alert(`✅ Pago Aprobado\n\nMonto: $${amount.toLocaleString('es-CL')} CLP\nCódigo de autorización: ${authCode}\n\n⚠️ NOTA: Este pago NO se registró como venta en el sistema.`);
+                btn.disabled = false;
+                btn.textContent = '💳 Pago Prueba';
+            } else if (status === 'DECLINED' || status === 'ERROR' || status === 'CANCELLED') {
+                clearInterval(pollInterval);
+                const errorMsg = data.error_message || data.intent?.error_message || 'Pago rechazado';
+                alert(`❌ Pago Rechazado\n\n${errorMsg}`);
+                btn.disabled = false;
+                btn.textContent = '💳 Pago Prueba';
+            } else if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                alert(`⏱️ Timeout\n\nEl pago no se completó en 60 segundos. Verifica el estado manualmente.`);
+                btn.disabled = false;
+                btn.textContent = '💳 Pago Prueba';
+            }
+            // Si aún está en proceso, continuar polling
+        } catch (error) {
+            console.error('Error en polling:', error);
+            if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                alert(`❌ Error al verificar resultado: ${error.message}`);
+                btn.disabled = false;
+                btn.textContent = '💳 Pago Prueba';
+            }
+        }
+    }, 1000); // Poll cada 1 segundo
+}
+</script>
+{% endblock %}
+

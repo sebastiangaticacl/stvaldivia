@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Entrega por Módulo{% endblock %}
+
+{% block titulo_sistema %}
+{% endblock %}
+
+{% block content %}
+
+<h2 style="margin: 0 0 20px 0;">📦 Entrega por Módulo</h2>
+<p style="color: #aaa; margin-bottom: 30px;">Vista individual de entregas por cada bartender</p>
+
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px;">
+    {% for modulo in modulos %}
+    <div class="modulo-card" style="background-color: #222; border-radius: 8px; padding: 20px; border: 2px solid #444;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #444;">
+            <h3 style="margin: 0; color: #4caf50; font-size: 1.5em;">{{ modulo.bartender }}</h3>
+            <div style="text-align: right;">
+                <div style="color: #aaa; font-size: 0.9em;">Total Entregas</div>
+                <div style="color: #4caf50; font-size: 1.3em; font-weight: bold;">{{ modulo.total_entregas }}</div>
+                <div style="color: #aaa; font-size: 0.9em; margin-top: 5px;">Total Items</div>
+                <div style="color: #ff9800; font-size: 1.1em; font-weight: bold;">{{ modulo.total_items }}</div>
+            </div>
+        </div>
+        
+        <div style="max-height: 500px; overflow-y: auto;">
+            {% if modulo.entregas %}
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                <thead>
+                    <tr style="background-color: #333;">
+                        <th style="padding: 8px; border: 1px solid #444; text-align: left;">Venta</th>
+                        <th style="padding: 8px; border: 1px solid #444; text-align: left;">Producto</th>
+                        <th style="padding: 8px; border: 1px solid #444; text-align: center;">Cant.</th>
+                        <th style="padding: 8px; border: 1px solid #444; text-align: left;">Barra</th>
+                        <th style="padding: 8px; border: 1px solid #444; text-align: left;">Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entrega in modulo.entregas %}
+                    <tr style="background-color: {% if loop.index % 2 == 0 %}#1a1a1a{% else %}#222{% endif %};">
+                        <td style="padding: 8px; border: 1px solid #444; color: #4caf50; font-weight: bold;">{{ entrega.sale_id }}</td>
+                        <td style="padding: 8px; border: 1px solid #444;">{{ entrega.item_name }}</td>
+                        <td style="padding: 8px; border: 1px solid #444; text-align: center; font-weight: bold; color: #ff9800;">{{ entrega.qty }}</td>
+                        <td style="padding: 8px; border: 1px solid #444; color: #aaa;">{{ entrega.barra }}</td>
+                        <td style="padding: 8px; border: 1px solid #444; color: #666; font-size: 0.85em;">{{ entrega.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 40px; text-align: center; color: #666;">
+                <p>No hay entregas registradas para este módulo</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const socket = io('/admin_logs');
+    
+    socket.on('connect', function() {
+        console.log('✅ WebSocket conectado para módulos');
+    });
+
+    socket.on('disconnect', function(reason) {
+        console.log('❌ WebSocket desconectado:', reason);
+    });
+
+    socket.on('new_log', function(data) {
+        console.log('📦 Nueva entrega registrada, recargando...');
+        // Recargar la página después de 1 segundo para mostrar la nueva entrega
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    });
+    
+    // Actualización automática cada 30 segundos
+    let lastUpdateTime = new Date().getTime();
+    let isUpdating = false;
+    
+    async function checkForUpdates() {
+        if (isUpdating) return;
+        
+        try {
+            const currentTime = new Date().getTime();
+            const timeSinceLastUpdate = currentTime - lastUpdateTime;
+            
+            if (timeSinceLastUpdate >= 30000) {
+                console.log('🔄 Verificando actualizaciones de módulos...');
+                isUpdating = true;
+                lastUpdateTime = currentTime;
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('❌ Error al verificar actualizaciones:', error);
+            isUpdating = false;
+        }
+    }
+    
+    // Eliminado: actualización automática para reducir carga en API
+    // Los logs se actualizan solo al recargar manualmente la página
+});
+</script>
+
+
+<style>
+.modulo-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.modulo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+/* Scrollbar personalizado */
+.modulo-card div[style*="overflow-y: auto"]::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modulo-card div[style*="overflow-y: auto"]::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+}
+
+.modulo-card div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+.modulo-card div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+</style>
+
+{% endblock %}
+

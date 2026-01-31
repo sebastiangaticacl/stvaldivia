@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Error Report - Debug{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1400px; margin: 0 auto; padding: var(--spacing-md, 1rem);">
+    <h1>🔍 Error Report - Debug Mode</h1>
+    
+    <div style="margin-bottom: var(--spacing-md, 1rem);">
+        <button onclick="loadErrorReport()" class="btn btn-primary">🔄 Refresh Report</button>
+        <button onclick="clearErrorReport()" class="btn btn-secondary">🗑️ Clear Report</button>
+        <button onclick="exportReport()" class="btn btn-success">📥 Export JSON</button>
+    </div>
+    
+    <div id="error-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md, 1rem); margin-bottom: var(--spacing-lg, 1.5rem);">
+        <!-- Se llenará dinámicamente -->
+    </div>
+    
+    <div id="error-details">
+        <!-- Se llenará dinámicamente -->
+    </div>
+</div>
+
+<script>
+    function loadErrorReport() {
+        if (typeof window.getErrorReport !== 'function') {
+            document.getElementById('error-details').innerHTML = 
+                '<div class="alert alert-error">❌ Error Capture Mode no está activo. Verifica que DEBUG_ERRORS esté habilitado.</div>';
+            return;
+        }
+        
+        const report = window.getErrorReport();
+        displayReport(report);
+    }
+    
+    function clearErrorReport() {
+        if (typeof window.clearErrorReport !== 'function') {
+            alert('Error Capture Mode no está activo');
+            return;
+        }
+        
+        if (confirm('¿Limpiar el reporte de errores?')) {
+            window.clearErrorReport();
+            loadErrorReport();
+        }
+    }
+    
+    function exportReport() {
+        if (typeof window.getErrorReport !== 'function') {
+            alert('Error Capture Mode no está activo');
+            return;
+        }
+        
+        const report = window.getErrorReport();
+        const json = JSON.stringify(report, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `error_report_${new Date().toISOString().replace(/:/g, '-')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    function displayReport(report) {
+        // Resumen
+        const summary = document.getElementById('error-summary');
+        summary.innerHTML = `
+            <div class="card" style="background: var(--bg-surface, #1a1a2e); padding: var(--spacing-md, 1rem); border-radius: 8px;">
+                <h3 style="margin: 0 0 var(--spacing-xs, 0.5rem) 0; color: var(--text-primary);">JS Errors</h3>
+                <div style="font-size: 2rem; font-weight: bold; color: ${report.js_errors.length > 0 ? '#ff4444' : '#4caf50'};">
+                    ${report.js_errors.length}
+                </div>
+            </div>
+            <div class="card" style="background: var(--bg-surface, #1a1a2e); padding: var(--spacing-md, 1rem); border-radius: 8px;">
+                <h3 style="margin: 0 0 var(--spacing-xs, 0.5rem) 0; color: var(--text-primary);">Network Errors</h3>
+                <div style="font-size: 2rem; font-weight: bold; color: ${report.network_errors.length > 0 ? '#ff4444' : '#4caf50'};">
+                    ${report.network_errors.length}
+                </div>
+            </div>
+            <div class="card" style="background: var(--bg-surface, #1a1a2e); padding: var(--spacing-md, 1rem); border-radius: 8px;">
+                <h3 style="margin: 0 0 var(--spacing-xs, 0.5rem) 0; color: var(--text-primary);">CSP Violations</h3>
+                <div style="font-size: 2rem; font-weight: bold; color: ${report.csp_violations.length > 0 ? '#ff4444' : '#4caf50'};">
+                    ${report.csp_violations.length}
+                </div>
+            </div>
+            <div class="card" style="background: var(--bg-surface, #1a1a2e); padding: var(--spacing-md, 1rem); border-radius: 8px;">
+                <h3 style="margin: 0 0 var(--spacing-xs, 0.5rem) 0; color: var(--text-primary);">Unhandled Rejections</h3>
+                <div style="font-size: 2rem; font-weight: bold; color: ${report.unhandled_rejections.length > 0 ? '#ff4444' : '#4caf50'};">
+                    ${report.unhandled_rejections.length}
+                </div>
+            </div>
+        `;
+        
+        // Detalles
+        const details = document.getElementById('error-details');
+        let html = '';
+        
+        // JS Errors
+        if (report.js_errors.length > 0) {
+            html += '<h2>🔴 JavaScript Errors</h2>';
+            report.js_errors.forEach((error, idx) => {
+                html += `
+                    <div class="card" style="background: var(--bg-surface, #1a1a2e); padding: var(--spacing-md, 1rem); margin-bottom: var(--spacing-sm, 0.75rem); border-radius: 8px; border-left: 4px solid #ff4444;">
+                        <strong>${error.message || 'Unknown error'}</strong><br>
+                        <small style="color: var(--text-muted);">${error.filename || 'unknown'}:${error.lineno || '?'}:${error.colno || '?'}</small><br>
+                        ${error.stack ? `<pre style="background: rgba(0,0,0,0.3); padding: var(--spacing-xs, 0.5rem); border-radius: 4px; overflow-x: auto; font-size: 0.85rem;">${error.stack}</pre>` : ''}
+                        <small style="color: var(--text-muted);">${error.timestamp}</small>
+                    </div>
+                `;
+            });
+        }
+        
+        // Network Errors
+        if (report.network_errors.length > 0) {
+            html += '<h2>🔴 Network Errors</h2>';
+            report.network_errors.forEach((error, idx) => {
+                html += `
+                    <div class="card" style="background: var(--bg-surface, #1a1a2e); padding: var(--spacing-md, 1rem); margin-bottom: var(--spacing-sm, 0.75rem); border-radius: 8px; border-left: 4px solid #ff4444;">
+                        <strong>${error.method || 'GET'} ${error.url || 'unknown'}</strong><br>
+                        <span style="color: ${error.status >= 500 ? '#ff4444' : error.status >= 400 ? '#ffaa00' : '#4caf50'};">Status: ${error.status || 'Network Error'}</span><br>
+                        ${error.duration_ms ? `<small>Duration: ${error.duration_ms}ms</small><br>` : ''}
+                        ${error.body ? `<pre style="background: rgba(0,0,0,0.3); padding: var(--spacing-xs, 0.5rem); border-radius: 4px; overflow-x: auto; font-size: 0.85rem;">${JSON.stringify(error.body, null, 2)}</pre>` : ''}
+                        <small style="color: var(--text-muted);">${error.timestamp}</small>
+                    </div>
+                `;
+            });
+        }
+        
+        // CSP Violations
+        if (report.csp_violations.length > 0) {
+            html += '<h2>🔴 CSP Violations</h2>';
+            report.csp_violations.forEach((violation, idx) => {
+                html += `
+                    <div class="card" style="background: var(--bg-surface, #1a1a2e); padding: var(--spacing-md, 1rem); margin-bottom: var(--spacing-sm, 0.75rem); border-radius: 8px; border-left: 4px solid #ff4444;">
+                        <strong>${violation.violated_directive || 'Unknown directive'}</strong><br>
+                        <small>Blocked URI: ${violation.blocked_uri || 'unknown'}</small><br>
+                        ${violation.source_file ? `<small>Source: ${violation.source_file}:${violation.line_number || '?'}</small><br>` : ''}
+                        <small style="color: var(--text-muted);">${violation.timestamp}</small>
+                    </div>
+                `;
+            });
+        }
+        
+        // Unhandled Rejections
+        if (report.unhandled_rejections.length > 0) {
+            html += '<h2>🔴 Unhandled Rejections</h2>';
+            report.unhandled_rejections.forEach((rejection, idx) => {
+                html += `
+                    <div class="card" style="background: var(--bg-surface, #1a1a2e); padding: var(--spacing-md, 1rem); margin-bottom: var(--spacing-sm, 0.75rem); border-radius: 8px; border-left: 4px solid #ff4444;">
+                        <strong>${rejection.reason || 'Unknown rejection'}</strong><br>
+                        ${rejection.stack ? `<pre style="background: rgba(0,0,0,0.3); padding: var(--spacing-xs, 0.5rem); border-radius: 4px; overflow-x: auto; font-size: 0.85rem;">${rejection.stack}</pre>` : ''}
+                        <small style="color: var(--text-muted);">${rejection.timestamp}</small>
+                    </div>
+                `;
+            });
+        }
+        
+        if (html === '') {
+            html = '<div class="alert alert-success">✅ No hay errores capturados</div>';
+        }
+        
+        details.innerHTML = html;
+    }
+    
+    // Cargar al iniciar
+    window.addEventListener('DOMContentLoaded', function() {
+        loadErrorReport();
+        // Auto-refresh cada 5 segundos
+        setInterval(loadErrorReport, 5000);
+    });
+</script>
+{% endblock %}
+
+

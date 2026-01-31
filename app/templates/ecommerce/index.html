@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Venta de Entradas Express{% endblock %}
+
+{% block head_extra %}
+{% set CSS_VERSION = current_app.config.get('CSS_VERSION', '20250115-01') if current_app else '20250115-01' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ecommerce.css') }}?v={{ CSS_VERSION }}">
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Forzar fondo oscuro para ecommerce */
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    }
+    
+    .container {
+        background: transparent !important;
+    }
+</style>
+<div class="ecommerce-container">
+    <div class="ecommerce-hero">
+        <h1>🎫 Venta de Entradas Express</h1>
+        <p>Compra tus entradas de forma rápida y segura</p>
+        <div style="margin-top: 1.5rem;">
+            <a href="{{ url_for('ecommerce.landing') }}" 
+               style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                🎯 Ver Landing Page
+            </a>
+        </div>
+    </div>
+    
+    <div class="card ecommerce-card">
+        <h2>Entradas Disponibles</h2>
+        
+        {% if productos %}
+            {% for producto in productos %}
+            <div class="event-card">
+                <div class="event-card-content">
+                    <div class="event-info">
+                        <h3>{{ producto.nombre }}</h3>
+                        <span class="event-badge">{{ producto.categoria }}</span>
+                        <div class="event-details">
+                            <p class="event-detail-item">
+                                <span class="event-icon">🎫</span>
+                                <strong>Tipo:</strong> {{ producto.nombre }}
+                            </p>
+                        </div>
+                        <div class="event-pricing">
+                            <p class="event-price">${{ "{:,.0f}".format(producto.precio) }}</p>
+                            <p class="event-availability {% if producto.disponible %}available{% else %}sold-out{% endif %}">
+                                {% if producto.stock_ilimitado %}
+                                    ✅ Disponible
+                                {% elif producto.stock_quantity and producto.stock_quantity > 0 %}
+                                    ✅ {{ producto.stock_quantity }} disponible(s)
+                                {% else %}
+                                    ❌ Agotado
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="event-action">
+                        {% if producto.disponible %}
+                        <a href="{{ url_for('ecommerce.checkout', product_id=producto.id, cantidad=1) }}" 
+                           class="btn-checkout">
+                            Comprar Entrada
+                        </a>
+                        {% else %}
+                        <button class="btn-checkout" disabled style="opacity: 0.5; cursor: not-allowed; background: #ccc;">
+                            Agotado
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="event-card empty-state">
+                <span class="icon-large">🎫</span>
+                <h3>No hay entradas disponibles</h3>
+                <p>Las entradas se mostrarán aquí cuando estén configuradas.</p>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                    💡 Para agregar entradas, ve a <code>/admin/products</code> y crea productos con categoría "ENTRADAS"
+                </p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="features">
+        <div class="feature-item">
+            <div class="icon">🔒</div>
+            <h4>Pago Seguro</h4>
+            <p>Procesado por GetNet</p>
+        </div>
+        <div class="feature-item">
+            <div class="icon">📧</div>
+            <h4>Ticket por Email</h4>
+            <p>Recibirás tu entrada al instante</p>
+        </div>
+        <div class="feature-item">
+            <div class="icon">⚡</div>
+            <h4>Checkout Rápido</h4>
+            <p>Proceso simple y directo</p>
+        </div>
+        <div class="feature-item">
+            <div class="icon">📱</div>
+            <h4>Código QR</h4>
+            <p>Validación rápida en la entrada</p>
+        </div>
+    </div>
+    
+    <div class="card system-info">
+        <h3>ℹ️ Información del Sistema</h3>
+        <p><strong>Estado:</strong> Sistema listo para validación con GetNet</p>
+        <p><strong>Próximos pasos:</strong></p>
+        <ol>
+            <li>Configurar credenciales de GetNet en variables de entorno</li>
+            <li>Ajustar endpoints según documentación oficial</li>
+            <li>Probar en ambiente sandbox</li>
+        </ol>
+        <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+            Consulta <code>GETNET_INTEGRATION_READY.md</code> para más detalles.
+        </p>
+    </div>
+</div>
+{% endblock %}
+

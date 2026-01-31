@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Historial de Encuestas{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<style>
+    .history-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .session-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .session-card h2 {
+        color: #00ff00;
+        margin-bottom: 20px;
+        font-size: 2rem;
+    }
+
+    .session-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .info-item {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .info-item label {
+        color: #aaa;
+        font-size: 0.9rem;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .info-item .value {
+        color: #fff;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .stat-card .value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #00ff00;
+        margin: 10px 0;
+    }
+
+    .stat-card .label {
+        color: #aaa;
+        font-size: 1rem;
+    }
+
+    .chart-container {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        height: 300px;
+    }
+
+    .back-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+
+    .back-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
+    }
+
+    .responses-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .response-item {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+
+    .response-item .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .response-item .rating {
+        font-size: 1.5rem;
+    }
+
+    .response-item .details {
+        color: #aaa;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('routes.admin_dashboard') }}" class="btn btn-primary" style="margin-right: 10px;">
+            🏠 Dashboard Principal
+        </a>
+        <a href="{{ url_for('survey.survey_admin') }}" class="btn btn-primary">
+            📊 Dashboard de Encuestas
+        </a>
+    </div>
+    <a href="{{ url_for('survey.session_manager') }}" class="back-link">📋 Gestión de Sesiones</a>
+
+    <h1 style="color: #00ff00; text-align: center; margin-bottom: 30px; font-size: 2.5rem;">
+        📊 Historial de Sesiones de Encuestas
+    </h1>
+
+    <div id="history-content">
+        <p style="color: #ccc; text-align: center; padding: 40px;">Cargando historial...</p>
+    </div>
+</div>
+
+<script>
+    loadHistory();
+
+    async function loadHistory() {
+        try {
+            const response = await fetch('/encuesta/api/history');
+            const data = await response.json();
+            
+            const container = document.getElementById('history-content');
+            
+            if (data.sessions.length === 0) {
+                container.innerHTML = '<p style="color: #aaa; text-align: center; padding: 40px;">No hay sesiones registradas</p>';
+                return;
+            }
+
+            container.innerHTML = data.sessions.map(session => `
+                <div class="session-card">
+                    <h2>🎉 ${session.fiesta_nombre || 'Sin Nombre'} - ${session.fecha_sesion}</h2>
+                    
+                    <div class="session-info">
+                        <div class="info-item">
+                            <label>DJs</label>
+                            <div class="value">${session.djs || 'No especificados'}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Bartenders</label>
+                            <div class="value">${session.bartenders || 'No especificados'}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Hora de Inicio</label>
+                            <div class="value">${session.hora_inicio || 'N/A'}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Hora de Fin</label>
+                            <div class="value">${session.hora_fin || 'En curso'}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Estado</label>
+                            <div class="value">
+                                <span style="padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; ${session.estado === 'abierta' ? 'background: #4CAF50; color: white;' : 'background: #ff4444; color: white;'}">
+                                    ${session.estado === 'abierta' ? 'ABIERTA' : 'CERRADA'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="label">Total Respuestas</div>
+                            <div class="value">${session.total_respuestas || 0}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Promedio de Calificación</div>
+                            <div class="value">${parseFloat(session.promedio_rating || 0).toFixed(2)} ⭐</div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a href="/encuesta/history/${session.fecha_sesion}" style="padding: 10px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                            Ver Detalles Completos
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error cargando historial:', error);
+            document.getElementById('history-content').innerHTML = '<p style="color: #ff4444; text-align: center; padding: 40px;">Error cargando historial</p>';
+        }
+    }
+</script>
+{% endblock %}
+

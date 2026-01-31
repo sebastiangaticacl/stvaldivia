@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Cerrar Sesión de Caja - BIMBA{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<style>
+    .close-session-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .summary-card {
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .summary-row:last-child {
+        border-bottom: none;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        color: #e8e8e8;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+    
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #e8e8e8;
+        font-size: 0.9rem;
+        font-family: monospace;
+        box-sizing: border-box;
+        resize: vertical;
+        min-height: 100px;
+    }
+    
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .help-text {
+        color: #aaa;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+    
+    .cash-count-inputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .cash-input-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .cash-input-group label {
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .cash-input-group input {
+        padding: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        color: #e8e8e8;
+        font-size: 1rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: rgba(102, 126, 234, 0.3);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+        width: 100%;
+    }
+    
+    .btn-primary:hover {
+        background: rgba(102, 126, 234, 0.5);
+        color: #fff;
+    }
+    
+    .btn-secondary {
+        background: rgba(158, 158, 158, 0.3);
+        border: 1px solid rgba(158, 158, 158, 0.5);
+        color: #9e9e9e;
+        width: 100%;
+        margin-top: 0.5rem;
+        display: block;
+        text-align: center;
+        text-decoration: none;
+    }
+    
+    .btn-secondary:hover {
+        background: rgba(158, 158, 158, 0.5);
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="close-session-container">
+    <h1 style="color: #e8e8e8; margin-bottom: 1.5rem; text-align: center;">🔒 Cerrar Sesión de Caja</h1>
+    
+    <div class="summary-card">
+        <h3 style="color: #667eea; margin-bottom: 1rem;">Resumen de Sesión</h3>
+        <div class="summary-row">
+            <span>Caja:</span>
+            <span><strong>{{ register.name if register else register_session.register_id }}</strong></span>
+        </div>
+        <div class="summary-row">
+            <span>Abierta por:</span>
+            <span>{{ register_session.opened_by_employee_name }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Abierta el:</span>
+            <span>{{ register_session.opened_at.strftime('%Y-%m-%d %H:%M') if register_session.opened_at else 'N/A' }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Fondo inicial:</span>
+            <span>${{ "{:,.0f}".format(summary.initial_cash) }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Total ventas:</span>
+            <span>{{ summary.total_sales }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Total efectivo (ventas):</span>
+            <span>${{ "{:,.0f}".format(summary.total_cash) }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Total débito:</span>
+            <span>${{ "{:,.0f}".format(summary.total_debit) }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Total crédito:</span>
+            <span>${{ "{:,.0f}".format(summary.total_credit) }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Total general:</span>
+            <span style="color: #667eea;">${{ "{:,.0f}".format(summary.total_amount) }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Efectivo esperado:</span>
+            <span style="color: #4caf50;">${{ "{:,.0f}".format(summary.expected_cash) }}</span>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('caja.session_close') }}" id="closeForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="form-group">
+            <label>Conteo de Efectivo por Denominación</label>
+            <div class="cash-count-inputs">
+                <div class="cash-input-group">
+                    <label for="cash_1000">$1.000</label>
+                    <input type="number" id="cash_1000" name="cash_1000" min="0" step="1" value="0">
+                </div>
+                <div class="cash-input-group">
+                    <label for="cash_2000">$2.000</label>
+                    <input type="number" id="cash_2000" name="cash_2000" min="0" step="1" value="0">
+                </div>
+                <div class="cash-input-group">
+                    <label for="cash_5000">$5.000</label>
+                    <input type="number" id="cash_5000" name="cash_5000" min="0" step="1" value="0">
+                </div>
+                <div class="cash-input-group">
+                    <label for="cash_10000">$10.000</label>
+                    <input type="number" id="cash_10000" name="cash_10000" min="0" step="1" value="0">
+                </div>
+                <div class="cash-input-group">
+                    <label for="cash_20000">$20.000</label>
+                    <input type="number" id="cash_20000" name="cash_20000" min="0" step="1" value="0">
+                </div>
+                <div class="cash-input-group">
+                    <label for="cash_total">Total Contado</label>
+                    <input type="number" id="cash_total" name="cash_total" min="0" step="1" readonly style="background: rgba(102, 126, 234, 0.2); font-weight: bold;">
+                </div>
+            </div>
+            <div class="help-text">Ingresa la cantidad de billetes por denominación. El total se calculará automáticamente.</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="close_notes">Notas del Cierre</label>
+            <textarea id="close_notes" name="close_notes" placeholder="Observaciones, comentarios, etc."></textarea>
+            <div class="help-text">Notas adicionales sobre el cierre de la sesión</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="incidents">Incidentes (JSON Array)</label>
+            <textarea id="incidents" name="incidents" placeholder='[{"type": "printer_down", "description": "Impresora falló a las 22:30"}, {"type": "network_issue", "description": "Problema de red a las 23:15"}]'></textarea>
+            <div class="help-text">Lista de incidentes durante la sesión en formato JSON array (opcional)</div>
+        </div>
+        
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+            <button type="submit" class="btn btn-primary">Cerrar Sesión</button>
+            <a href="{{ url_for('caja.sales') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Calcular total de efectivo automáticamente
+const denominations = [1000, 2000, 5000, 10000, 20000];
+const inputs = denominations.map(d => document.getElementById(`cash_${d}`));
+const totalInput = document.getElementById('cash_total');
+
+function calculateTotal() {
+    let total = 0;
+    inputs.forEach((input, index) => {
+        const count = parseInt(input.value) || 0;
+        total += count * denominations[index];
+    });
+    totalInput.value = total;
+}
+
+inputs.forEach(input => {
+    input.addEventListener('input', calculateTotal);
+});
+
+// Generar JSON de cash_count al enviar
+document.getElementById('closeForm').addEventListener('submit', function(e) {
+    const cashCount = {};
+    let total = 0;
+    
+    inputs.forEach((input, index) => {
+        const count = parseInt(input.value) || 0;
+        if (count > 0) {
+            cashCount[denominations[index].toString()] = count;
+            total += count * denominations[index];
+        }
+    });
+    
+    cashCount.total = total;
+    
+    // Crear input hidden con el JSON
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'cash_count';
+    hiddenInput.value = JSON.stringify(cashCount);
+    this.appendChild(hiddenInput);
+});
+</script>
+{% endblock %}
+
+

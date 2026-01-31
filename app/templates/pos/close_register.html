@@ -1,0 +1,1213 @@
+{% extends "base.html" %}
+{% block title %}Cierre de Caja{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<style>
+    /* Ocultar footer y header del sistema de scanner */
+    .footer-desarrollador,
+    .footer-bar,
+    .titulo-sistema-principal,
+    .admin-top-nav,
+    nav,
+    header {
+        display: none !important;
+    }
+    
+    /* Ocultar el header propio de la página de cierre de caja */
+    .close-register-header {
+        display: none !important;
+    }
+    
+    body.pos-close-register {
+        margin: 0;
+        padding: 8px;
+        background: #0f0f0f;
+        color: #fff;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+    
+    /* Ajustes cuando está dentro de un iframe */
+    body.pos-close-register iframe {
+        display: none; /* Ocultar iframes anidados si los hay */
+    }
+    
+    .close-register-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: #1a1a1a;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    .close-register-header {
+        text-align: center;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #ab47bc;
+        padding-bottom: 8px;
+    }
+    
+    .close-register-header h1 {
+        color: #ab47bc;
+        font-size: 1.3rem;
+        margin-bottom: 4px;
+    }
+    
+    .close-register-header .info {
+        color: #ccc;
+        font-size: 0.85rem;
+    }
+    
+    .summary-section {
+        background: #252525;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .summary-section h2 {
+        color: #ab47bc;
+        font-size: 1rem;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 6px;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .summary-item {
+        background: #2a2a2a;
+        padding: 8px;
+        border-radius: 4px;
+        border-left: 3px solid #ab47bc;
+    }
+    
+    .summary-item-label {
+        color: #aaa;
+        font-size: 0.75rem;
+        margin-bottom: 3px;
+    }
+    
+    .summary-item-value {
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+    
+    .cash-input-section {
+        background: #252525;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .cash-input-section h2 {
+        color: #ab47bc;
+        font-size: 1rem;
+        margin-bottom: 8px;
+    }
+    
+    .cash-input-section p {
+        font-size: 0.8rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .form-group {
+        margin-bottom: 10px;
+    }
+    
+    .form-group label {
+        display: block;
+        color: #ccc;
+        font-size: 0.85rem;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+    
+    .form-group input[type="number"],
+    .form-group input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        background: #2a2a2a;
+        border: 2px solid #444;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: bold;
+        box-sizing: border-box;
+    }
+    
+    .form-group input[type="number"]:focus,
+    .form-group input[type="text"]:focus {
+        outline: none;
+        border-color: #ab47bc;
+        box-shadow: 0 0 0 2px rgba(171, 71, 188, 0.3);
+    }
+    
+    .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        background: #2a2a2a;
+        border: 2px solid #444;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 0.85rem;
+        min-height: 60px;
+        resize: vertical;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+    
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #ab47bc;
+    }
+    
+    .difference-display {
+        background: #2a2a2a;
+        padding: 8px;
+        border-radius: 4px;
+        margin-top: 8px;
+        text-align: center;
+    }
+    
+    .difference-display.positive {
+        border-left: 4px solid #38ef7d;
+    }
+    
+    .difference-display.negative {
+        border-left: 4px solid #f5576c;
+    }
+    
+    .difference-display.zero {
+        border-left: 4px solid #4facfe;
+    }
+    
+    .difference-label {
+        color: #aaa;
+        font-size: 0.8rem;
+        margin-bottom: 3px;
+    }
+    
+    .difference-value {
+        font-size: 1.3rem;
+        font-weight: bold;
+    }
+    
+    .difference-value.positive {
+        color: #38ef7d;
+    }
+    
+    .difference-value.negative {
+        color: #f5576c;
+    }
+    
+    .difference-value.zero {
+        color: #4facfe;
+    }
+    
+    .actions {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #4a4a4a;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a5a5a;
+    }
+    
+    .btn-open-drawer {
+        padding: 14px 28px;
+        background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+        min-width: 250px;
+    }
+    
+    .btn-open-drawer:hover:not(:disabled) {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
+    }
+    
+    .btn-open-drawer:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #aaa;
+    }
+    
+    .error {
+        background: #2a1a1a;
+        border: 1px solid #f5576c;
+        color: #f5576c;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    /* Estilos para verificación de PIN */
+    .pin-verification-section {
+        background: #252525;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .pin-verification-section h2 {
+        color: #ab47bc;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+    
+    .pin-verification-section p {
+        color: #ccc;
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+    }
+    
+    .pin-display-close {
+        background: #2a2a2a;
+        border: 2px solid #ab47bc;
+        border-radius: 6px;
+        padding: 10px;
+        font-size: 1.2rem;
+        letter-spacing: 0.2em;
+        margin: 0 auto 10px auto;
+        max-width: 250px;
+        text-align: center;
+        color: #fff;
+        font-weight: bold;
+        min-height: 40px;
+    }
+    
+    .pin-display-close.empty {
+        color: #666;
+        font-size: 1rem;
+        letter-spacing: normal;
+        font-weight: normal;
+    }
+    
+    .numeric-keyboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-bottom: 10px;
+        max-width: 350px;
+        margin-left: auto;
+        margin-right: auto;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    
+    .keyboard-btn {
+        padding: 8px 16px;
+        background: #4a4a4a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        aspect-ratio: 2 / 1;
+        min-height: 40px;
+    }
+    
+    .keyboard-btn:hover {
+        background: #5a5a5a;
+        transform: scale(1.05);
+    }
+    
+    .keyboard-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .keyboard-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        max-width: 350px;
+        margin: 0 auto;
+    }
+    
+    .btn-submit {
+        padding: 8px;
+        background: #00ff00;
+        color: #000;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-submit:hover {
+        background: #00cc00;
+        transform: scale(1.02);
+    }
+    
+    .btn-clear {
+        padding: 8px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-clear:hover {
+        background: #c82333;
+        transform: scale(1.02);
+    }
+    
+    .btn-verify-pin {
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: bold;
+        min-width: 120px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-verify-pin:hover:not(:disabled) {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    
+    .btn-verify-pin:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .btn-cancel-pin {
+        padding: 8px 16px;
+        background: #4a4a4a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: bold;
+        min-width: 120px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-cancel-pin:hover {
+        background: #5a5a5a;
+    }
+    
+    #pin-error-close {
+        color: #f5576c;
+        margin-top: 15px;
+        font-size: 0.95rem;
+        min-height: 20px;
+    }
+    
+    /* Footer sticky para información y botones */
+    .caja-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 15px;
+        background: #0f0f0f;
+        border-top: 1px solid #333;
+        min-height: 45px;
+        box-sizing: border-box;
+        z-index: 1000;
+    }
+    
+    .caja-footer-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        color: #ffffff;
+        font-size: 0.8rem;
+    }
+    
+    .caja-footer-info span {
+        color: #ab47bc;
+        font-weight: 600;
+    }
+    
+    .caja-footer-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+    
+    .caja-footer-actions a,
+    .caja-footer-actions button {
+        padding: 6px 14px;
+        background: #4a4a4a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        line-height: 1.3;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+        text-decoration: none;
+    }
+    
+    .caja-footer-actions a:hover,
+    .caja-footer-actions button:hover {
+        background: #5a5a5a;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    }
+    
+    .close-register-container {
+        padding-bottom: 50px; /* Espacio para el footer */
+    }
+    
+    /* Reducir tamaños en resultados */
+    #result-title {
+        font-size: 1rem !important;
+        margin-bottom: 8px !important;
+    }
+    
+    #result-balanced,
+    #result-unbalanced {
+        padding: 15px !important;
+    }
+    
+    #result-balanced h3,
+    #result-unbalanced h3 {
+        font-size: 1.2rem !important;
+    }
+    
+    #result-balanced div[style*="font-size: 4rem"] {
+        font-size: 2.5rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    #result-unbalanced div[style*="font-size: 4rem"] {
+        font-size: 2.5rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    #result-balanced p,
+    #result-unbalanced p {
+        font-size: 0.9rem !important;
+        margin-bottom: 10px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<script>
+    document.body.classList.add('pos-close-register');
+</script>
+
+<div class="close-register-container">
+    <div class="close-register-header">
+        <h1>💰 Cierre de Caja</h1>
+        <div class="info">
+            <strong>Caja:</strong> {{ register_name }} | 
+            <strong>Cajero:</strong> {{ employee_name }}
+        </div>
+    </div>
+    
+    <div id="loading" class="loading">
+        Cargando resumen de ventas...
+    </div>
+    
+    <div id="error-container"></div>
+    
+    <!-- Paso 0: Verificación de PIN -->
+    <div id="step-0-pin">
+        <div class="pin-verification-section">
+            <h2>🔒 Verificación de PIN</h2>
+            <p>Ingresa tu PIN para continuar con el cierre de caja</p>
+            
+            <div class="pin-display-close empty" id="pin-display-close">Ingresa tu PIN</div>
+            
+            <div class="numeric-keyboard">
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('1')">1</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('2')">2</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('3')">3</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('4')">4</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('5')">5</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('6')">6</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('7')">7</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('8')">8</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('9')">9</button>
+                <button type="button" class="keyboard-btn btn-clear" onclick="clearPinClose()">C</button>
+                <button type="button" class="keyboard-btn" onclick="appendPinDigitClose('0')">0</button>
+                <button type="button" class="keyboard-btn btn-clear" onclick="deletePinDigitClose()">⌫</button>
+            </div>
+            
+            <div id="pin-error-close"></div>
+            
+            <div class="keyboard-actions">
+                <button type="button" class="btn-cancel-pin" onclick="cancelPinVerification()">Cancelar</button>
+                <button type="button" class="btn-verify-pin" id="btn-verify-pin-close" onclick="verifyPinForClose()" disabled>Verificar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="close-register-content" style="display: none;">
+        <!-- Paso 1: Ingreso de Medios de Pago (A Ciegas) -->
+            <div id="step-1-input">
+                <div class="cash-input-section">
+                    <h2>💵 Cierre de Caja</h2>
+                    <p style="color: #aaa; margin-bottom: 8px; text-align: center; font-size: 0.8rem;">
+                        Ingresa los totales de cada medio de pago que tienes. El sistema verificará si está descuadrado.
+                    </p>
+                    
+                <div class="form-group">
+                    <label for="actual-cash">💵 Efectivo en Caja (CLP) *</label>
+                    <input 
+                        type="text" 
+                        id="actual-cash" 
+                        name="actual_cash" 
+                        placeholder="0"
+                        autofocus
+                        required
+                        oninput="formatNumber(this)"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="actual-debit">💳 Total Débito (CLP) *</label>
+                    <input 
+                        type="text" 
+                        id="actual-debit" 
+                        name="actual_debit" 
+                        placeholder="0"
+                        required
+                        oninput="formatNumber(this)"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="actual-credit">💳 Total Crédito (CLP) *</label>
+                    <input 
+                        type="text" 
+                        id="actual-credit" 
+                        name="actual_credit" 
+                        placeholder="0"
+                        required
+                        oninput="formatNumber(this)"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notas (Opcional)</label>
+                    <textarea 
+                        id="notes" 
+                        name="notes" 
+                        placeholder="Observaciones sobre el cierre de caja..."
+                    ></textarea>
+                </div>
+            </div>
+            
+            <!-- Botones de Acción - Paso 1 -->
+            <div class="actions">
+                <a href="{{ url_for('caja.sales') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="button" class="btn btn-primary" onclick="verifyCashAmount()">
+                    ✅ Verificar Cierre
+                </button>
+            </div>
+        </div>
+        
+        <!-- Paso 2: Resultado de Verificación -->
+        <div id="step-2-result" style="display: none;">
+            <div class="summary-section">
+                <h2 id="result-title">📊 Resultado del Cierre</h2>
+                
+                <div id="result-balanced" style="display: none;">
+                    <div style="text-align: center; padding: 12px;">
+                        <div style="font-size: 2.5rem; margin-bottom: 8px;">✅</div>
+                        <h3 style="color: #38ef7d; font-size: 1.2rem; margin-bottom: 6px;">Caja Cuadrada</h3>
+                        <p style="color: #ccc; font-size: 0.9rem;">
+                            Los montos ingresados coinciden con los esperados.
+                        </p>
+                    </div>
+                </div>
+                
+                <div id="result-unbalanced" style="display: none;">
+                    <div style="text-align: center; padding: 12px;">
+                        <div style="font-size: 2.5rem; margin-bottom: 8px;">⚠️</div>
+                        <h3 style="color: #f5576c; font-size: 1.2rem; margin-bottom: 6px;">Caja Descuadrada</h3>
+                        <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 10px;">
+                            Hay diferencias entre los montos ingresados y los esperados.
+                        </p>
+                        
+                        <div class="summary-grid" style="margin-top: 10px;">
+                            <div class="summary-item">
+                                <div class="summary-item-label">Efectivo Ingresado</div>
+                                <div class="summary-item-value" id="result-actual-cash">$0</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-item-label">Débito Ingresado</div>
+                                <div class="summary-item-value" id="result-actual-debit">$0</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-item-label">Crédito Ingresado</div>
+                                <div class="summary-item-value" id="result-actual-credit">$0</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #2a1a1a; border: 2px solid #f5576c; border-radius: 6px; padding: 10px; margin-top: 10px;">
+                            <p style="color: #f5576c; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px;">
+                                ⚠️ Requiere Intervención del Superadmin
+                            </p>
+                            <p style="color: #ccc; font-size: 0.8rem; margin-bottom: 6px;">
+                                El cierre ha sido registrado. Un administrador revisará los totales esperados y las diferencias contigo.
+                            </p>
+                            <p style="color: #aaa; font-size: 0.75rem; font-style: italic;">
+                                Los totales esperados y las diferencias solo serán visibles después de la revisión del superadmin.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumen Completo (solo visible después de verificar) -->
+            <div class="summary-section" id="full-summary" style="display: none;">
+                <h2>📊 Resumen Completo del Turno</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-item-label">Total de Ventas</div>
+                        <div class="summary-item-value" id="total-sales">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Efectivo</div>
+                        <div class="summary-item-value" id="expected-cash">$0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Débito</div>
+                        <div class="summary-item-value" id="total-debit">$0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Crédito</div>
+                        <div class="summary-item-value" id="total-credit">$0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">Total General</div>
+                        <div class="summary-item-value" id="total-amount">$0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mensaje de éxito y redirección automática -->
+            <div id="success-redirect-message" style="display: none; text-align: center; padding: 20px; margin-top: 20px; background: rgba(56, 239, 125, 0.15); border: 2px solid #38ef7d; border-radius: 8px;">
+                <div style="font-size: 4rem; margin-bottom: 15px;">✅</div>
+                <h3 style="color: #38ef7d; font-size: 1.8rem; margin-bottom: 15px; font-weight: bold;">¡Cierre de Caja Completado!</h3>
+                <p style="color: #fff; font-size: 1.1rem; margin-bottom: 10px; font-weight: 600;">
+                    La caja ha sido cerrada correctamente y ha sido liberada.
+                </p>
+                <p style="color: #aaa; font-size: 1rem;">
+                    Redirigiendo al home en <span id="countdown" style="color: #38ef7d; font-weight: bold; font-size: 1.2rem;">3</span> segundos...
+                </p>
+            </div>
+            
+            <!-- Botones de Acción - Paso 2 (ocultos después del cierre exitoso) -->
+            <div class="actions" id="result-actions">
+                <button type="button" class="btn btn-secondary" onclick="goBackToInput()">Volver</button>
+                <a href="{{ url_for('caja.sales') }}" class="btn btn-primary">Finalizar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let summaryData = null;
+let pinClose = '';
+let pinVerified = false;
+
+// Cargar solo para verificar que hay datos, pero no mostrar resumen
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar solo el paso de PIN inicialmente
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('step-0-pin').style.display = 'block';
+    document.getElementById('close-register-content').style.display = 'none';
+    updatePinDisplayClose();
+});
+
+// Funciones para manejo de PIN
+function appendPinDigitClose(digit) {
+    if (pinClose.length < 10) {
+        pinClose += digit;
+        updatePinDisplayClose();
+    }
+}
+
+function deletePinDigitClose() {
+    if (pinClose.length > 0) {
+        pinClose = pinClose.slice(0, -1);
+        updatePinDisplayClose();
+    }
+}
+
+function clearPinClose() {
+    pinClose = '';
+    updatePinDisplayClose();
+}
+
+function updatePinDisplayClose() {
+    const pinDisplay = document.getElementById('pin-display-close');
+    const verifyBtn = document.getElementById('btn-verify-pin-close');
+    const errorMsg = document.getElementById('pin-error-close');
+    
+    if (pinDisplay) {
+        if (pinClose.length === 0) {
+            pinDisplay.textContent = 'Ingresa tu PIN';
+            pinDisplay.classList.add('empty');
+        } else {
+            pinDisplay.textContent = '•'.repeat(pinClose.length);
+            pinDisplay.classList.remove('empty');
+        }
+    }
+    
+    if (verifyBtn) {
+        verifyBtn.disabled = pinClose.length === 0;
+    }
+    
+    if (errorMsg) {
+        errorMsg.textContent = '';
+    }
+}
+
+// Verificar PIN y abrir cajón automáticamente
+async function verifyPinForClose() {
+    if (pinClose.length === 0) {
+        return;
+    }
+    
+    const verifyBtn = document.getElementById('btn-verify-pin-close');
+    const errorMsg = document.getElementById('pin-error-close');
+    
+    // Deshabilitar botón mientras se verifica
+    if (verifyBtn) {
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = 'Verificando...';
+    }
+    
+    try {
+        const response = await fetch('/caja/api/verify-pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pin: pinClose
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            pinVerified = true;
+            
+            // Ocultar paso de PIN
+            document.getElementById('step-0-pin').style.display = 'none';
+            
+            // Mostrar contenido de cierre de caja
+            document.getElementById('close-register-content').style.display = 'block';
+            
+            // Abrir cajón automáticamente después de verificar PIN
+            showToast('✅ PIN verificado. Abriendo cajón de dinero...', 'info');
+            
+            try {
+                const drawerResponse = await fetch('/caja/api/open-cash-drawer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const drawerData = await drawerResponse.json();
+                
+                if (drawerData.success) {
+                    showToast('✅ Cajón de dinero abierto. Ingresa los montos.', 'success');
+                } else {
+                    showToast('⚠️ No se pudo abrir el cajón automáticamente', 'error');
+                }
+            } catch (drawerError) {
+                console.error('Error al abrir cajón:', drawerError);
+                showToast('⚠️ Error al abrir cajón, pero puedes continuar', 'error');
+            }
+            
+            // Enfocar el primer campo de entrada
+            setTimeout(() => {
+                const cashInput = document.getElementById('actual-cash');
+                if (cashInput) {
+                    cashInput.focus();
+                }
+            }, 500);
+            
+        } else {
+            // PIN incorrecto
+            if (errorMsg) {
+                errorMsg.textContent = data.error || 'PIN incorrecto. Intenta nuevamente.';
+            }
+            pinClose = '';
+            updatePinDisplayClose();
+            
+            // Re-habilitar botón
+            if (verifyBtn) {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verificar';
+            }
+        }
+    } catch (error) {
+        console.error('Error al verificar PIN:', error);
+        if (errorMsg) {
+            errorMsg.textContent = 'Error de conexión. Intenta nuevamente.';
+        }
+        pinClose = '';
+        updatePinDisplayClose();
+        
+        // Re-habilitar botón
+        if (verifyBtn) {
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = 'Verificar';
+        }
+    }
+}
+
+function cancelPinVerification() {
+    // Redirigir a la pantalla de ventas
+    window.location.href = '{{ url_for("caja.sales") }}';
+}
+
+// Función para verificar los montos de todos los medios de pago (a ciegas)
+async function verifyCashAmount() {
+    // Validar que todos los campos estén completos
+    const cashInput = document.getElementById('actual-cash');
+    const debitInput = document.getElementById('actual-debit');
+    const creditInput = document.getElementById('actual-credit');
+    
+    // Validar que no estén vacíos (permitir 0 como valor válido)
+    if (!cashInput.value || cashInput.value.trim() === '') {
+        showError('Debes ingresar el monto de efectivo (puede ser 0)');
+        cashInput.focus();
+        return;
+    }
+    
+    if (!debitInput.value || debitInput.value.trim() === '') {
+        showError('Debes ingresar el monto de débito (puede ser 0)');
+        debitInput.focus();
+        return;
+    }
+    
+    if (!creditInput.value || creditInput.value.trim() === '') {
+        showError('Debes ingresar el monto de crédito (puede ser 0)');
+        creditInput.focus();
+        return;
+    }
+    
+    const actualCash = getNumericValue('actual-cash');
+    const actualDebit = getNumericValue('actual-debit');
+    const actualCredit = getNumericValue('actual-credit');
+    const notes = document.getElementById('notes').value;
+    
+    if (actualCash < 0 || actualDebit < 0 || actualCredit < 0) {
+        showError('Los montos no pueden ser negativos');
+        return;
+    }
+    
+    const totalEntered = actualCash + actualDebit + actualCredit;
+    if (totalEntered === 0) {
+        if (!confirm('¿Estás seguro de que no hay ningún medio de pago registrado?')) {
+            return;
+        }
+    }
+    
+    // Ocultar paso 1
+    document.getElementById('step-1-input').style.display = 'none';
+    document.getElementById('step-2-result').style.display = 'block';
+    
+    // Mostrar loading
+    const resultTitle = document.getElementById('result-title');
+    resultTitle.textContent = 'Verificando...';
+    
+    try {
+        // P0-009: CIERRE A CIEGAS - NO obtener resumen, solo enviar montos declarados
+        // El backend calcula expected y diferencias, el cajero NO las ve
+        
+        // Procesar el cierre
+        const response = await fetch('/caja/api/close-register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                actual_cash: actualCash,
+                actual_debit: actualDebit,
+                actual_credit: actualCredit,
+                notes: notes
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            showError(data.error || 'Error al procesar el cierre');
+            goBackToInput();
+            return;
+        }
+        
+        // P0-009: CIERRE A CIEGAS - Solo mostrar "Cierre recibido correctamente"
+        // NO mostrar expected, NO mostrar diferencias, NO mostrar comparación
+        document.getElementById('step-1-input').style.display = 'none';
+        document.getElementById('step-2-result').style.display = 'block';
+        
+        // Ocultar TODAS las secciones que muestran expected o diferencias
+        document.getElementById('result-actions').style.display = 'none';
+        document.getElementById('result-balanced').style.display = 'none';
+        document.getElementById('result-unbalanced').style.display = 'none';
+        document.getElementById('full-summary').style.display = 'none';
+        
+        // Mostrar SOLO mensaje de éxito (el cajero NO ve comparación)
+        const successMessage = document.getElementById('success-redirect-message');
+        successMessage.style.display = 'block';
+        
+        // Actualizar título
+        const resultTitle = document.getElementById('result-title');
+        resultTitle.textContent = '✅ Cierre recibido correctamente';
+        resultTitle.style.color = '#4caf50';
+        
+        // Obtener URL de redirección
+        const redirectUrl = data.redirect_url || "{{ url_for('home.index') }}";
+        
+        // Mostrar countdown de 3 segundos
+        let countdown = 3;
+        const countdownElement = document.getElementById('countdown');
+        countdownElement.textContent = countdown;
+        
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                countdownElement.textContent = countdown;
+            } else {
+                clearInterval(countdownInterval);
+                countdownElement.textContent = '0';
+            }
+        }, 1000);
+        
+        // Redirigir después de 3 segundos para que el usuario vea el mensaje
+        setTimeout(() => {
+            // Si estamos en un iframe, notificar al parent para cerrar modal y redirigir
+            if (window.parent !== window) {
+                console.log('📤 Enviando mensaje al parent para cerrar modal y redirigir...');
+                window.parent.postMessage({
+                    type: 'close_register_complete',
+                    success: true,
+                    redirect: redirectUrl
+                }, '*');
+            } else {
+                // Si no estamos en iframe, redirigir directamente al home
+                window.location.href = redirectUrl;
+            }
+        }, 3000); // 3 segundos para que el usuario vea el mensaje de éxito
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Error de conexión al verificar el cierre');
+        goBackToInput();
+    }
+}
+
+function displayFullSummary(summary) {
+    document.getElementById('total-sales').textContent = summary.total_sales;
+    document.getElementById('expected-cash').textContent = formatCurrency(summary.total_cash);
+    document.getElementById('total-debit').textContent = formatCurrency(summary.total_debit);
+    document.getElementById('total-credit').textContent = formatCurrency(summary.total_credit);
+    document.getElementById('total-amount').textContent = formatCurrency(summary.total_amount);
+}
+
+function goBackToInput() {
+    document.getElementById('step-1-input').style.display = 'block';
+    document.getElementById('step-2-result').style.display = 'none';
+    document.getElementById('actual-cash').focus();
+}
+
+function formatCurrency(amount) {
+    return '$' + Math.round(amount).toLocaleString('es-CL');
+}
+
+// Función para formatear número con separador de miles (formato chileno: 1.000.000)
+function formatNumber(input) {
+    // Remover todo excepto números
+    let value = input.value.replace(/\D/g, '');
+    
+    // Formatear con separador de miles (punto en Chile)
+    if (value) {
+        const numValue = parseInt(value);
+        // Formatear con separador de miles usando punto
+        value = numValue.toLocaleString('es-CL', { useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+    
+    input.value = value;
+}
+
+// Función para obtener el valor numérico de un input formateado
+function getNumericValue(inputId) {
+    // Remover puntos (separador de miles) y espacios
+    const value = document.getElementById(inputId).value.replace(/\./g, '').replace(/\s/g, '').replace(/,/g, '');
+    return parseFloat(value) || 0;
+}
+
+function showError(message) {
+    const errorContainer = document.getElementById('error-container');
+    errorContainer.innerHTML = `<div class="error">${message}</div>`;
+    document.getElementById('loading').style.display = 'none';
+}
+
+// Función para abrir cajón de dinero manualmente
+async function openCashDrawer() {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    
+    // Deshabilitar botón mientras se procesa
+    btn.disabled = true;
+    btn.textContent = 'Abriendo...';
+    
+    try {
+        const response = await fetch('/caja/api/open-cash-drawer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            showToast('✅ Cajón de dinero abierto', 'success');
+        } else {
+            // Mostrar error
+            showError(data.error || 'No se pudo abrir el cajón de dinero');
+        }
+    } catch (error) {
+        console.error('Error al abrir cajón:', error);
+        showError('Error de conexión al abrir cajón de dinero');
+    } finally {
+        // Re-habilitar botón
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+// Función para mostrar toast (si no existe)
+function showToast(message, type = 'info') {
+    // Crear contenedor de toast si no existe
+    let toastContainer = document.getElementById('toast-container-close');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container-close';
+        toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 10000;';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        background: ${type === 'success' ? '#38ef7d' : type === 'error' ? '#f5576c' : '#4facfe'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto-remover después de 3 segundos
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease forwards';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+</script>
+
+<div class="caja-footer">
+    <div class="caja-footer-info">
+        <div>Caja: <span>{{ register_name }}</span></div>
+        <div>Cajero: <span>{{ employee_name }}</span></div>
+    </div>
+    <div class="caja-footer-actions">
+        <a href="{{ url_for('caja.sales') }}" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">← Volver a Ventas</a>
+    </div>
+</div>
+{% endblock %}
+

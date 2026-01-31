@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}FRAUDE DETECTADO{% endblock %}
+
+{% block head_extra %}
+<style>
+    body {
+        background-color: #8b0000 !important;
+        background: linear-gradient(135deg, #8b0000 0%, #a00000 50%, #8b0000 100%) !important;
+        min-height: 100vh;
+        animation: pulseRed 2s infinite;
+    }
+
+    @keyframes pulseRed {
+        0%, 100% { background-color: #8b0000; }
+        50% { background-color: #a00000; }
+    }
+
+    .fraud-container {
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 40px;
+        background-color: rgba(0, 0, 0, 0.8);
+        border: 5px solid #ff0000;
+        border-radius: 20px;
+        box-shadow: 0 0 50px rgba(255, 0, 0, 0.8);
+        text-align: center;
+        color: white;
+    }
+
+    .fraud-icon {
+        font-size: 6rem;
+        color: #ff0000;
+        margin-bottom: 20px;
+        animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    .fraud-title {
+        font-size: 3rem;
+        color: #ff0000;
+        margin-bottom: 30px;
+        text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .fraud-message {
+        font-size: 1.5rem;
+        margin-bottom: 30px;
+        color: #fff;
+        line-height: 1.6;
+    }
+
+    .fraud-details {
+        background-color: rgba(255, 0, 0, 0.2);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 30px 0;
+        border: 2px solid #ff0000;
+    }
+
+    .fraud-details p {
+        margin: 10px 0;
+        font-size: 1.2rem;
+    }
+
+    .fraud-details strong {
+        color: #ffcccc;
+    }
+
+    .auth-form {
+        margin-top: 40px;
+        padding: 30px;
+        background-color: rgba(0, 0, 0, 0.6);
+        border-radius: 15px;
+        border: 3px solid #ffaa00;
+    }
+
+    .auth-form h2 {
+        color: #ffaa00;
+        margin-bottom: 20px;
+        font-size: 2rem;
+    }
+
+    .auth-form label {
+        display: block;
+        margin-bottom: 10px;
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: bold;
+    }
+
+    .auth-form input[type="password"] {
+        width: 100%;
+        max-width: 400px;
+        padding: 15px;
+        font-size: 1.5rem;
+        border-radius: 10px;
+        border: 3px solid #ffaa00;
+        background-color: #222;
+        color: #fff;
+        text-align: center;
+        margin: 10px auto;
+        box-sizing: border-box;
+    }
+
+    .auth-form input[type="password"]:focus {
+        outline: none;
+        border-color: #ffaa00;
+        box-shadow: 0 0 20px rgba(255, 170, 0, 0.6);
+    }
+
+    .auth-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+
+    .btn-authorize {
+        padding: 20px 40px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        background-color: #ffaa00;
+        color: #000;
+        box-shadow: 0 0 20px rgba(255, 170, 0, 0.6);
+    }
+
+    .btn-authorize:hover {
+        background-color: #ffcc00;
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 170, 0, 0.8);
+    }
+
+    .btn-cancel {
+        padding: 20px 40px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        background-color: #666;
+        color: #fff;
+    }
+
+    .btn-cancel:hover {
+        background-color: #777;
+        transform: scale(1.05);
+    }
+
+    .ticket-info {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        text-align: left;
+    }
+
+    .ticket-info p {
+        margin: 8px 0;
+        font-size: 1.1rem;
+    }
+
+    @media (max-width: 768px) {
+        .fraud-container {
+            padding: 20px;
+            margin: 20px;
+        }
+
+        .fraud-title {
+            font-size: 2rem;
+        }
+
+        .fraud-message {
+            font-size: 1.2rem;
+        }
+
+        .auth-buttons {
+            flex-direction: column;
+        }
+
+        .btn-authorize, .btn-cancel {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fraud-container">
+    <div class="fraud-icon">⚠️</div>
+    <h1 class="fraud-title">FRAUDE DETECTADO</h1>
+    
+    <div class="fraud-message">
+        {{ fraud_message }}
+    </div>
+
+    <div class="fraud-details">
+        <p><strong>Ticket ID:</strong> {{ sale_id }}</p>
+        {% if fraud_type == 'old_ticket' %}
+            <p><strong>Días de antigüedad:</strong> {{ fraud_details.days_old }} días</p>
+            <p><strong>Fecha de venta:</strong> {{ fraud_details.sale_time }}</p>
+        {% elif fraud_type == 'multiple_attempts' %}
+            <p><strong>Intentos de entrega:</strong> {{ fraud_details.attempts }}</p>
+            <p><strong>Máximo permitido:</strong> {{ fraud_details.max_attempts }}</p>
+        {% endif %}
+    </div>
+
+    {% if venta_info_adicional %}
+    <div class="ticket-info">
+        <p><strong>Vendido por:</strong> {{ venta_info_adicional.vendido_por }}</p>
+        <p><strong>Fecha de venta:</strong> {{ venta_info_adicional.fecha_venta }}</p>
+        <p><strong>Caja:</strong> {{ venta_info_adicional.caja }}</p>
+    </div>
+    {% endif %}
+
+    <div class="auth-form">
+        <h2>🔐 AUTORIZACIÓN REQUERIDA</h2>
+        <p style="color: #ffcccc; margin-bottom: 20px; font-size: 1.1rem;">
+            Se requiere autorización del administrador para continuar con esta entrega.
+        </p>
+
+        <form method="POST" action="{{ url_for('routes.authorize_fraud') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="sale_id" value="{{ sale_id }}">
+            <input type="hidden" name="fraud_type" value="{{ fraud_type }}">
+            <input type="hidden" name="item_name" value="{{ item_name }}">
+            <input type="hidden" name="qty" value="{{ qty }}">
+            <input type="hidden" name="return_url" value="{{ return_url }}">
+
+            <label for="admin_password">Contraseña del Administrador:</label>
+            <input type="password" 
+                   name="admin_password" 
+                   id="admin_password" 
+                   required 
+                   autofocus
+                   placeholder="Ingresa la contraseña del administrador">
+
+            <div class="auth-buttons">
+                <button type="submit" class="btn-authorize">Autorizar Entrega</button>
+                <a href="{{ url_for('routes.scanner') }}" class="btn-cancel" style="text-decoration: none; display: inline-block;">
+                    Cancelar y Volver
+                </a>
+            </div>
+        </form>
+
+        {% if error %}
+        <div style="margin-top: 20px; padding: 15px; background-color: rgba(255, 0, 0, 0.3); border-radius: 10px; border: 2px solid #ff0000;">
+            <p style="color: #ffcccc; font-size: 1.1rem; margin: 0;">{{ error }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+
+
+

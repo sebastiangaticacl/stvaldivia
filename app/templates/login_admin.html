@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}Login Administrador - Acceso al Panel BIMBA{% endblock %}
+{% block meta_description %}Acceso seguro al panel de administración del sistema BIMBA. Gestión de turnos, entregas, inventario y estadísticas.{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Asegurar que el main-container no interfiera */
+    .main-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 200px);
+        padding: 0;
+    }
+
+    /* Contenedor principal centrado */
+    .login-wrapper {
+        width: 100%;
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 450px;
+        padding: 40px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-radius: 20px;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        box-sizing: border-box;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-logo {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .login-logo img {
+        max-width: 200px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        filter: drop-shadow(0 4px 20px rgba(102, 126, 234, 0.3));
+    }
+
+    .login-container h2 {
+        color: #e8e8e8;
+        text-align: center;
+        margin-bottom: 35px;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+    }
+
+    .login-container label {
+        display: block;
+        color: #cbd5e1;
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .login-container input {
+        width: 100%;
+        padding: 14px 16px;
+        margin-bottom: 24px;
+        border-radius: 10px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        background-color: rgba(24, 24, 26, 0.8);
+        color: #e8e8e8;
+        font-size: 1rem;
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+    }
+
+    .login-container input::placeholder {
+        color: #64748b;
+    }
+
+    .login-container input:focus {
+        outline: none;
+        border-color: rgba(102, 126, 234, 0.8);
+        background-color: rgba(24, 24, 26, 1);
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .login-container button,
+    .login-container form button[type="submit"] {
+        width: 100% !important;
+        padding: 16px !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        margin-top: 10px !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+        letter-spacing: 0.3px !important;
+    }
+
+    .login-container button:hover,
+    .login-container form button[type="submit"]:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5) !important;
+        background: linear-gradient(135deg, #7c8ef0 0%, #8a5fb8 100%) !important;
+    }
+
+    .login-container button:active,
+    .login-container form button[type="submit"]:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    }
+
+    /* Estilo del botón volver */
+    .login-container a[href*="index"] {
+        display: inline-block;
+        padding: 12px 24px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #cbd5e1;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .login-container a[href*="index"]:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+        color: #e8e8e8;
+    }
+
+    .login-container a[href*="index"]:active {
+        transform: translateY(0);
+    }
+
+    /* Animación de entrada */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .login-container {
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .login-logo {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .login-container h2 {
+        animation: fadeInUp 0.7s ease-out;
+    }
+
+    .login-container form {
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .login-wrapper {
+            min-height: calc(100vh - 150px);
+            padding: 15px;
+        }
+
+        .login-container {
+            max-width: 100%;
+            padding: 30px 25px;
+            border-radius: 16px;
+        }
+
+        .login-logo img {
+            max-width: 150px;
+        }
+
+        .login-container h2 {
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+        }
+
+        .login-container input {
+            padding: 12px 14px;
+            font-size: 0.95rem;
+        }
+
+        .login-container button,
+        .login-container form button[type="submit"] {
+            padding: 14px !important;
+            font-size: 1rem !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .login-wrapper {
+            padding: 10px;
+        }
+
+        .login-container {
+            padding: 25px 20px;
+            border-radius: 12px;
+        }
+
+        .login-logo img {
+            max-width: 120px;
+        }
+
+        .login-container h2 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .login-container label {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .login-container input {
+            padding: 11px 12px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .login-container button,
+        .login-container form button[type="submit"] {
+            padding: 13px !important;
+            font-size: 0.95rem !important;
+        }
+    }
+
+    @media (max-height: 600px) {
+        .login-wrapper {
+            min-height: auto;
+            padding: 20px;
+        }
+
+        .login-container {
+            padding: 25px;
+        }
+
+        .login-logo {
+            margin-bottom: 20px;
+        }
+
+        .login-logo img {
+            max-width: 120px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="login-wrapper">
+    <div class="login-container">
+    <div class="login-logo">
+        <img src="{{ url_for('static', filename='img/bimba-logo.png') }}" alt="BIMBA - Sistema de Gestión" onerror="this.style.display='none';">
+    </div>
+    <h2>🔐 Acceso Administrador</h2>
+
+    <form method="POST" action="{{ url_for('auth.login_admin') }}">
+        {% if csrf_token() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>{% endif %}
+        <label for="username">Usuario:</label>
+        <input type="text" name="username" id="username" required autofocus placeholder="Ingresa tu usuario"
+            autocomplete="username">
+
+        <label for="password">Contraseña:</label>
+        <input type="password" name="password" id="password" required placeholder="Ingresa tu contraseña"
+            autocomplete="current-password">
+
+        <button type="submit">Ingresar</button>
+    </form>
+
+    <div style="margin-top: 25px; text-align: center;">
+        <a href="{{ url_for('home.index') }}" 
+           style="display: inline-block; padding: 12px 24px; background: rgba(255, 255, 255, 0.1); color: #cbd5e1; text-decoration: none; border-radius: 8px; font-size: 0.95rem; font-weight: 500; transition: all 0.3s ease; border: 1px solid rgba(255, 255, 255, 0.2);">
+            ← Volver al inicio
+        </a>
+    </div>
+    </div>
+</div>
+
+{% endblock %}

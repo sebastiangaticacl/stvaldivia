@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Diario de Turnos - {{ fecha_str }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .filters {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 8px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .summary-card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .summary-card.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .summary-card-title {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .summary-card-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: white;
+        }
+        
+        thead {
+            background: #34495e;
+            color: white;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 14px;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        tbody tr.fuga-critica {
+            background: #fee;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        tbody tr.fuga-critica:hover {
+            background: #fdd;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .badge-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .badge-info {
+            background: #3498db;
+            color: white;
+        }
+        
+        .totals-row {
+            background: #2c3e50;
+            color: white;
+            font-weight: 700;
+        }
+        
+        .totals-row td {
+            border-bottom: none;
+            padding: 15px 12px;
+        }
+        
+        .currency {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .link {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .link:hover {
+            text-decoration: underline;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+        
+        .no-data-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Panel Diario de Turnos</h1>
+        <p class="subtitle">Resumen de turnos cerrados por fecha</p>
+        
+        <!-- Filtros -->
+        <form method="GET" action="{{ url_for('bartender_turnos.resumen_dia') }}" class="filters">
+            <div class="filter-group">
+                <label for="fecha">Fecha</label>
+                <input type="date" id="fecha" name="fecha" value="{{ fecha_str }}" required>
+            </div>
+            <div class="filter-group">
+                <label for="ubicacion">Ubicación</label>
+                <select id="ubicacion" name="ubicacion">
+                    <option value="">Todas</option>
+                    <option value="barra_pista" {% if ubicacion == 'barra_pista' %}selected{% endif %}>Barra Pista</option>
+                    <option value="barra_terraza" {% if ubicacion == 'barra_terraza' %}selected{% endif %}>Barra Terraza</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn">Buscar</button>
+            </div>
+            <div class="filter-group">
+                <a href="{{ url_for('bartender_turnos.resumen_dia', fecha=fecha_str, ubicacion=ubicacion, format='json') }}" class="btn btn-secondary" target="_blank">JSON</a>
+            </div>
+        </form>
+        
+        {% if turnos %}
+        <!-- Tarjetas de resumen -->
+        <div class="summary-cards">
+            <div class="summary-card success">
+                <div class="summary-card-title">Total Ventas</div>
+                <div class="summary-card-value">${{ "{:,.0f}".format(totales.suma_venta) }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">Total Costos</div>
+                <div class="summary-card-value">${{ "{:,.0f}".format(totales.suma_costo) }}</div>
+            </div>
+            <div class="summary-card success">
+                <div class="summary-card-title">Margen Bruto</div>
+                <div class="summary-card-value">${{ "{:,.0f}".format(totales.margen_bruto_total) }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">Total Merma</div>
+                <div class="summary-card-value">${{ "{:,.0f}".format(totales.suma_merma) }}</div>
+            </div>
+            <div class="summary-card warning">
+                <div class="summary-card-title">Pérdida No Justificada</div>
+                <div class="summary-card-value">${{ "{:,.0f}".format(totales.suma_perdida_no_justificada) }}</div>
+            </div>
+            <div class="summary-card {% if totales.cantidad_turnos_con_fuga_critica > 0 %}warning{% endif %}">
+                <div class="summary-card-title">Turnos con Fuga Crítica</div>
+                <div class="summary-card-value">{{ totales.cantidad_turnos_con_fuga_critica }}</div>
+            </div>
+        </div>
+        
+        <!-- Tabla de turnos -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Bartender</th>
+                    <th>Ubicación</th>
+                    <th>Apertura</th>
+                    <th>Cierre</th>
+                    <th class="text-right">Stock Inicial</th>
+                    <th class="text-right">Stock Final</th>
+                    <th class="text-right">Venta</th>
+                    <th class="text-right">Costo</th>
+                    <th class="text-right">Merma</th>
+                    <th class="text-right">Pérdida</th>
+                    <th class="text-right">Margen</th>
+                    <th class="text-center">Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in turnos %}
+                <tr class="{% if t.flag_fuga_critica %}fuga-critica{% endif %}">
+                    <td>
+                        <strong>{{ t.turno.bartender_name }}</strong>
+                        <br>
+                        <a href="{{ url_for('bartender_turnos.resumen_turno', turno_id=t.turno.id) }}" class="link" style="font-size: 11px;">Ver detalle</a>
+                    </td>
+                    <td>
+                        <span class="badge badge-info">{{ t.turno.ubicacion.replace('_', ' ').title() }}</span>
+                    </td>
+                    <td style="font-size: 12px;">
+                        {{ t.turno.fecha_hora_apertura.strftime('%H:%M') if t.turno.fecha_hora_apertura else 'N/A' }}
+                    </td>
+                    <td style="font-size: 12px;">
+                        {{ t.turno.fecha_hora_cierre.strftime('%H:%M') if t.turno.fecha_hora_cierre else 'N/A' }}
+                    </td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(t.valor_inicial_barra_costo) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(t.valor_final_barra_costo) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(t.valor_vendido_venta) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(t.valor_vendido_costo) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(t.valor_merma_costo) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(t.valor_perdida_no_justificada_costo) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(t.margen_bruto) }}</td>
+                    <td class="text-center">
+                        {% if t.flag_fuga_critica %}
+                            <span class="badge badge-danger">⚠️ Fuga</span>
+                        {% else %}
+                            <span class="badge badge-success">✓ OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                <!-- Fila de totales -->
+                <tr class="totals-row">
+                    <td colspan="4"><strong>TOTALES DEL DÍA</strong></td>
+                    <td class="text-right currency">-</td>
+                    <td class="text-right currency">-</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(totales.suma_venta) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(totales.suma_costo) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(totales.suma_merma) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(totales.suma_perdida_no_justificada) }}</td>
+                    <td class="text-right currency">${{ "{:,.0f}".format(totales.margen_bruto_total) }}</td>
+                    <td class="text-center">
+                        <strong>{{ turnos|length }} turnos</strong>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-data">
+            <div class="no-data-icon">📭</div>
+            <h3>No hay turnos cerrados para esta fecha</h3>
+            <p style="margin-top: 10px; color: #95a5a6;">
+                No se encontraron turnos cerrados para el {{ fecha_str }}{% if ubicacion %} en {{ ubicacion.replace('_', ' ').title() }}{% endif %}.
+            </p>
+            <p style="margin-top: 15px; font-size: 12px; color: #7f8c8d;">
+                💡 <strong>Tip:</strong> Intenta cambiar la fecha o quitar el filtro de ubicación.
+            </p>
+        </div>
+        {% endif %}
+        
+        <!-- Debug info (solo en desarrollo) -->
+        {% if config.DEBUG %}
+        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 6px; font-size: 12px; color: #666;">
+            <strong>Debug Info:</strong><br>
+            Fecha consultada: {{ fecha_str }}<br>
+            Ubicación: {{ ubicacion or 'Todas' }}<br>
+            Turnos encontrados: {{ turnos|length }}<br>
+            Admin logged in: {{ session.get('admin_logged_in', False) }}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+
+
+
+

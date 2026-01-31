@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Log Caja SUPERADMIN - Administración BIMBA{% endblock %}
+
+{% block content %}
+<div class="admin-container" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1 style="color: #fff; margin: 0;">🔐 Log Caja SUPERADMIN</h1>
+        <a href="{{ url_for('routes.admin_dashboard') }}" style="color: #667eea; text-decoration: none;">← Volver al Dashboard</a>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 12px; padding: 20px;">
+            <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">Total Cortesías</div>
+            <div style="color: #4caf50; font-size: 2rem; font-weight: bold;">{{ total_cortesias }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 12px; padding: 20px;">
+            <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">Total Pruebas</div>
+            <div style="color: #ff9800; font-size: 2rem; font-weight: bold;">{{ total_pruebas }}</div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+        <form method="GET" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+            <div>
+                <label style="display: block; color: #fff; margin-bottom: 5px; font-weight: 600;">Tipo de Operación:</label>
+                <select name="tipo_operacion" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff;">
+                    <option value="">Todos</option>
+                    <option value="CORTESIA" {% if tipo_operacion == 'CORTESIA' %}selected{% endif %}>Cortesía</option>
+                    <option value="PRUEBA_DEPLOY" {% if tipo_operacion == 'PRUEBA_DEPLOY' %}selected{% endif %}>Prueba Deploy</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; color: #fff; margin-bottom: 5px; font-weight: 600;">Fecha Desde:</label>
+                <input type="date" name="fecha_desde" value="{{ fecha_desde }}" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff;">
+            </div>
+            <div>
+                <label style="display: block; color: #fff; margin-bottom: 5px; font-weight: 600;">Fecha Hasta:</label>
+                <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff;">
+            </div>
+            <div>
+                <button type="submit" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer;">🔍 Filtrar</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Tabla de logs -->
+    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 12px; padding: 20px; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; color: #fff;">
+            <thead>
+                <tr style="border-bottom: 2px solid rgba(102, 126, 234, 0.3);">
+                    <th style="padding: 12px; text-align: left;">ID Venta</th>
+                    <th style="padding: 12px; text-align: left;">Fecha</th>
+                    <th style="padding: 12px; text-align: left;">Tipo</th>
+                    <th style="padding: 12px; text-align: left;">Admin</th>
+                    <th style="padding: 12px; text-align: right;">Total</th>
+                    <th style="padding: 12px; text-align: left;">Motivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if audit_logs %}
+                    {% for log in audit_logs %}
+                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                        <td style="padding: 12px;">#{{ log.sale_id }}</td>
+                        <td style="padding: 12px;">{{ log.created_at.strftime('%d/%m/%Y %H:%M') if log.created_at else 'N/A' }}</td>
+                        <td style="padding: 12px;">
+                            {% if log.tipo_operacion == 'CORTESIA' %}
+                                <span style="color: #4caf50; font-weight: 600;">🎁 Cortesía</span>
+                            {% elif log.tipo_operacion == 'PRUEBA_DEPLOY' %}
+                                <span style="color: #ff9800; font-weight: 600;">🧪 Prueba</span>
+                            {% else %}
+                                {{ log.tipo_operacion }}
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px;">{{ log.admin_user_name }}</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 600;">
+                            ${{ "{:,.0f}".format(log.total) if log.total else "0" }}
+                        </td>
+                        <td style="padding: 12px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ log.motivo }}">
+                            {{ log.motivo[:50] }}{% if log.motivo|length > 50 %}...{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="padding: 40px; text-align: center; color: #94a3b8;">
+                            No hay registros de auditoría
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        
+        <!-- Paginación -->
+        {% if pagination.pages > 1 %}
+        <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
+            {% if pagination.has_prev %}
+                <a href="?page={{ pagination.prev_num }}{% if tipo_operacion %}&tipo_operacion={{ tipo_operacion }}{% endif %}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}" 
+                   style="padding: 8px 16px; background: rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff; text-decoration: none;">← Anterior</a>
+            {% endif %}
+            <span style="padding: 8px 16px; color: #fff;">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+            {% if pagination.has_next %}
+                <a href="?page={{ pagination.next_num }}{% if tipo_operacion %}&tipo_operacion={{ tipo_operacion }}{% endif %}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}" 
+                   style="padding: 8px 16px; background: rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff; text-decoration: none;">Siguiente →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+

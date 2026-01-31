@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Vista Previa del Email - Panel de Control{% endblock %}
+
+{% block content %}
+<style>
+    .preview-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .preview-header {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .preview-header h1 {
+        color: #fff;
+        margin: 0 0 1rem 0;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .info-item {
+        background: rgba(15, 23, 42, 0.5);
+        padding: 1rem;
+        border-radius: 8px;
+    }
+    
+    .info-item label {
+        color: #aaa;
+        font-size: 0.85rem;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-item .value {
+        color: #fff;
+        font-weight: 600;
+    }
+    
+    .email-preview {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .actions-bar {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .btn-action {
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+        border: none;
+        font-size: 1rem;
+    }
+    
+    .btn-send {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-send:hover {
+        background: #059669;
+    }
+    
+    .btn-cancel {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .btn-cancel:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .payment-link-info {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .payment-link-info strong {
+        color: #856404;
+    }
+    
+    .payment-link-info a {
+        color: #856404;
+        word-break: break-all;
+    }
+</style>
+
+<div class="preview-container">
+    <div class="preview-header">
+        <h1>👁️ Vista Previa del Email</h1>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Destinatario</label>
+                <div class="value">{{ entrada.comprador_email }}</div>
+            </div>
+            <div class="info-item">
+                <label>Asunto</label>
+                <div class="value">{{ email_subject }}</div>
+            </div>
+            <div class="info-item">
+                <label>Monto Total</label>
+                <div class="value">${{ "{:,.0f}".format(precio_total) }}</div>
+            </div>
+            <div class="info-item">
+                <label>Link de Pago</label>
+                <div class="value" style="font-size: 0.85rem; word-break: break-all;">
+                    <a href="{{ payment_link }}" target="_blank" style="color: #667eea;">{{ payment_link }}</a>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- Vista Previa del Email -->
+    <div class="email-preview">
+        <h2 style="color: #333; margin-top: 0; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #eee;">
+            📧 Contenido del Email
+        </h2>
+        <div style="border: 2px dashed #ddd; padding: 1rem; background: #f9f9f9; border-radius: 8px; margin-bottom: 1rem;">
+            <strong style="color: #666;">Asunto:</strong> <span style="color: #333;">{{ email_subject }}</span>
+        </div>
+        <div style="max-width: 600px; margin: 0 auto;">
+            {{ email_body|safe }}
+        </div>
+    </div>
+    
+    <!-- Barra de Acciones -->
+    <div class="actions-bar">
+        <button id="btn-enviar" class="btn-action btn-send" data-entrada-id="{{ entrada.id }}">
+            ✅ Enviar Email
+        </button>
+        <a href="{{ url_for('admin_ecommerce.list_compras') }}" class="btn-action btn-cancel">
+            ← Volver a Compras
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnEnviar = document.getElementById('btn-enviar');
+    
+    btnEnviar.addEventListener('click', function() {
+        const entradaId = this.dataset.entradaId;
+        
+        // Confirmar envío
+        if (!confirm('¿Estás seguro de enviar este email al comprador?')) {
+            return;
+        }
+        
+        // Deshabilitar botón mientras se procesa
+        this.disabled = true;
+        const textoOriginal = this.textContent;
+        this.textContent = 'Enviando...';
+        this.style.opacity = '0.7';
+        
+        // Hacer la petición AJAX
+        fetch(`/admin/ecommerce/compras/${entradaId}/enviar-resumen`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.textContent = '✅ Enviado';
+                this.style.background = '#10b981';
+                alert('✅ ' + data.message);
+                // Opcional: cerrar ventana después de 2 segundos
+                setTimeout(() => {
+                    window.close();
+                }, 2000);
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo enviar el email'));
+                this.textContent = textoOriginal;
+                this.disabled = false;
+                this.style.opacity = '1';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al enviar el email. Por favor intenta nuevamente.');
+            this.textContent = textoOriginal;
+            this.disabled = false;
+            this.style.opacity = '1';
+        });
+    });
+});
+</script>
+{% endblock %}
+

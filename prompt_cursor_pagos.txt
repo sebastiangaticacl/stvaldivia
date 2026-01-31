@@ -1,0 +1,143 @@
+## 2. BACKEND BIMBAVERSO – ENDPOINTS SIMPLES (MySQL/MariaDB)
+
+Asume:
+
+- Backend actual de stvaldivia.cl corre en Linux.
+- Está conectado a MySQL/MariaDB.
+- Ya existen modelos de ventas o al menos conexión a base de datos.
+
+Debes implementar sólo DOS endpoints:
+
+-----------------------------------------------------
+### ENDPOINT 1
+POST /api/caja/venta-ok
+-----------------------------------------------------
+
+Este endpoint lo llama el frontend de caja SOLO cuando Getnet devolvió OK.
+
+Body esperado:
+
+{
+  "total": 15000,
+  "venta": {
+    "caja_codigo": "caja1",
+    "cajero": "usuario_x",
+    "items": [
+      { "sku": "PISCO_SOUR", "nombre": "Pisco Sour", "cantidad": 2, "precio_unitario": 5000 },
+      { "sku": "RON_COLA", "nombre": "Ron Cola", "cantidad": 1, "precio_unitario": 5000 }
+    ]
+  },
+  "getnet": {
+    "responseCode": "0",
+    "responseMessage": "Aprobado",
+    "authorizationCode": "123456",
+    "raw": null
+  }
+}
+
+Lógica del endpoint:
+
+1. Validar el body.
+2. Registrar la venta en la base MySQL/MariaDB:
+   - Insertar fila en tabla ventas o equivalente.
+   - Insertar filas detalle en tabla ventas_detalle o equivalente.
+   - Registrar campos relacionados a Getnet.
+3. Generar ticket_code único:
+   - ej: "caja1-BMB-000123"
+4. Guardar ticket_code en tabla de ventas o tickets.
+5. Responder con:
+
+{
+  "ok": true,
+  "venta_id": <ID>,
+  "ticket_code": "<ticket_code>"
+}
+
+IMPORTANTE:
+- Solo registrar venta real si Getnet devolvió OK.
+- Si hay error al guardar, devolver error y NO inventar venta.
+
+
+-----------------------------------------------------
+### ENDPOINT 2
+POST /api/caja/venta-fallida-log
+-----------------------------------------------------
+
+Lo llama el frontend cuando Getnet devuelve FALSE o RECHAZADO.
+
+Body ejemplo:
+
+{
+  "total": 15000,
+  "venta": {
+    "caja_codigo": "caja1",
+    "cajero": "usuario_x",
+    "items": [
+      { "sku": "PISCO_SOUR", "nombre": "Pisco Sour", "cantidad": 2, "precio_unitario": 5000 }
+    ]
+  },
+  "motivo": "Rechazado por Getnet (responseCode XX)"
+}
+
+Lógica:
+
+- Insertar en tabla logs_intentos_pago (o similar):
+  - caja_codigo
+  - cajero
+  - total
+  - items (JSON)
+  - motivo
+  - fecha/hora NOW()
+
+- Responder siempre:
+
+{
+  "ok": true
+}
+
+-----------------------------------------------------
+### TABLAS MÍNIMAS REQUERIDAS (si NO existen):
+
+CREATE TABLE logs_intentos_pago (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  caja_codigo VARCHAR(32) NOT NULL,
+  cajero VARCHAR(64),
+  total INT NOT NULL,
+  items_json JSON NOT NULL,
+  motivo VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE ventas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  caja_codigo VARCHAR(32) NOT NULL,
+  cajero VARCHAR(64),
+  total INT NOT NULL,
+  getnet_response_code VARCHAR(8),
+  getnet_response_message VARCHAR(255),
+  getnet_authorization_code VARCHAR(64),
+  ticket_code VARCHAR(64),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE ventas_detalle (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  venta_id INT,
+  sku VARCHAR(64),
+  nombre VARCHAR(64),
+  cantidad INT,
+  precio_unitario INT,
+  FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE
+);
+
+-----------------------------------------------------
+### NOTAS PARA IMPLEMENTACIÓN RÁPIDA
+
+- No cambiar arquitectura actual.
+- Solo agregar:
+  - Endpoint venta-ok
+  - Endpoint venta-fallida-log
+- Donde vaya la llamada real al POS Getnet, dejar comentario:
+  "// TODO: aquí va el protocolo al POS Getnet local por USB"
+- El backend solo procesa venta si viene desde frontend con ok = true.
+

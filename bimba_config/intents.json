@@ -1,0 +1,11 @@
+{
+  "saludo": "Hola.\nTe leo.",
+  "evento_hoy": "Hoy no hay evento.",
+  "estado_noche": "Hoy está tranquilo.",
+  "proximos_eventos": "Aún no hay anuncio.",
+  "precios": "Entrada desde $X.",
+  "horario": "Abrimos a las 23:00.",
+  "lista": "Se anuncia el mismo día.",
+  "djs": "Se anuncia el mismo día.",
+  "como_funciona": "Llegas, entras, y listo."
+}

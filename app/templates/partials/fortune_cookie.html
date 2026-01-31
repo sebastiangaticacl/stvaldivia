@@ -1,0 +1,166 @@
+<!-- Modal de Galleta de la Fortuna -->
+<div id="galleta-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 3px solid rgba(255, 215, 0, 0.6); border-radius: 20px; padding: 50px; max-width: 600px; width: 90%; text-align: center; position: relative; box-shadow: 0 20px 60px rgba(255, 215, 0, 0.4);">
+        <button onclick="cerrarGalleta();" style="position: absolute; top: 15px; right: 15px; background: transparent; border: none; color: #fff; font-size: 28px; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.3s; z-index: 100000;">&times;</button>
+        
+        <div style="font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite;">🍪</div>
+        
+        <h2 style="color: #ffd700; font-size: 2rem; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Galleta de la Fortuna</h2>
+        
+        <div id="galleta-mensaje" style="background: rgba(255, 215, 0, 0.15); border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 15px; padding: 30px; margin: 30px 0; min-height: 120px; display: flex; align-items: center; justify-content: center;">
+            <p id="galleta-texto" style="color: #e8e8e8; font-size: 1.3rem; line-height: 1.6; margin: 0; font-style: italic;">Cargando tu fortuna...</p>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <button onclick="cerrarGalleta();" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); border: none; color: white; padding: 15px 40px; font-size: 1.2rem; border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);">
+                ✅ Continuar
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+#galleta-modal {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+
+<script>
+// Mensajes de galleta de la fortuna para trabajadores
+const mensajesGalleta = [
+    "🎉 Hoy será un día excepcional. Tu dedicación será recompensada.",
+    "💰 El éxito te espera. Cada acción cuenta para alcanzar tus metas.",
+    "🚀 La energía positiva te acompañará durante toda tu jornada.",
+    "⭐ Tu excelencia brillará en cada tarea que realices.",
+    "💪 La dedicación de hoy construye el éxito de mañana.",
+    "🎯 Enfócate en cada detalle. Los pequeños gestos hacen la diferencia.",
+    "🌟 La buena fortuna está de tu lado. Confía en ti mismo.",
+    "🔥 Tu entusiasmo es contagioso. Inspira a quienes te rodean.",
+    "💎 Las oportunidades están por todas partes. Mantén los ojos abiertos.",
+    "🎊 La alegría y la satisfacción llenarán tu jornada de trabajo.",
+    "✨ Cada momento cuenta. Aprovecha al máximo esta oportunidad.",
+    "🏆 El trabajo en equipo será clave para el éxito de hoy.",
+    "🌈 Después del esfuerzo viene la recompensa. Hoy será brillante.",
+    "🎁 Las sorpresas agradables están por venir. Mantén la mente abierta.",
+    "⚡ Tu velocidad y precisión serán tus aliadas hoy.",
+    "🎨 Tu creatividad resolverá cualquier desafío que se presente.",
+    "🌙 Bajo las estrellas, la magia ocurrirá. Esta noche será especial.",
+    "💼 Tu profesionalidad abrirá todas las puertas del éxito.",
+    "🎪 El espectáculo está a punto de comenzar. ¡Que empiece la función!",
+    "🌟 Tu actitud positiva atraerá resultados extraordinarios.",
+    "💫 Cada cliente es una oportunidad de brillar. Demuestra tu mejor versión.",
+    "🎭 El trabajo bien hecho es tu mejor carta de presentación.",
+    "🔥 Tu pasión se notará en cada interacción. Deja huella positiva.",
+    "⚡ Mantén el ritmo, la eficiencia es tu aliada hoy.",
+    "🌺 Tu sonrisa y amabilidad harán la diferencia esta jornada."
+];
+
+function mostrarGalletaFortuna() {
+    console.log('🍪 mostrarGalletaFortuna() llamado');
+    
+    // Seleccionar un mensaje aleatorio
+    const mensajeAleatorio = mensajesGalleta[Math.floor(Math.random() * mensajesGalleta.length)];
+    
+    // Mostrar el modal
+    const modal = document.getElementById('galleta-modal');
+    const texto = document.getElementById('galleta-texto');
+    
+    console.log('🔍 Modal encontrado:', !!modal);
+    console.log('🔍 Texto encontrado:', !!texto);
+    
+    if (modal && texto) {
+        texto.textContent = mensajeAleatorio;
+        modal.style.display = 'flex';
+        
+        console.log('✅ Modal mostrado');
+        console.log('💬 Mensaje:', mensajeAleatorio);
+        
+        // Agregar efecto de animación al texto
+        texto.style.animation = 'fadeIn 0.5s ease-in';
+    } else {
+        console.error('❌ Error: No se encontró el modal o el texto');
+        console.error('Modal:', modal);
+        console.error('Texto:', texto);
+    }
+}
+
+function cerrarGalleta() {
+    const modal = document.getElementById('galleta-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        
+        // Llamar a callback si existe
+        if (window.onGalletaCerrada) {
+            window.onGalletaCerrada();
+        }
+    }
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarGalleta();
+    }
+});
+
+// Verificar si debe mostrarse automáticamente al cargar la página
+(function() {
+    function initGalleta() {
+        console.log('🍪 Inicializando galleta de la fortuna...');
+        
+        // Verificar si hay un parámetro en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const showCookie = urlParams.get('show_fortune') === 'true';
+        
+        console.log('🔍 Parámetro show_fortune:', showCookie);
+        console.log('📍 URL completa:', window.location.href);
+        
+        if (showCookie) {
+            // Verificar si ya se mostró en esta sesión para esta URL específica
+            const currentUrl = window.location.pathname;
+            const galletaKey = `galleta_mostrada_${currentUrl}`;
+            const alreadyShown = sessionStorage.getItem(galletaKey) === 'true';
+            
+            console.log('🔑 Clave de sesión:', galletaKey);
+            console.log('👁️ Ya se mostró antes:', alreadyShown);
+            
+            if (!alreadyShown) {
+                console.log('✅ Mostrando galleta en 800ms...');
+                // Esperar un momento para que la página cargue completamente
+                setTimeout(() => {
+                    console.log('🚀 Ejecutando mostrarGalletaFortuna()');
+                    mostrarGalletaFortuna();
+                    // Marcar como mostrada para esta página
+                    sessionStorage.setItem(galletaKey, 'true');
+                    console.log('💾 Galleta marcada como mostrada');
+                }, 800);
+            } else {
+                console.log('⏭️ Galleta ya mostrada anteriormente, omitiendo...');
+            }
+        } else {
+            console.log('ℹ️ No se debe mostrar la galleta (parámetro show_fortune no está en true)');
+        }
+    }
+    
+    // Intentar ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        console.log('📄 DOM cargando, esperando DOMContentLoaded...');
+        document.addEventListener('DOMContentLoaded', initGalleta);
+    } else {
+        console.log('📄 DOM ya cargado, ejecutando inmediatamente...');
+        // Si ya está cargado, ejecutar inmediatamente
+        initGalleta();
+    }
+})();
+</script>
+

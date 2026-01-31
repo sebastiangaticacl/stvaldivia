@@ -1,0 +1,400 @@
+
+================================================================================
+== 0) Snapshot del sistema
+================================================================================
+date                         2026-01-03T09:33:37+00:00
+host                         stvaldivia
+uptime                       up 2 weeks, 3 days, 12 hours, 19 minutes
+load                         0.08 0.02 0.02
+os                           Ubuntu 22.04.5 LTS
+kernel                       6.8.0-1045-gcp
+
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        29G   14G   15G  49% /
+tmpfs           3.9G     0  3.9G   0% /dev/shm
+tmpfs           1.6G  1.1M  1.6G   1% /run
+tmpfs           5.0M     0  5.0M   0% /run/lock
+efivarfs         56K   24K   27K  48% /sys/firmware/efi/efivars
+/dev/sda15      105M  6.1M   99M   6% /boot/efi
+tmpfs           794M  4.0K  794M   1% /run/user/1002
+tmpfs           794M  4.0K  794M   1% /run/user/1001
+
+               total        used        free      shared  buff/cache   available
+Mem:           7.8Gi       1.0Gi       5.1Gi       5.0Mi       1.6Gi       6.4Gi
+Swap:             0B          0B          0B
+
+================================================================================
+== 1) Servicios críticos (systemd)
+================================================================================
+nginx              (no unit)
+stvaldivia         (no unit)
+cloud-sql-proxy    (no unit)
+mysql              (no unit)
+postgresql         (no unit)
+
+================================================================================
+== 2) Puertos escuchando y procesos
+================================================================================
+Netid State  Recv-Q Send-Q   Local Address:Port  Peer Address:PortProcess                                                                                                                                                                                                                               
+udp   UNCONN 0      0        127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=429,fd=13)) uid:101 ino:2872 sk:102d cgroup:/system.slice/systemd-resolved.service <->                                                                                                                 
+udp   UNCONN 0      0      10.194.0.2%ens4:68         0.0.0.0:*    users:(("systemd-network",pid=427,fd=15)) uid:100 ino:42034295 sk:62 cgroup:/system.slice/systemd-networkd.service <->                                                                                                               
+udp   UNCONN 0      0            127.0.0.1:323        0.0.0.0:*    users:(("chronyd",pid=475,fd=5)) ino:3037 sk:102f cgroup:/system.slice/chrony.service <->                                                                                                                                            
+udp   UNCONN 0      0                [::1]:323           [::]:*    users:(("chronyd",pid=475,fd=6)) ino:3038 sk:16 cgroup:/system.slice/chrony.service v6only:1 <->                                                                                                                                     
+tcp   LISTEN 0      511            0.0.0.0:80         0.0.0.0:*    users:(("nginx",pid=2806682,fd=6),("nginx",pid=2806681,fd=6),("nginx",pid=951822,fd=6)) ino:10333893 sk:13 cgroup:/system.slice/nginx.service <->                                                                                    
+tcp   LISTEN 0      128            0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=820,fd=3)) ino:4968 sk:2 cgroup:/system.slice/ssh.service <->                                                                                                                                                     
+tcp   LISTEN 0      4096     127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=429,fd=14)) uid:101 ino:2873 sk:3 cgroup:/system.slice/systemd-resolved.service <->                                                                                                                    
+tcp   LISTEN 0      511            0.0.0.0:443        0.0.0.0:*    users:(("nginx",pid=2806682,fd=17),("nginx",pid=2806681,fd=17),("nginx",pid=951822,fd=17)) ino:41786853 sk:1033 cgroup:/system.slice/nginx.service <->                                                                               
+tcp   LISTEN 0      2048         127.0.0.1:5001       0.0.0.0:*    users:(("gunicorn",pid=2850445,fd=7),("gunicorn",pid=2850444,fd=7),("gunicorn",pid=2850443,fd=7),("gunicorn",pid=2850442,fd=7),("gunicorn",pid=2850440,fd=7)) uid:1003 ino:42024062 sk:63 cgroup:/system.slice/stvaldivia.service <->
+tcp   LISTEN 0      128            0.0.0.0:20202      0.0.0.0:*    users:(("fluent-bit",pid=852,fd=263)) ino:5049 sk:6 cgroup:/system.slice/google-cloud-ops-agent-fluent-bit.service <->                                                                                                               
+tcp   LISTEN 0      4096         127.0.0.1:5432       0.0.0.0:*    users:(("cloud-sql-proxy",pid=2831331,fd=7)) uid:1003 ino:41923368 sk:1d cgroup:/system.slice/cloud-sql-proxy.service <->                                                                                                            
+tcp   LISTEN 0      511               [::]:80            [::]:*    users:(("nginx",pid=2806682,fd=15),("nginx",pid=2806681,fd=15),("nginx",pid=951822,fd=15)) ino:41607959 sk:1031 cgroup:/system.slice/nginx.service v6only:1 <->                                                                      
+tcp   LISTEN 0      128               [::]:22            [::]:*    users:(("sshd",pid=820,fd=4)) ino:4970 sk:7 cgroup:/system.slice/ssh.service v6only:1 <->                                                                                                                                            
+tcp   LISTEN 0      511               [::]:443           [::]:*    users:(("nginx",pid=2806682,fd=18),("nginx",pid=2806681,fd=18),("nginx",pid=951822,fd=18)) ino:41786854 sk:1034 cgroup:/system.slice/nginx.service v6only:1 <->                                                                      
+tcp   LISTEN 0      4096                 *:20201            *:*    users:(("otelopscol",pid=828,fd=3)) ino:6269 sk:8 cgroup:/system.slice/google-cloud-ops-agent-opentelemetry-collector.service v6only:0 <->                                                                                           
+
+root      951822  0.0  0.1 107712 10100 ?        Ss    2025   0:00 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+www-data 2806681  0.0  0.4 135156 37028 ?        S    04:34   0:00 nginx: worker process
+www-data 2806682  0.0  0.4 136152 38436 ?        S    04:34   0:13 nginx: worker process
+deploy   2831331  0.3  0.3 1251232 26336 ?       Ssl  07:06   0:26 /opt/cloud-sql/cloud-sql-proxy --address 127.0.0.1 --port 5432 stvaldivia:southamerica-west1:stvaldivia-db
+deploy   2850440  0.0  0.3  42264 31944 ?        Ss   08:48   0:00 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+deploy   2850442  0.4  1.4 164632 119888 ?       S    08:48   0:10 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+deploy   2850443  0.5  1.4 163804 119892 ?       S    08:48   0:13 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+deploy   2850444  0.3  1.4 157912 114360 ?       S    08:48   0:10 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+deploy   2850445  0.2  1.4 164356 120400 ?       S    08:48   0:07 /var/www/stvaldivia/venv/bin/python3 /var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+root     2853044  0.0  0.0   7040  2432 ?        S    09:33   0:00 grep -E -i nginx|gunicorn|cloud-sql-proxy|mysql|postgres
+
+================================================================================
+== 3) App service unit (stvaldivia) + overrides (redactado)
+================================================================================
+# /etc/systemd/system/stvaldivia.service
+[Unit]
+Description=stvaldivia gunicorn
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+Group=www-data
+WorkingDirectory=/var/www/stvaldivia
+EnvironmentFile=/etc/stvaldivia/stvaldivia.env
+Environment="PATH=/var/www/stvaldivia/venv/bin"
+ExecStart=/var/www/stvaldivia/venv/bin/gunicorn --pythonpath /var/www/stvaldivia --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --access-logfile /var/www/stvaldivia/logs/access.log --error-logfile /var/www/stvaldivia/logs/error.log wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
+# /etc/systemd/system/stvaldivia.service.d/agent.conf
+[Service]
+Environment="AGENT_API_KEY=<redacted>
+
+# /etc/systemd/system/stvaldivia.service.d/override.conf
+[Service]
+Environment="FLASK_ENV=production"
+Environment="DATABASE_URL=postgresql://stvaldivia_user:fvt37Kf3LZtbZ0YCIRO6JGMA4DVHAO@127.0.0.1:5432/stvaldivia"
+
+================================================================================
+== 4) Variables que ve el servicio (redactado)
+================================================================================
+Environment=PATH=/var/www/stvaldivia/venv/bin AGENT_API_KEY=<redacted> FLASK_ENV=production DATABASE_URL=postgresql://stvaldivia_user:fvt37Kf3LZtbZ0YCIRO6JGMA4DVHAO@127.0.0.1:5432/stvaldivia
+
+================================================================================
+== 5) Cloud SQL Proxy: estado y conexiones reales a 5432
+================================================================================
+● cloud-sql-proxy.service - Cloud SQL Auth Proxy
+     Loaded: loaded (/etc/systemd/system/cloud-sql-proxy.service; enabled; vendor preset: enabled)
+     Active: active (running) since Sat 2026-01-03 07:06:31 UTC; 2h 27min ago
+   Main PID: 2831331 (cloud-sql-proxy)
+      Tasks: 10 (limit: 9518)
+     Memory: 12.9M
+        CPU: 26.783s
+     CGroup: /system.slice/cloud-sql-proxy.service
+             └─2831331 /opt/cloud-sql/cloud-sql-proxy --address 127.0.0.1 --port 5432 stvaldivia:southamerica-west1:stvaldivia-db
+
+Jan 03 08:48:36 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 08:48:36 [stvaldivia:southamerica-west1:stvaldivia-db] client closed the connection
+Jan 03 08:48:36 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 08:48:36 [stvaldivia:southamerica-west1:stvaldivia-db] client closed the connection
+Jan 03 08:48:36 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 08:48:36 [stvaldivia:southamerica-west1:stvaldivia-db] client closed the connection
+Jan 03 08:48:39 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 08:48:39 [stvaldivia:southamerica-west1:stvaldivia-db] Accepted connection from 127.0.0.1:60166
+Jan 03 08:48:39 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 08:48:39 [stvaldivia:southamerica-west1:stvaldivia-db] Accepted connection from 127.0.0.1:60170
+Jan 03 08:48:40 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 08:48:40 [stvaldivia:southamerica-west1:stvaldivia-db] Accepted connection from 127.0.0.1:60182
+Jan 03 08:48:40 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 08:48:40 [stvaldivia:southamerica-west1:stvaldivia-db] Accepted connection from 127.0.0.1:60184
+Jan 03 08:50:18 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 08:50:18 [stvaldivia:southamerica-west1:stvaldivia-db] Accepted connection from 127.0.0.1:42864
+Jan 03 09:09:46 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 09:09:46 [stvaldivia:southamerica-west1:stvaldivia-db] Accepted connection from 127.0.0.1:36834
+Jan 03 09:29:17 stvaldivia cloud-sql-proxy[2831331]: 2026/01/03 09:29:17 [stvaldivia:southamerica-west1:stvaldivia-db] Accepted connection from 127.0.0.1:36796
+
+-- conexiones a :5432 --
+ESTAB 0      0                127.0.0.1:5432                127.0.0.1:36796 users:(("cloud-sql-proxy",pid=2831331,fd=20))              
+ESTAB 0      0                127.0.0.1:5432                127.0.0.1:36834 users:(("cloud-sql-proxy",pid=2831331,fd=18))              
+ESTAB 0      0                127.0.0.1:42864               127.0.0.1:5432  users:(("gunicorn",pid=2850442,fd=29))                     
+ESTAB 0      0                127.0.0.1:60182               127.0.0.1:5432  users:(("gunicorn",pid=2850444,fd=14))                     
+ESTAB 0      0                127.0.0.1:60170               127.0.0.1:5432  users:(("gunicorn",pid=2850443,fd=14))                     
+ESTAB 0      0                127.0.0.1:36834               127.0.0.1:5432  users:(("gunicorn",pid=2850444,fd=15))                     
+ESTAB 0      0                127.0.0.1:5432                127.0.0.1:60184 users:(("cloud-sql-proxy",pid=2831331,fd=14))              
+ESTAB 0      0                127.0.0.1:5432                127.0.0.1:42864 users:(("cloud-sql-proxy",pid=2831331,fd=16))              
+ESTAB 0      0                127.0.0.1:5432                127.0.0.1:60166 users:(("cloud-sql-proxy",pid=2831331,fd=8))               
+ESTAB 0      0                127.0.0.1:5432                127.0.0.1:60170 users:(("cloud-sql-proxy",pid=2831331,fd=10))              
+ESTAB 0      0                127.0.0.1:36796               127.0.0.1:5432  users:(("gunicorn",pid=2850443,fd=13))                     
+ESTAB 0      0                127.0.0.1:60166               127.0.0.1:5432  users:(("gunicorn",pid=2850442,fd=14))                     
+ESTAB 0      0                127.0.0.1:5432                127.0.0.1:60182 users:(("cloud-sql-proxy",pid=2831331,fd=12))              
+ESTAB 0      0                127.0.0.1:60184               127.0.0.1:5432  users:(("gunicorn",pid=2850445,fd=14))                     
+
+================================================================================
+== 6) Confirmación DB desde el proceso (sin secretos)
+================================================================================
+MainPID                      2850440
+ENV keys relevantes (nombres):
+FLASK_ENV
+DATABASE_URL
+FLASK_SECRET_KEY
+DATABASE_PROD_URL
+
+================================================================================
+== 7) Nginx: validación + vhost + TLS
+================================================================================
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+-- sites-enabled --
+total 8
+drwxr-xr-x 2 root root 4096 Jan  3 03:33 .
+drwxr-xr-x 8 root root 4096 Jan  3 04:35 ..
+lrwxrwxrwx 1 root root   37 Jan  3 03:33 stvaldivia -> /etc/nginx/sites-available/stvaldivia
+
+-- grep TLS/certs --
+/etc/nginx/sites-enabled/stvaldivia:26:    listen 443 ssl http2;
+/etc/nginx/sites-enabled/stvaldivia:31:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-enabled/stvaldivia:32:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:16:    listen 443 ssl http2;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:19:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:20:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:69:    listen 443 ssl http2;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:72:    ssl_certificate /etc/ssl/certs/ip_34.176.144.166.crt;
+/etc/nginx/sites-available/stvaldivia.backup.20260103_033306:73:    ssl_certificate_key /etc/ssl/private/ip_34.176.144.166.key;
+/etc/nginx/sites-available/stvaldivia:26:    listen 443 ssl http2;
+/etc/nginx/sites-available/stvaldivia:31:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia:32:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005330:30:    listen 443 ssl http2;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005330:33:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005330:34:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005620:10:    listen 443 ssl http2;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005620:13:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251217_005620:14:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/default:27:	# listen 443 ssl default_server;
+/etc/nginx/sites-available/stvaldivia.backup.20251226_000618:10:    listen 443 ssl http2;
+/etc/nginx/sites-available/stvaldivia.backup.20251226_000618:13:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup.20251226_000618:14:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup_20251217_224220:10:    listen 443 ssl http2;
+/etc/nginx/sites-available/stvaldivia.backup_20251217_224220:13:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup_20251217_224220:14:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/sites-available/stvaldivia.backup:10:    listen 443 ssl http2;
+/etc/nginx/sites-available/stvaldivia.backup:13:    ssl_certificate /etc/letsencrypt/live/stvaldivia.cl/fullchain.pem;
+/etc/nginx/sites-available/stvaldivia.backup:14:    ssl_certificate_key /etc/letsencrypt/live/stvaldivia.cl/privkey.pem;
+/etc/nginx/snippets/snakeoil.conf:4:ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;
+/etc/nginx/snippets/snakeoil.conf:5:ssl_certificate_key /etc/ssl/private/ssl-cert-snakeoil.key;
+
+================================================================================
+== 8) HTTP/HTTPS checks (local)
+================================================================================
+-- HTTP localhost --
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Date: Sat, 03 Jan 2026 09:33:45 GMT
+Content-Type: text/html
+Content-Length: 178
+Connection: keep-alive
+Location: https://stvaldivia.cl/
+
+
+-- HTTPS localhost (sin verificar CA) --
+HTTP/2 200 
+server: nginx/1.18.0 (Ubuntu)
+date: Sat, 03 Jan 2026 09:33:45 GMT
+content-type: text/html; charset=utf-8
+content-length: 38516
+vary: Accept-Encoding
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws: wss: https://stvaldivia.cl wss://stvaldivia.cl; frame-ancestors 'self';
+permissions-policy: geolocation=(), microphone=(), camera=()
+vary: Cookie
+set-cookie: session=eyJjc3JmX3Rva2VuIjoiYTI5OTQ2MmQ5ZmE1NTRlMjlkMGFjMThkY2MyMTAwYWU0MWNlMDBlMyJ9.aVjieQ.gfPey4Y_KRSIYs59szCvTs27N1A; HttpOnly; Path=/
+strict-transport-security: max-age=31536000; includeSubDomains
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+
+
+-- App directo (gunicorn) --
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Sat, 03 Jan 2026 09:33:45 GMT
+Connection: keep-alive
+Content-Type: text/html; charset=utf-8
+Content-Length: 38528
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws: wss: https://stvaldivia.cl wss://stvaldivia.cl; frame-ancestors 'self';
+Permissions-Policy: geolocation=(), microphone=(), camera=()
+Vary: Cookie
+Set-Cookie: session=eyJjc3JmX3Rva2VuIjoiODBlYTdiMTRiOTBjZTgyMWUwODFlZDIwOTBjZjJjY2VjNzBkMDBjZCJ9.aVjieQ.09RMEBLn1lXEmzvYX7Xtg2NvuqI; HttpOnly; Path=/
+
+
+================================================================================
+== 9) Logs recientes (app + nginx) [redactados]
+================================================================================
+-- journalctl app (200) --
+Jan 03 09:30:28 stvaldivia gunicorn[2850445]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:30:28 stvaldivia gunicorn[2850445]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:30:28 stvaldivia gunicorn[2850445]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:30:28 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]: [2026-01-03 09:30:37,419] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]: Traceback (most recent call last):
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]: [2026-01-03 09:30:37,419] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]: Traceback (most recent call last):
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:30:37 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:37 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:37 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:38 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:47 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:47 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:47 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:48 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:57 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:57 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:57 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:30:58 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:07 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:07 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:07 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:08 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:17 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]: [2026-01-03 09:31:17,652] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]: Traceback (most recent call last):
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]: [2026-01-03 09:31:17,652] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]: Traceback (most recent call last):
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:31:17 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]: [2026-01-03 09:31:17,766] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]: Traceback (most recent call last):
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]: [2026-01-03 09:31:17,766] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]: Traceback (most recent call last):
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:31:17 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:18 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:27 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:27 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:27 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]: [2026-01-03 09:31:28,496] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]: Traceback (most recent call last):
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]: [2026-01-03 09:31:28,496] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]: Traceback (most recent call last):
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:31:28 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]: [2026-01-03 09:31:37,549] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]: Traceback (most recent call last):
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]: [2026-01-03 09:31:37,549] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]: Traceback (most recent call last):
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:31:37 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:37 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:37 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:38 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:47 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:47 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:47 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:48 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:57 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:57 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:57 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:31:58 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:07 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:07 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:07 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:08 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:17 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]: [2026-01-03 09:32:17,770] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]: Traceback (most recent call last):
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]: [2026-01-03 09:32:17,770] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]: Traceback (most recent call last):
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:32:17 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:17 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:18 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:27 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:27 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:27 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]: [2026-01-03 09:32:28,611] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]: Traceback (most recent call last):
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]: [2026-01-03 09:32:28,611] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]: Traceback (most recent call last):
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:32:28 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]: [2026-01-03 09:32:37,676] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]: Traceback (most recent call last):
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]: [2026-01-03 09:32:37,676] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]: Traceback (most recent call last):
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 804, in _get_guardarropia_metrics
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]:     from app.models.guardarropia_models import GuardarropiaTicket
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]: ImportError: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:32:37 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:37 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:37 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:38 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:47 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:47 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:47 stvaldivia gunicorn[2850444]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:48 stvaldivia gunicorn[2850445]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:57 stvaldivia gunicorn[2850442]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:57 stvaldivia gunicorn[2850443]: emitting event "metrics_update" to all [/admin_stats]
+Jan 03 09:32:57 stvaldivia gunicorn[2850444]: [2026-01-03 09:32:57,899] ERROR in dashboard_metrics_service: Error obteniendo métricas de inventario: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:32:57 stvaldivia gunicorn[2850444]: Traceback (most recent call last):
+Jan 03 09:32:57 stvaldivia gunicorn[2850444]:   File "/var/www/stvaldivia/app/helpers/dashboard_metrics_service.py", line 758, in _get_inventario_metrics
+Jan 03 09:32:57 stvaldivia gunicorn[2850444]:     from app.models.inventory_models import Product, Ingredient, Recipe
+Jan 03 09:32:57 stvaldivia gunicorn[2850444]: ImportError: cannot import name 'Product' from 'app.models.inventory_models' (/var/www/stvaldivia/app/models/inventory_models.py)
+Jan 03 09:32:57 stvaldivia gunicorn[2850444]: [2026-01-03 09:32:57,899] ERROR in dashboard_metrics_service: Error obteniendo métricas de guardarropía: cannot import name 'GuardarropiaTicket' from 'app.models.guardarropia_models' (/var/www/stvaldivia/app/models/guardarropia_models.py)
+Jan 03 09:32:57 stvaldivia gunicorn[

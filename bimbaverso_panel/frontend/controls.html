@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Control Agentes</title>
+<script>
+async function load(){
+  const res = await fetch("http://localhost:5002/api/panel/agentes");
+  const data = await res.json();
+  document.getElementById("estado").innerText = JSON.stringify(data,null,2);
+}
+
+async function toggle(agente, estado){
+  await fetch("http://localhost:5002/api/panel/agente/toggle",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({agente,estado})
+  });
+  load();
+}
+</script>
+</head>
+<body onload="load()">
+<h1>Control de Agentes</h1>
+
+<button onclick="toggle('rrss', true)">RRSS ON</button>
+<button onclick="toggle('rrss', false)">RRSS OFF</button><br/><br/>
+
+<button onclick="toggle('optimizacion', true)">Opt ON</button>
+<button onclick="toggle('optimizacion', false)">Opt OFF</button><br/><br/>
+
+<button onclick="toggle('mixologia', true)">Mix ON</button>
+<button onclick="toggle('mixologia', false)">Mix OFF</button><br/><br/>
+
+<pre id="estado"></pre>
+</body>
+</html>

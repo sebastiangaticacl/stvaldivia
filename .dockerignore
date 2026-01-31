@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Environment variables
+.env
+.env.*
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+__MACOSX/
+Thumbs.db
+
+# Logs
+*.log
+logs/
+*.sqlite
+*.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+
+# Backups
+backup_*/
+backups/
+
+# Cloud SQL proxy (no necesario en Cloud Run)
+cloud-sql-proxy
+cloud_sql_credentials.txt
+
+# Scripts locales
+*.sh
+!deploy*.sh
+
+# Data files
+*.xlsx
+*.csv
+data/
+
+# Instance folder (se crea en runtime)
+instance/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

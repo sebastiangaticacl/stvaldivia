@@ -1,0 +1,778 @@
+{% extends "base.html" %}
+{% block title %}Historial de Turnos y Jornadas - Administración BIMBA{% endblock %}
+{% block meta_description %}Historial completo de turnos y jornadas anteriores. Consulta de estadísticas, cierres y resúmenes de operaciones pasadas en el sistema BIMBA.{% endblock %}
+
+{% block titulo_sistema %}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .shift-history-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .page-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+    }
+    
+    .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+    
+    .dates-list-container {
+        background-color: #222;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+    
+    .dates-list-container h2 {
+        color: #00ff00;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    
+    .dates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+    
+    .date-card {
+        background-color: #18181a;
+        padding: 15px;
+        border-radius: 6px;
+        border: 2px solid #444;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    
+    .date-card:hover {
+        border-color: #00ff00;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 255, 0, 0.3);
+    }
+    
+    .date-card.active {
+        border-color: #667eea;
+        background-color: rgba(102, 126, 234, 0.2);
+    }
+    
+    .date-card .date {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #e8e8e8;
+        margin-bottom: 5px;
+    }
+    
+    .date-card .day-name {
+        font-size: 0.9rem;
+        color: #aaa;
+    }
+    
+    .shift-details-container {
+        background-color: #222;
+        padding: 30px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .shift-details-container h2 {
+        color: #00ff00;
+        margin-top: 0;
+        margin-bottom: 25px;
+        font-size: 1.8rem;
+    }
+    
+    .detail-section {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #444;
+    }
+    
+    .detail-section:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-section h3 {
+        color: #00ff00;
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 1.4rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .info-card {
+        background-color: #18181a;
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid #444;
+    }
+    
+    .info-card .label {
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .info-card .value {
+        color: #e8e8e8;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .stat-card {
+        background-color: #18181a;
+        padding: 20px;
+        border-radius: 6px;
+        border: 2px solid #444;
+        text-align: center;
+    }
+    
+    .stat-card h4 {
+        color: #aaa;
+        margin: 0 0 10px 0;
+        font-size: 0.9rem;
+    }
+    
+    .stat-card .value {
+        color: #00ff00;
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .ranking-list {
+        background-color: #18181a;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 10px;
+    }
+    
+    .ranking-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #333;
+        color: #e8e8e8;
+    }
+    
+    .ranking-item:last-child {
+        border-bottom: none;
+    }
+    
+    .ranking-item .name {
+        flex: 1;
+    }
+    
+    .ranking-item .value {
+        color: #00ff00;
+        font-weight: bold;
+    }
+    
+    .deliveries-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    
+    .deliveries-table th,
+    .deliveries-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #444;
+        color: #e8e8e8;
+    }
+    
+    .deliveries-table th {
+        background-color: #18181a;
+        color: #00ff00;
+        font-weight: bold;
+    }
+    
+    .deliveries-table tr:hover {
+        background-color: #18181a;
+    }
+    
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #aaa;
+        font-size: 1.1rem;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    
+    .badge-success {
+        background-color: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+    }
+    
+    .badge-warning {
+        background-color: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="shift-history-container">
+    <div class="page-header">
+        <h1>📅 Historial de Turnos Cerrados</h1>
+        <p>Consulta detallada de todos los turnos cerrados del sistema</p>
+        {% if selected_date %}
+        <div style="margin-top: 15px; padding: 15px; background: rgba(255, 255, 255, 0.15); border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3);">
+            <p style="margin: 0 0 10px 0; color: rgba(255, 255, 255, 0.95); font-size: 1rem; font-weight: bold;">
+                🔗 URL del Informe:
+            </p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-family: monospace; font-size: 0.9rem; color: rgba(255, 255, 255, 0.9); word-break: break-all; flex: 1; min-width: 300px;">
+                    {{ url_for('routes.shift_history', date=selected_date, _external=True) }}
+                </span>
+                <button onclick="copyToClipboard('{{ url_for('routes.shift_history', date=selected_date, _external=True) }}')" 
+                        style="padding: 8px 15px; background: rgba(255, 255, 255, 0.25); border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 6px; color: white; cursor: pointer; font-size: 0.9rem; font-weight: bold; white-space: nowrap;">
+                    📋 Copiar URL
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Lista de Días Disponibles -->
+    <div class="dates-list-container">
+        <h2>📆 Días Disponibles ({{ total_shifts }} turnos)</h2>
+        {% if available_dates %}
+        <div class="dates-grid">
+            {% for date in available_dates %}
+            <a href="{{ url_for('routes.shift_history', date=date) }}" 
+               class="date-card {% if selected_date == date %}active{% endif %}">
+                <div class="date">{{ date }}</div>
+                <div class="day-name">{{ date }}</div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-data">
+            <p>No hay turnos cerrados en el historial</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Detalles del Turno Seleccionado -->
+    {% if selected_shift_data %}
+    <div class="shift-details-container">
+        <h2>📊 Detalles del Turno: {{ selected_date }}</h2>
+        
+        <!-- Información Básica del Turno -->
+        <div class="detail-section">
+            <h3>ℹ️ Información del Turno</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="label">Fecha</div>
+                    <div class="value">{{ selected_date }}</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Fiesta</div>
+                    <div class="value">{{ selected_shift_data.get('fiesta_nombre', 'N/A') }}</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">DJs</div>
+                    <div class="value">{{ selected_shift_data.get('djs', 'N/A') }}</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Abierto por</div>
+                    <div class="value">{{ selected_shift_data.get('opened_by', 'N/A') }}</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Cerrado por</div>
+                    <div class="value">{{ selected_shift_data.get('closed_by', 'N/A') }}</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Hora de Apertura</div>
+                    <div class="value">
+                        {% if selected_shift_data.get('opened_at') %}
+                            {{ selected_shift_data.get('opened_at')[:16] }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Hora de Cierre</div>
+                    <div class="value">
+                        {% if selected_shift_data.get('closed_at') %}
+                            {{ selected_shift_data.get('closed_at')[:16] }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Duración</div>
+                    <div class="value">
+                        {% if selected_shift_data.get('opened_at') and selected_shift_data.get('closed_at') %}
+                            {% set opened = selected_shift_data.get('opened_at') | to_datetime %}
+                            {% set closed = selected_shift_data.get('closed_at') | to_datetime %}
+                            {% if opened and closed %}
+                                {% set duration_seconds = (closed - opened).total_seconds() %}
+                                {% set duration_hours = (duration_seconds / 3600) | round(2) %}
+                                {{ duration_hours }} horas
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Barras Disponibles -->
+            {% if selected_shift_data.get('barras_disponibles') %}
+            <div style="margin-top: 15px;">
+                <div class="label">Barras Disponibles:</div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
+                    {% for barra in selected_shift_data.get('barras_disponibles', []) %}
+                    <span class="badge badge-success">{{ barra }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Bartenders -->
+            {% if selected_shift_data.get('bartenders') %}
+            <div style="margin-top: 15px;">
+                <div class="label">Bartenders:</div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
+                    {% for bartender in selected_shift_data.get('bartenders', []) %}
+                    <span class="badge badge-warning">{{ bartender }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Estadísticas de Entregas -->
+        {% set delivery_stats = selected_shift_data.get('delivery_stats', {}) %}
+        <div class="detail-section">
+            <h3>📦 Estadísticas de Entregas</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Entregas</h4>
+                    <div class="value">{{ selected_shift_data.get('total_entregas', 0) }}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Cantidad</h4>
+                    <div class="value">{{ selected_shift_data.get('total_cantidad', 0) }}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Entregas Hoy</h4>
+                    <div class="value">{{ delivery_stats.get('today_count', 0) }}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Promedio por Hora</h4>
+                    <div class="value">{{ delivery_stats.get('avg_per_hour', 0) | round(1) }}</div>
+                </div>
+            </div>
+            
+            <!-- Rankings: Cajas, Bartenders y Barras -->
+            <div style="margin-top: 20px;">
+                <h4 style="color: #00ff00; margin-bottom: 15px; font-size: 1.2rem;">🏆 Rankings del Turno</h4>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Top Cajas -->
+                    {% if selected_shift_data.get('top_registers') %}
+                    <div>
+                        <h5 style="color: #667eea; margin-bottom: 10px; font-size: 1rem;">💼 Top Cajas</h5>
+                        <div class="ranking-list">
+                            {% for register in selected_shift_data.get('top_registers', [])[:10] %}
+                            <div class="ranking-item">
+                                <span class="name">{{ register.name }}</span>
+                                <span class="value">{{ register.sales_count }} ventas</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Top Bartenders -->
+                    {% if selected_shift_data.get('top_bartenders') %}
+                    <div>
+                        <h5 style="color: #667eea; margin-bottom: 10px; font-size: 1rem;">👤 Top Bartenders</h5>
+                        <div class="ranking-list">
+                            {% for bartender, qty in selected_shift_data.get('top_bartenders', [])[:10] %}
+                            <div class="ranking-item">
+                                <span class="name">{{ bartender }}</span>
+                                <span class="value">{{ qty }} unidades</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Top Barras -->
+                    {% if selected_shift_data.get('top_barras') %}
+                    <div>
+                        <h5 style="color: #667eea; margin-bottom: 10px; font-size: 1rem;">🍺 Top Barras</h5>
+                        <div class="ranking-list">
+                            {% for barra, qty in selected_shift_data.get('top_barras', [])[:10] %}
+                            <div class="ranking-item">
+                                <span class="name">{{ barra }}</span>
+                                <span class="value">{{ qty }} unidades</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Top Items -->
+            {% if selected_shift_data.get('top_items') %}
+            <div style="margin-top: 20px;">
+                <h4 style="color: #00ff00; margin-bottom: 10px;">🥤 Top Productos Entregados</h4>
+                <div class="ranking-list">
+                    {% for item, qty in selected_shift_data.get('top_items', [])[:10] %}
+                    <div class="ranking-item">
+                        <span class="name">{{ item }}</span>
+                        <span class="value">{{ qty }} unidades</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Curvas de Compra y Entrada -->
+        {% if selected_shift_data.get('hours_data') %}
+        <div class="detail-section">
+            <h3>📊 Curvas de Compra y Entrada</h3>
+            
+            <!-- Curva de Compra -->
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #00ff00; margin-bottom: 15px;">
+                    📦 Curva de Compra - Entregas por Hora 
+                    {% if selected_shift_data.get('peak_hour_label') %}
+                    (Hora Pico: {{ selected_shift_data.get('peak_hour_label') }} con {{ selected_shift_data.get('peak_hour_count', 0) }} entregas)
+                    {% endif %}
+                </h4>
+                <div style="background-color: #18181a; padding: 20px; border-radius: 8px;">
+                    <canvas id="compraChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+            
+            <!-- Curva de Entrada -->
+            {% if selected_shift_data.get('entradas_hours_data') %}
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #00ff00; margin-bottom: 15px;">
+                    👥 Curva de Entrada - Personas por Hora
+                    {% if selected_shift_data.get('peak_entradas_hour_label') %}
+                    (Hora Pico: {{ selected_shift_data.get('peak_entradas_hour_label') }} con {{ selected_shift_data.get('peak_entradas_count', 0) }} personas)
+                    {% endif %}
+                </h4>
+                <div style="background-color: #18181a; padding: 20px; border-radius: 8px;">
+                    <canvas id="entradaChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Estadísticas de Entradas -->
+        {% if selected_shift_data.get('total_personas_en_local') is not none %}
+        <div class="detail-section">
+            <h3>🎫 Estadísticas de Entradas</h3>
+            <div class="stats-grid">
+                <div class="stat-card" style="background: linear-gradient(135deg, #0066ff 0%, #0088ff 100%); border-color: #00aaff;">
+                    <h4 style="color: #fff;">Total Personas</h4>
+                    <div class="value" style="color: #fff;">{{ selected_shift_data.get('total_personas_en_local', 0) }}</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #00aa00 0%, #00cc00 100%); border-color: #00ff00;">
+                    <h4 style="color: #fff;">Entradas $5,000</h4>
+                    <div class="value" style="color: #fff;">{{ selected_shift_data.get('entradas_5000_count', 0) }}</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff8800 0%, #ffaa00 100%); border-color: #ffcc00;">
+                    <h4 style="color: #fff;">Entradas $10,000</h4>
+                    <div class="value" style="color: #fff;">{{ selected_shift_data.get('entradas_10000_count', 0) }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Rankings de Cajeros -->
+        {% if selected_shift_data.get('top_cashiers') %}
+        <div class="detail-section">
+            <h3>💼 Top Cajeros del Turno</h3>
+            <div class="ranking-list">
+                {% for cashier in selected_shift_data.get('top_cashiers', [])[:10] %}
+                <div class="ranking-item">
+                    <span class="name">{{ cashier.name }}</span>
+                    <span class="value">{{ cashier.sales_count }} ventas</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Lista Detallada de Entregas -->
+        {% set deliveries = selected_shift_data.get('deliveries', []) %}
+        {% if deliveries %}
+        <div class="detail-section">
+            <h3>📋 Lista Detallada de Entregas ({{ deliveries | length }} registros)</h3>
+            <div style="overflow-x: auto;">
+                <table class="deliveries-table">
+                    <thead>
+                        <tr>
+                            <th>Venta ID</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Bartender</th>
+                            <th>Barra</th>
+                            <th>Fecha/Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for delivery in deliveries %}
+                        <tr>
+                            <td>{{ delivery.sale_id }}</td>
+                            <td>{{ delivery.item_name }}</td>
+                            <td>{{ delivery.qty }}</td>
+                            <td>{{ delivery.bartender }}</td>
+                            <td>{{ delivery.barra }}</td>
+                            <td>
+                                {% if delivery.timestamp %}
+                                    {% if delivery.timestamp is string %}
+                                        {{ delivery.timestamp }}
+                                    {% else %}
+                                        {{ delivery.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                                    {% endif %}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Estadísticas de Encuestas -->
+        {% set survey_stats = selected_shift_data.get('survey_stats', {}) %}
+        {% if survey_stats and survey_stats.get('has_data') %}
+        <div class="detail-section">
+            <h3>📝 Estadísticas de Encuestas</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Respuestas</h4>
+                    <div class="value">{{ survey_stats.get('total_respuestas', 0) }}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Promedio de Calificación</h4>
+                    <div class="value">{{ survey_stats.get('promedio_rating', 0) | round(2) }}</div>
+                    <div style="color: #aaa; font-size: 0.9rem; margin-top: 5px;">Sobre 5 puntos</div>
+                </div>
+            </div>
+            
+            <!-- Distribución por Calificación -->
+            {% if survey_stats.get('ratings_count') %}
+            <div style="margin-top: 20px;">
+                <h4 style="color: #00ff00; margin-bottom: 10px;">📊 Distribución por Calificación</h4>
+                <div class="ranking-list">
+                    {% for rating in [5, 3, 2, 1] %}
+                    {% set emoji_map = {5: '😄', 3: '🙂', 2: '😐', 1: '😞'} %}
+                    {% set count = survey_stats.get('ratings_count', {}).get(rating, 0) %}
+                    {% if count > 0 %}
+                    <div class="ranking-item">
+                        <span class="name">{{ emoji_map.get(rating, '⭐') }} Calificación {{ rating }}</span>
+                        <span class="value">{{ count }} respuestas</span>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Distribución por Barra -->
+            {% if survey_stats.get('by_barra') %}
+            <div style="margin-top: 20px;">
+                <h4 style="color: #00ff00; margin-bottom: 10px;">🍺 Distribución por Barra</h4>
+                <div class="ranking-list">
+                    {% for barra, count in survey_stats.get('by_barra', {}).items() %}
+                    <div class="ranking-item">
+                        <span class="name">Barra {{ barra }}</span>
+                        <span class="value">{{ count }} respuestas</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+    </div>
+    {% elif selected_date %}
+    <div class="no-data">
+        <p>No se encontraron datos para la fecha seleccionada: {{ selected_date }}</p>
+    </div>
+    {% else %}
+    <div class="no-data">
+        <p>Selecciona un día del calendario para ver los detalles del turno</p>
+    </div>
+    {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+// Función para copiar URL al portapapeles
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('✅ URL copiada al portapapeles');
+    }, function(err) {
+        // Fallback para navegadores antiguos
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            alert('✅ URL copiada al portapapeles');
+        } catch (err) {
+            alert('❌ Error al copiar URL');
+        }
+        document.body.removeChild(textArea);
+    });
+}
+
+// Gráfico de Curva de Compra
+{% if selected_shift_data and selected_shift_data.get('hours_data') %}
+const compraCtx = document.getElementById('compraChart');
+if (compraCtx) {
+    new Chart(compraCtx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: {{ selected_shift_data.get('hours_labels', [])|tojson }},
+            datasets: [{
+                label: 'Entregas por Hora',
+                data: {{ selected_shift_data.get('hours_data', [])|tojson }},
+                backgroundColor: 'rgba(0, 255, 0, 0.2)',
+                borderColor: 'rgba(0, 255, 0, 1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#e8e8e8' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#00ff00',
+                    bodyColor: '#e8e8e8'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#aaa' },
+                    grid: { color: '#444' }
+                },
+                x: {
+                    ticks: { color: '#aaa', maxRotation: 45, minRotation: 45 },
+                    grid: { color: '#444' }
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de Curva de Entrada
+{% if selected_shift_data and selected_shift_data.get('entradas_hours_data') %}
+const entradaCtx = document.getElementById('entradaChart');
+if (entradaCtx) {
+    new Chart(entradaCtx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: {{ selected_shift_data.get('entradas_hours_labels', [])|tojson }},
+            datasets: [{
+                label: 'Personas que Entraron',
+                data: {{ selected_shift_data.get('entradas_hours_data', [])|tojson }},
+                backgroundColor: 'rgba(0, 102, 255, 0.2)',
+                borderColor: 'rgba(0, 102, 255, 1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#e8e8e8' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#0066ff',
+                    bodyColor: '#e8e8e8'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#aaa' },
+                    grid: { color: '#444' }
+                },
+                x: {
+                    ticks: { color: '#aaa', maxRotation: 45, minRotation: 45 },
+                    grid: { color: '#444' }
+                }
+            }
+        }
+    });
+}
+{% endif %}
+{% endif %}
+</script>
+{% endblock %}
+

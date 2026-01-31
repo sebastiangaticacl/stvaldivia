@@ -1,0 +1,551 @@
+/* 
+   📱 BIMBA RESPONSIVE BASE SYSTEM
+   Mobile-First Responsive Design System
+   Compatible con 320px+ sin overflow horizontal
+*/
+
+/* ============================================
+   BREAKPOINTS ESTÁNDAR (Mobile-First)
+   ============================================ */
+:root {
+  /* Breakpoints */
+  --bp-mobile: 480px;
+  --bp-tablet: 768px;
+  --bp-desktop: 1024px;
+  --bp-large: 1280px;
+  
+  /* Espaciado responsive */
+  --spacing-xs: clamp(0.5rem, 1vw, 0.75rem);   /* 8-12px */
+  --spacing-sm: clamp(0.75rem, 1.5vw, 1rem);   /* 12-16px */
+  --spacing-md: clamp(1rem, 2vw, 1.5rem);      /* 16-24px */
+  --spacing-lg: clamp(1.5rem, 3vw, 2rem);     /* 24-32px */
+  --spacing-xl: clamp(2rem, 4vw, 3rem);       /* 32-48px */
+  
+  /* Tipografía responsive */
+  --font-size-xs: clamp(0.75rem, 1.5vw, 0.875rem);   /* 12-14px */
+  --font-size-sm: clamp(0.875rem, 2vw, 1rem);        /* 14-16px */
+  --font-size-base: clamp(1rem, 2.5vw, 1.125rem);     /* 16-18px */
+  --font-size-lg: clamp(1.125rem, 3vw, 1.5rem);       /* 18-24px */
+  --font-size-xl: clamp(1.5rem, 4vw, 2rem);           /* 24-32px */
+  --font-size-2xl: clamp(2rem, 5vw, 2.5rem);          /* 32-40px */
+  
+  /* Contenedores */
+  --container-padding-mobile: var(--spacing-sm);
+  --container-padding-tablet: var(--spacing-md);
+  --container-padding-desktop: var(--spacing-lg);
+  --container-max-width: 1400px;
+}
+
+/* ============================================
+   RESET Y BASE (Mobile-First)
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Prevenir overflow en elementos multimedia */
+img,
+video,
+canvas,
+svg,
+iframe,
+embed,
+object {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ============================================
+   CONTENEDOR GLOBAL CONSISTENTE
+   ============================================ */
+.responsive-container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding-left: var(--container-padding-mobile);
+  padding-right: var(--container-padding-mobile);
+}
+
+@media (min-width: 768px) {
+  .responsive-container {
+    padding-left: var(--container-padding-tablet);
+    padding-right: var(--container-padding-tablet);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-container {
+    padding-left: var(--container-padding-desktop);
+    padding-right: var(--container-padding-desktop);
+  }
+}
+
+/* ============================================
+   UTILIDADES RESPONSIVE
+   ============================================ */
+
+/* Grid Responsive */
+.responsive-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: 1fr; /* Mobile: 1 columna */
+}
+
+@media (min-width: 480px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr); /* Mobile Landscape: 2 columnas */
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Tablet: auto-fit */
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Desktop: más espacio */
+  }
+}
+
+/* Flex Responsive */
+.responsive-flex {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .responsive-flex {
+    flex-direction: row;
+    gap: var(--spacing-md);
+  }
+}
+
+/* Stack (siempre vertical) */
+.responsive-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* ============================================
+   TIPOGRAFÍA RESPONSIVE
+   ============================================ */
+.responsive-text-xs { font-size: var(--font-size-xs); }
+.responsive-text-sm { font-size: var(--font-size-sm); }
+.responsive-text-base { font-size: var(--font-size-base); }
+.responsive-text-lg { font-size: var(--font-size-lg); }
+.responsive-text-xl { font-size: var(--font-size-xl); }
+.responsive-text-2xl { font-size: var(--font-size-2xl); }
+
+/* ============================================
+   ESPACIADO RESPONSIVE
+   ============================================ */
+.responsive-p-xs { padding: var(--spacing-xs); }
+.responsive-p-sm { padding: var(--spacing-sm); }
+.responsive-p-md { padding: var(--spacing-md); }
+.responsive-p-lg { padding: var(--spacing-lg); }
+.responsive-p-xl { padding: var(--spacing-xl); }
+
+.responsive-m-xs { margin: var(--spacing-xs); }
+.responsive-m-sm { margin: var(--spacing-sm); }
+.responsive-m-md { margin: var(--spacing-md); }
+.responsive-m-lg { margin: var(--spacing-lg); }
+.responsive-m-xl { margin: var(--spacing-xl); }
+
+/* ============================================
+   VISIBILIDAD RESPONSIVE
+   ============================================ */
+.show-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
+.hide-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-mobile {
+    display: block;
+  }
+}
+
+.show-tablet {
+  display: none;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .show-tablet {
+    display: block;
+  }
+}
+
+.hide-tablet {
+  display: block;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hide-tablet {
+    display: none;
+  }
+}
+
+.show-desktop {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .show-desktop {
+    display: block;
+  }
+}
+
+.hide-desktop {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .hide-desktop {
+    display: none;
+  }
+}
+
+/* ============================================
+   MODO DEBUG LAYOUT
+   ============================================ */
+.debug-layout * {
+  outline: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.debug-layout *:hover {
+  outline: 1px solid rgba(102, 126, 234, 0.5) !important;
+}
+
+/* Activar con: <body class="debug-layout"> o agregar clase a cualquier elemento */
+
+/* ============================================
+   SCROLL CONTROLADO (sin overflow body)
+   ============================================ */
+.scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  /* Ocultar scrollbar en algunos navegadores */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(102, 126, 234, 0.5) transparent;
+}
+
+.scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.5);
+  border-radius: 4px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.7);
+}
+
+/* ============================================
+   BOTONES TÁCTILES (mínimo 44px)
+   ============================================ */
+.btn-touch {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-touch:active {
+  transform: scale(0.98);
+}
+
+.btn-touch:focus {
+  outline: 2px solid rgba(102, 126, 234, 0.5);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   INPUTS TÁCTILES
+   ============================================ */
+.input-touch {
+  min-height: 44px;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-primary, #e8e8e8);
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.input-touch:focus {
+  outline: none;
+  border-color: rgba(102, 126, 234, 0.6);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ============================================
+   CARDS RESPONSIVE
+   ============================================ */
+.card-responsive {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: var(--spacing-md);
+  transition: all 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .card-responsive {
+    padding: var(--spacing-lg);
+  }
+}
+
+.card-responsive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* ============================================
+   MODALES RESPONSIVE
+   ============================================ */
+.modal-responsive {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--spacing-sm);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-responsive-content {
+  width: 100%;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: var(--spacing-md);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+@media (min-width: 768px) {
+  .modal-responsive-content {
+    max-width: 600px;
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal-responsive-content {
+    max-width: 800px;
+  }
+}
+
+/* ============================================
+   PREVENIR OVERFLOW HORIZONTAL
+   ============================================ */
+.no-overflow {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img, video, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ============================================
+   UTILIDADES DE ALINEACIÓN
+   ============================================ */
+.text-center-mobile {
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .text-center-mobile {
+    text-align: left;
+  }
+}
+
+.text-left-mobile {
+  text-align: left;
+}
+
+@media (min-width: 768px) {
+  .text-left-mobile {
+    text-align: center;
+  }
+}
+
+/* ============================================
+   CLASES DEBUG (NO ACTIVAR POR DEFECTO)
+   ============================================ */
+.debug-layout * {
+  outline: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.debug-overflow * {
+  outline: 1px solid rgba(255, 0, 0, 0.20);
+}
+
+/* Para activar debug: agregar clase .debug-layout o .debug-overflow al body */
+
+/* ============================================
+   ELIMINAR CLIPPING POR OVERFLOW EN MÓVIL (CRÍTICO)
+   ============================================ */
+@media (max-width: 767px) {
+  /* Asegurar que contenedores padres no recorten el menú móvil */
+  body,
+  html,
+  .app,
+  .dashboard,
+  .dashboard-container,
+  .main-content,
+  #main-content,
+  .container,
+  .main-container {
+    overflow-x: visible !important;
+    overflow-y: auto !important;
+  }
+  
+  /* El nav puede tener overflow-x hidden, pero no debe afectar al menú móvil */
+  .admin-top-nav {
+    overflow-x: visible !important;
+  }
+  
+  /* El contenedor del nav puede tener overflow, pero el menú móvil está fuera */
+  .admin-nav-container {
+    overflow-x: visible !important;
+  }
+}
+
+/* ============================================
+   PREVENIR OVERFLOW HORIZONTAL GLOBAL
+   ============================================ */
+* {
+  /* Asegurar que ningún elemento cause overflow horizontal */
+  box-sizing: border-box;
+}
+
+/* Contenedores principales siempre sin overflow horizontal */
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Prevenir overflow en todos los contenedores */
+.container,
+.main-container,
+.responsive-container,
+.admin-container,
+.table-responsive-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Asegurar que imágenes y media no causen overflow */
+img,
+video,
+iframe,
+embed,
+object,
+svg,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Prevenir overflow en elementos con ancho fijo */
+table,
+pre,
+code {
+  max-width: 100%;
+  overflow-x: auto;
+  word-wrap: break-word;
+}
+
+/* Asegurar que inputs y textareas no causen overflow */
+input,
+textarea,
+select {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Media queries para prevenir overflow en diferentes tamaños */
+@media (max-width: 320px) {
+  * {
+    max-width: 100vw;
+  }
+  
+  .container,
+  .main-container,
+  .responsive-container {
+    padding-left: var(--spacing-xs, 0.5rem);
+    padding-right: var(--spacing-xs, 0.5rem);
+  }
+}
+
+

@@ -1,0 +1,791 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Administrativo - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Forzar ancho completo del dashboard */
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .main-container {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .admin-dashboard {
+        width: 100%;
+        min-height: calc(100vh - 60px);
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #f8fafc;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Header Section */
+    .dashboard-header-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .dashboard-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-title h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0;
+        background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .shift-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: rgba(0, 255, 136, 0.15);
+        border: 2px solid rgba(0, 255, 136, 0.5);
+        border-radius: 25px;
+        color: #00ff88;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .shift-status-badge.closed {
+        background: rgba(255, 152, 0, 0.15);
+        border-color: rgba(255, 152, 0, 0.5);
+        color: #ff9800;
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        background: #00ff88;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #00ff88;
+        animation: pulse 2s infinite;
+    }
+
+    .shift-status-badge.closed .status-dot {
+        background: #ff9800;
+        box-shadow: 0 0 10px #ff9800;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.2); }
+    }
+
+    .shift-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .info-item {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    /* Quick Actions Grid */
+    .quick-actions-section {
+        margin-bottom: 30px;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .quick-action-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 16px;
+        padding: 25px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .quick-action-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .quick-action-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(102, 126, 234, 0.6);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+    }
+
+    .quick-action-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .quick-action-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .quick-action-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #fff;
+    }
+
+    .quick-action-desc {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        margin: 0;
+    }
+
+    /* Metrics Grid */
+    .metrics-section {
+        margin-bottom: 30px;
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .metric-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .metric-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .metric-label {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    .metric-icon {
+        font-size: 2rem;
+        opacity: 0.3;
+    }
+
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #fff;
+        margin-bottom: 5px;
+        line-height: 1;
+    }
+
+    .metric-subvalue {
+        font-size: 0.9rem;
+        color: #94a3b8;
+    }
+
+    /* Alerts Section */
+    .alerts-section {
+        margin-bottom: 30px;
+    }
+
+    .alert-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-left: 4px solid;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .alert-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .alert-card.warning {
+        border-left-color: #ff9800;
+        background: rgba(255, 152, 0, 0.1);
+    }
+
+    .alert-card.error {
+        border-left-color: #f44336;
+        background: rgba(244, 67, 54, 0.1);
+    }
+
+    .alert-card.info {
+        border-left-color: #2196f3;
+        background: rgba(33, 150, 243, 0.1);
+    }
+
+    .alert-icon {
+        font-size: 2rem;
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-title {
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: #fff;
+    }
+
+    .alert-message {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        margin: 0;
+    }
+
+    .alert-action {
+        padding: 8px 16px;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        border-radius: 8px;
+        color: #667eea;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .alert-action:hover {
+        background: rgba(102, 126, 234, 0.3);
+        transform: scale(1.05);
+    }
+
+    /* Stats Dashboard Container */
+    #stats-dashboard {
+        min-height: 400px;
+    }
+
+    .loading-state,
+    .empty-state,
+    .error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        text-align: center;
+        color: #94a3b8;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #00ff88;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-title h1 {
+            font-size: 1.8rem;
+        }
+
+        .quick-actions-grid,
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .shift-info {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <!-- Header Section -->
+    <div class="dashboard-header-section">
+        <div class="dashboard-title">
+            <div>
+                <h1>🏠 Dashboard Administrativo</h1>
+                <p style="color: #94a3b8; margin: 10px 0 0 0;">Panel de control y monitoreo en tiempo real</p>
+            </div>
+            <div class="shift-status-badge {% if not shift_status.is_open %}closed{% endif %}">
+                <span class="status-dot"></span>
+                <span>{% if shift_status.is_open %}🟢 Turno Abierto{% else %}🔴 Turno Cerrado{% endif %}</span>
+            </div>
+        </div>
+
+        {% if shift_status.is_open %}
+        <div class="shift-info">
+            <div class="info-item">
+                <div class="info-label">Fiesta</div>
+                <div class="info-value">{{ shift_status.fiesta_nombre or 'Sin nombre' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Fecha</div>
+                <div class="info-value">{{ shift_status.shift_date|fecha_solo if shift_status.shift_date else 'N/A' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Tiempo Transcurrido</div>
+                <div class="info-value">{{ shift_metrics.tiempo_transcurrido or 'N/A' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Total Entregas</div>
+                <div class="info-value">{{ shift_metrics.total_entregas or 0 }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Alerts Section -->
+    {% if sos_requests|length > 0 or pending_closes|length > 0 or register_locks|length > 0 %}
+    <div class="alerts-section">
+        <h2 class="section-title">⚠️ Alertas y Notificaciones</h2>
+        
+        {% if sos_requests|length > 0 %}
+        {% for request in sos_requests[:3] %}
+        <div class="alert-card warning">
+            <div class="alert-icon">🚨</div>
+            <div class="alert-content">
+                <div class="alert-title">Solicitud de Apertura de Cajón</div>
+                <p class="alert-message">Caja {{ request.register_id }} - {{ request.employee_name }}</p>
+            </div>
+            <a href="/admin/logs" class="alert-action">Ver</a>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if pending_closes|length > 0 %}
+        {% for close in pending_closes[:3] %}
+        <div class="alert-card info">
+            <div class="alert-icon">💰</div>
+            <div class="alert-content">
+                <div class="alert-title">Cierre de Caja Pendiente</div>
+                <p class="alert-message">Caja {{ close.register_id }} - {{ close.employee_name }}</p>
+            </div>
+            <a href="/admin/logs" class="alert-action">Ver</a>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if register_locks|length > 0 %}
+        {% for lock in register_locks[:3] %}
+        <div class="alert-card error">
+            <div class="alert-icon">🔒</div>
+            <div class="alert-content">
+                <div class="alert-title">Caja Bloqueada</div>
+                <p class="alert-message">Caja {{ lock.register_id }} - Bloqueada por {{ lock.locked_by }}</p>
+            </div>
+            <a href="/admin/logs" class="alert-action">Ver</a>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions Section -->
+    <div class="quick-actions-section">
+        <h2 class="section-title">⚡ Accesos Rápidos</h2>
+        <div class="quick-actions-grid">
+            <a href="/admin/turnos" class="quick-action-card">
+                <span class="quick-action-icon">⏰</span>
+                <div class="quick-action-title">Gestión de Turnos</div>
+                <p class="quick-action-desc">Abrir, cerrar y gestionar turnos del día</p>
+            </a>
+            
+            <a href="/admin/logs" class="quick-action-card">
+                <span class="quick-action-icon">📋</span>
+                <div class="quick-action-title">Tickets de Entregas</div>
+                <p class="quick-action-desc">Ver y gestionar todos los tickets</p>
+            </a>
+            
+            <a href="/admin/inventario" class="quick-action-card">
+                <span class="quick-action-icon">📦</span>
+                <div class="quick-action-title">Inventario</div>
+                <p class="quick-action-desc">Control de stock y consumos</p>
+            </a>
+            
+            <a href="{{ url_for('routes.pos_stats') }}" class="quick-action-card">
+                <span class="quick-action-icon">💰</span>
+                <div class="quick-action-title">Cajas y Kioskos</div>
+                <p class="quick-action-desc">Estadísticas de ventas y pagos</p>
+            </a>
+            
+            <a href="{{ url_for('equipo.listar') }}" class="quick-action-card">
+                <span class="quick-action-icon">👥</span>
+                <div class="quick-action-title">Equipo</div>
+                <p class="quick-action-desc">Gestionar empleados y cargos</p>
+            </a>
+            
+            <a href="{{ url_for('routes.admin_panel_control') }}" class="quick-action-card">
+                <span class="quick-action-icon">🎛️</span>
+                <div class="quick-action-title">Panel de Control</div>
+                <p class="quick-action-desc">Configuración del sistema</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Metrics Section -->
+    {% if shift_status.is_open %}
+    <div class="metrics-section">
+        <h2 class="section-title">📊 Métricas del Turno</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-label">Total Entregas</div>
+                    <div class="metric-icon">📦</div>
+                </div>
+                <div class="metric-value">{{ shift_metrics.total_entregas or 0 }}</div>
+                <div class="metric-subvalue">Productos entregados</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-label">Total Entradas</div>
+                    <div class="metric-icon">🎫</div>
+                </div>
+                <div class="metric-value">{{ shift_metrics.total_entradas or 0 }}</div>
+                <div class="metric-subvalue">
+                    {% if shift_metrics.entradas_5000 or shift_metrics.entradas_10000 %}
+                    $5k: {{ shift_metrics.entradas_5000 or 0 }} | $10k: {{ shift_metrics.entradas_10000 or 0 }}
+                    {% else %}
+                    Entradas vendidas
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-label">Kiosko</div>
+                    <div class="metric-icon">💳</div>
+                </div>
+                <div class="metric-value">${{ (shift_metrics.monto_kiosko or 0)|int|string|replace(',', '.')|replace('.', ',') if shift_metrics.monto_kiosko else '0' }}</div>
+                <div class="metric-subvalue">{{ kiosk_stats.pagos_turno or 0 }} pagos del turno</div>
+            </div>
+
+            {% if shift_metrics.peak_hour %}
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-label">Hora Pico</div>
+                    <div class="metric-icon">⚡</div>
+                </div>
+                <div class="metric-value">{{ shift_metrics.peak_hour }}:00</div>
+                <div class="metric-subvalue">{{ shift_metrics.peak_hour_count }} entregas</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Stats Dashboard (Dynamic Content) -->
+    <div id="stats-dashboard" class="dashboard-container">
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando métricas en tiempo real...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+
+<script>
+    // Configuración Global
+    const META_VENTA_DEFAULT = 2000000; // $2.000.000
+    let dashboardUpdateInterval;
+    let salesChart = null;
+
+    // Utilidades de Formato
+    const formatCurrency = (value) => {
+        if (value === null || value === undefined || isNaN(value)) return '$0';
+        return '$' + Math.round(value).toLocaleString('es-CL');
+    };
+
+    const formatNumber = (value) => {
+        if (value === null || value === undefined || isNaN(value)) return '0';
+        return Math.round(value).toLocaleString('es-CL');
+    };
+
+    // Renderizado del Dashboard
+    function renderDashboard(data) {
+        const container = document.getElementById('stats-dashboard');
+
+        if (!data.success) {
+            container.innerHTML = `
+                <div class="error-state">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">⚠️</div>
+                    <h2>Error de Conexión</h2>
+                    <p>${data.error || 'No se pudieron cargar los datos'}</p>
+                    <button onclick="updateStatsDashboard()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">Reintentar</button>
+                </div>
+            `;
+            return;
+        }
+
+        if (!data.shift_open) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">🌙</div>
+                    <h2>Turno Cerrado</h2>
+                    <p>Abre un turno para ver las métricas en tiempo real</p>
+                    <a href="/admin/turnos" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; text-decoration: none; display: inline-block;">Gestionar Turnos</a>
+                </div>
+            `;
+            return;
+        }
+
+        // Cálculos de Meta
+        const metaVenta = META_VENTA_DEFAULT;
+        const porcentajeMeta = Math.min(100, (data.financial.total_recaudado / metaVenta) * 100);
+        const faltaParaMeta = Math.max(0, metaVenta - data.financial.total_recaudado);
+
+        // HTML Structure
+        container.innerHTML = `
+            <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: #fff;">📈 Estadísticas de Ventas</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                    <div style="background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 12px;">
+                        <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">Total Recaudado</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: #00ff88;">${formatCurrency(data.financial.total_recaudado)}</div>
+                        <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 8px;">
+                            💵 ${formatCurrency(data.financial.efectivo)} | 💳 ${formatCurrency(data.financial.debito + data.financial.credito)}
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 12px;">
+                        <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">Meta Diaria</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 10px;">${formatCurrency(metaVenta)}</div>
+                        <div style="height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; margin-bottom: 5px;">
+                            <div style="height: 100%; background: linear-gradient(90deg, #00ff88, #00cc6a); width: ${porcentajeMeta}%; transition: width 1s ease;"></div>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #94a3b8;">${porcentajeMeta.toFixed(1)}% completado | Faltan ${formatCurrency(faltaParaMeta)}</div>
+                    </div>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 12px;">
+                        <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px;">Ventas Totales</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">${formatNumber(data.financial.total_ventas)}</div>
+                        <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 8px;">Ticket promedio: ${formatCurrency(data.financial.ticket_promedio)}</div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 12px; margin-top: 20px;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #fff;">🔥 Top Productos</h3>
+                    <div style="display: grid; gap: 10px;">
+                        ${renderTopList(data.tops.productos)}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Initialize Chart si hay datos
+        if (data.chart_data) {
+            initChart(data.chart_data);
+        }
+    }
+
+    function renderTopList(items) {
+        if (!items || items.length === 0) {
+            return '<div style="color: #94a3b8; text-align: center; padding: 20px;">Sin datos aún</div>';
+        }
+
+        const maxVal = Math.max(...items.map(i => i.qty));
+
+        return items.slice(0, 5).map((item, index) => `
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255, 255, 255, 0.02); border-radius: 8px;">
+                <div style="width: 30px; height: 30px; background: ${index === 0 ? '#00ff88' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: ${index === 0 ? '#000' : '#fff'};">
+                    ${index + 1}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">${item.name}</div>
+                    <div style="height: 4px; background: rgba(255, 255, 255, 0.05); border-radius: 2px; overflow: hidden;">
+                        <div style="height: 100%; background: #00ff88; width: ${(item.qty / maxVal) * 100}%; border-radius: 2px;"></div>
+                    </div>
+                </div>
+                <div style="font-weight: 700; color: #fff;">${item.qty}</div>
+            </div>
+        `).join('');
+    }
+
+    function initChart(chartData) {
+        const container = document.getElementById('stats-dashboard');
+        const chartSection = document.createElement('div');
+        chartSection.style.cssText = 'background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 25px; margin-top: 20px; border: 1px solid rgba(255, 255, 255, 0.05);';
+        chartSection.innerHTML = `
+            <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #fff;">📊 Tendencia de Ventas</h3>
+            <div style="height: 300px; position: relative;">
+                <canvas id="salesChart"></canvas>
+            </div>
+        `;
+        container.appendChild(chartSection);
+
+        const ctx = document.getElementById('salesChart');
+        if (!ctx) return;
+
+        const labels = chartData.labels || ['22:00', '23:00', '00:00', '01:00', '02:00', '03:00'];
+        const dataPoints = chartData.data || [150000, 300000, 450000, 600000, 400000, 200000];
+
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ventas ($)',
+                    data: dataPoints,
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#00ff88'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function (context) {
+                                return formatCurrency(context.raw);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8', callback: (val) => '$' + val / 1000 + 'k' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateStatsDashboard() {
+        fetch('/api/dashboard/stats')
+            .then(response => response.json())
+            .then(data => renderDashboard(data))
+            .catch(err => {
+                console.error('Error fetching stats:', err);
+                document.getElementById('stats-dashboard').innerHTML = `
+                    <div class="error-state">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">❌</div>
+                        <h2>Error de Conexión</h2>
+                        <p>No se pudieron cargar las estadísticas</p>
+                        <button onclick="updateStatsDashboard()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">Reintentar</button>
+                    </div>
+                `;
+            });
+    }
+
+    // Iniciar
+    document.addEventListener('DOMContentLoaded', () => {
+        updateStatsDashboard();
+        dashboardUpdateInterval = setInterval(updateStatsDashboard, 30000); // Actualizar cada 30s
+    });
+
+    // Limpiar
+    window.addEventListener('beforeunload', () => {
+        if (dashboardUpdateInterval) clearInterval(dashboardUpdateInterval);
+    });
+</script>
+{% endblock %}

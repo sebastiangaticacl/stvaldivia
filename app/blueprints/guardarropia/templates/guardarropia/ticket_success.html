@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Ticket Generado - Guardarropía{% endblock %}
+
+{% block content %}
+<style>
+    .ticket-container {
+        max-width: 600px;
+        margin: 50px auto;
+        background: #222;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        text-align: center;
+    }
+    
+    .success-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+    
+    .ticket-code {
+        font-size: 32px;
+        font-weight: bold;
+        color: #4caf50;
+        margin: 20px 0;
+        letter-spacing: 2px;
+    }
+    
+    .qr-container {
+        margin: 30px 0;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        display: inline-block;
+    }
+    
+    .qr-container img {
+        display: block;
+        margin: 0 auto;
+    }
+    
+    .ticket-info {
+        text-align: left;
+        margin: 30px 0;
+        padding: 20px;
+        background: #2a2a2a;
+        border-radius: 8px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #333;
+    }
+    
+    .info-label {
+        color: #888;
+    }
+    
+    .info-value {
+        color: #e8e8e8;
+        font-weight: bold;
+    }
+    
+    .btn-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        padding: 15px 30px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .print-instructions {
+        margin-top: 20px;
+        padding: 15px;
+        background: #2a2a2a;
+        border-radius: 8px;
+        color: #888;
+        font-size: 14px;
+    }
+</style>
+
+<div class="ticket-container">
+    <div class="success-icon">✅</div>
+    <h1 style="color: #e8e8e8; margin-bottom: 10px;">Ticket Generado</h1>
+    <p style="color: #888; margin-bottom: 30px;">El ticket ha sido impreso exitosamente</p>
+    
+    <div class="ticket-code">{{ item.ticket_code }}</div>
+    
+    <div class="qr-container">
+        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" style="max-width: 300px;">
+    </div>
+    
+    <div class="ticket-info">
+        <div class="info-row">
+            <span class="info-label">Cliente:</span>
+            <span class="info-value">{{ item.customer_name }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Teléfono:</span>
+            <span class="info-value">
+                {% if item.customer_phone %}
+                    {{ item.customer_phone }}
+                {% else %}
+                    <span style="color: #ff9800;">No registrado</span>
+                {% endif %}
+            </span>
+        </div>
+        {% if item.description %}
+        <div class="info-row">
+            <span class="info-label">Descripción:</span>
+            <span class="info-value">{{ item.description }}</span>
+        </div>
+        {% endif %}
+        <div class="info-row">
+            <span class="info-label">Precio:</span>
+            <span class="info-value" style="color: #4caf50;">$500</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Pago:</span>
+            <span class="info-value">
+                {% if item.payment_type == 'cash' %}
+                    Efectivo
+                {% elif item.payment_type == 'debit' %}
+                    Débito
+                {% elif item.payment_type == 'credit' %}
+                    Crédito
+                {% else %}
+                    {{ item.payment_type }}
+                {% endif %}
+            </span>
+        </div>
+        <div class="info-row" style="border-bottom: none;">
+            <span class="info-label">Fecha:</span>
+            <span class="info-value">
+                {% if item.deposited_at %}
+                    {{ item.deposited_at[:16]|replace('T', ' ') }}
+                {% else %}
+                    -
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    
+    <div class="print-instructions">
+        <strong>📋 Instrucciones:</strong><br>
+        El ticket con código QR ha sido impreso. El cliente debe presentar este código QR al retirar su prenda.
+    </div>
+    
+    <div class="btn-actions">
+        <a href="{{ url_for('guardarropia.pos') }}" class="btn btn-primary">
+            ➕ Nuevo Depósito
+        </a>
+        <a href="{{ url_for('guardarropia.index') }}" class="btn btn-success">
+            🏠 Volver al Inicio
+        </a>
+    </div>
+</div>
+
+<script>
+// Auto-imprimir si está disponible
+window.addEventListener('load', function() {
+    // Intentar imprimir automáticamente (opcional)
+    // window.print();
+});
+</script>
+{% endblock %}
+
+
+
+

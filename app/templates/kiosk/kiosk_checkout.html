@@ -1,0 +1,181 @@
+{% extends "kiosk/base.html" %}
+
+{% block title %}Confirmar Pedido - Club Bimba{% endblock %}
+
+{% block content %}
+<div class="checkout-screen">
+    <div class="screen-header">
+        <h1>Confirma tu pedido</h1>
+        <button class="btn-secondary btn-small" onclick="window.location.href='{{ url_for('kiosk.kiosk_products') }}'">
+            Volver
+        </button>
+    </div>
+    
+    <div class="checkout-content">
+        <div class="checkout-items" id="checkout-items">
+            <!-- Se llenará con JavaScript -->
+        </div>
+        
+        <div class="checkout-total">
+            <div class="total-line">
+                <span>Total a pagar:</span>
+                <span id="checkout-total-amount">$0</span>
+            </div>
+        </div>
+        
+        <div class="checkout-actions">
+            <button class="btn-secondary btn-large" onclick="window.location.href='{{ url_for('kiosk.kiosk_products') }}'">
+                ← Volver a Productos
+            </button>
+            <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%; margin-top: 2rem;">
+                {% if sumup_enabled %}
+                <button id="btn-pagar-sumup" class="btn-primary btn-large" onclick="pagarConSumUp()" style="display: none;">
+                    💳 Pagar con SumUp
+                </button>
+                <div id="loading-sumup" style="display: none; text-align: center; padding: 1rem;">
+                    <p>Creando pago...</p>
+                </div>
+                {% endif %}
+                <p style="text-align: center; color: #666; padding: 1rem; font-size: 0.9rem;">
+                    {% if sumup_enabled %}
+                    O acércate a la caja para realizar el pago en efectivo.
+                    {% else %}
+                    Acércate a la caja para realizar el pago en efectivo.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// Cargar carrito desde localStorage
+let carritoItems = [];
+
+function cargarCarrito() {
+    const carritoData = localStorage.getItem('carrito_pendiente');
+    if (carritoData) {
+        carritoItems = JSON.parse(carritoData);
+        mostrarCarrito();
+    } else {
+        // Si no hay carrito, volver a productos
+        window.location.href = '{{ url_for("kiosk.kiosk_products") }}';
+    }
+}
+
+function mostrarCarrito() {
+    const itemsEl = document.getElementById('checkout-items');
+    const totalEl = document.getElementById('checkout-total-amount');
+    
+    let html = '';
+    let total = 0;
+    
+    carritoItems.forEach(item => {
+        total += item.total;
+        html += `
+            <div class="checkout-item">
+                <div class="checkout-item-info">
+                    <span class="checkout-item-nombre">${item.nombre}</span>
+                    <span class="checkout-item-detalle">${item.cantidad} x $${item.precio.toLocaleString()}</span>
+                </div>
+                <span class="checkout-item-subtotal">$${item.total.toLocaleString()}</span>
+            </div>
+        `;
+    });
+    
+    itemsEl.innerHTML = html;
+    totalEl.textContent = `$${total.toLocaleString()}`;
+    
+    // Mostrar botones de pago después de mostrar el carrito
+    mostrarBotonesPago();
+}
+
+
+// Mostrar botón de pago SumUp si hay items
+function mostrarBotonesPago() {
+    if (carritoItems.length > 0) {
+        const btnSumUp = document.getElementById('btn-pagar-sumup');
+        if (btnSumUp) {
+            btnSumUp.style.display = 'block';
+        }
+    } else {
+        const btnSumUp = document.getElementById('btn-pagar-sumup');
+        if (btnSumUp) {
+            btnSumUp.style.display = 'none';
+        }
+    }
+}
+
+// Función para pagar con SumUp
+async function pagarConSumUp() {
+    if (carritoItems.length === 0) {
+        alert('No hay items en el carrito');
+        return;
+    }
+    
+    const btnSumUp = document.getElementById('btn-pagar-sumup');
+    const loadingDiv = document.getElementById('loading-sumup');
+    
+    if (btnSumUp) btnSumUp.style.display = 'none';
+    if (loadingDiv) loadingDiv.style.display = 'block';
+    
+    try {
+        const response = await fetch('/kiosk/api/pagos/sumup/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                carrito: carritoItems
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.ok && data.pago_id) {
+            // Redirigir a pantalla de pago SumUp
+            window.location.href = `/kiosk/sumup/payment/${data.pago_id}`;
+        } else {
+            alert('Error al crear el pago: ' + (data.error || 'Error desconocido'));
+            if (btnSumUp) btnSumUp.style.display = 'block';
+            if (loadingDiv) loadingDiv.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al procesar el pago. Por favor intenta de nuevo.');
+        if (btnSumUp) btnSumUp.style.display = 'block';
+        if (loadingDiv) loadingDiv.style.display = 'none';
+    }
+}
+
+// Cargar carrito al iniciar
+cargarCarrito();
+</script>
+
+<style>
+.btn-primary {
+    background: linear-gradient(135deg, #FF0000 0%, #FFC72C 100%);
+    color: white;
+    border: none;
+    padding: 1.5rem 2rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+</style>
+{% endblock %}
+

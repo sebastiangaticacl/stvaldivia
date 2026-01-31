@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Cajas y Detección de Fraudes - BIMBA{% endblock %}
+{% block meta_description %}Gestión del estado de cajas registradoras, habilitación/deshabilitación y monitoreo de intentos de fraude en tiempo real.{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Asegurar que el contenido sea visible */
+    .admin-container {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 1 !important;
+        min-height: 400px !important;
+        padding: 20px !important;
+    }
+    
+    .section {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 200px !important;
+    }
+    
+    .empty-state {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        padding: 60px 20px !important;
+    }
+    
+    /* Asegurar que main-container no oculte el contenido */
+    .main-container {
+        display: block !important;
+        visibility: visible !important;
+        overflow: visible !important;
+        min-height: auto !important;
+    }
+    
+    /* Forzar visibilidad del contenido admin */
+    #main-content-inner {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    #main-content-inner .admin-container {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Estilos específicos adicionales para pos_stats */
+    .register-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .register-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+    
+    .register-card.disabled {
+        opacity: 0.6;
+        border-color: rgba(244, 67, 54, 0.5);
+    }
+    
+    .register-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .register-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .status-badges {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .status-badge.enabled {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+        border: 1px solid rgba(76, 175, 80, 0.5);
+    }
+    
+    .status-badge.disabled {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+        border: 1px solid rgba(244, 67, 54, 0.5);
+    }
+    
+    .status-badge.online {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+        border: 1px solid rgba(76, 175, 80, 0.5);
+    }
+    
+    .status-badge.offline {
+        background: rgba(158, 158, 158, 0.2);
+        color: #9e9e9e;
+        border: 1px solid rgba(158, 158, 158, 0.5);
+    }
+    
+    .register-info {
+        margin-bottom: 20px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+    
+    .info-value {
+        color: #fff;
+        font-weight: 600;
+        text-align: right;
+    }
+    
+    .register-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .btn-toggle {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-enable {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+    }
+    
+    .btn-enable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+    }
+    
+    .btn-disable {
+        background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        color: white;
+    }
+    
+    .btn-disable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+    }
+    
+    .fraud-alert {
+        background: rgba(244, 67, 54, 0.1);
+        border-left: 4px solid #f44336;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .fraud-alert.authorized {
+        background: rgba(76, 175, 80, 0.1);
+        border-left-color: #4caf50;
+    }
+    
+    .fraud-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .fraud-title {
+        font-weight: bold;
+        color: #f44336;
+        font-size: 1.1rem;
+    }
+    
+    .fraud-alert.authorized .fraud-title {
+        color: #4caf50;
+    }
+    
+    .fraud-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .fraud-badge.unauthorized {
+        background: rgba(244, 67, 54, 0.3);
+        color: #f44336;
+    }
+    
+    .fraud-badge.authorized {
+        background: rgba(76, 175, 80, 0.3);
+        color: #4caf50;
+    }
+    
+    .fraud-details {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    
+    .fraud-details strong {
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container" style="display: block !important; visibility: visible !important; opacity: 1 !important; min-height: 400px !important; padding: 20px !important;">
+    <!-- Sección de Estado de Cajas -->
+    <div class="section">
+        <h2 class="section-title">💰 Estado de Cajas Registradoras</h2>
+        <p style="color: #94a3b8; margin-bottom: 20px;">
+            Gestiona el estado de habilitación de cada caja y verifica su estado online/offline
+        </p>
+        
+        {% if registers_status %}
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));">
+            {% for reg in registers_status %}
+            <div class="register-card {% if not reg.is_enabled %}disabled{% endif %}" id="register-card-{{ reg.register_id }}">
+                <div class="register-header">
+                    <div class="register-name">
+                        {{ reg.register_name }}
+                        {% if reg.get('is_superadmin') %}
+                        <span style="display: block; font-size: 0.75rem; color: #ff9800; margin-top: 5px; font-weight: normal;">
+                            🔐 SUPERADMIN (Cortesías/Pruebas)
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="status-badges">
+                        {% if reg.is_enabled %}
+                        <span class="status-badge enabled">✅ Habilitada</span>
+                        {% else %}
+                        <span class="status-badge disabled">❌ Deshabilitada</span>
+                        {% endif %}
+                        
+                        {% if reg.is_online %}
+                        <span class="status-badge online">🟢 Online</span>
+                        {% else %}
+                        <span class="status-badge offline">⚫ Offline</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="register-info">
+                    {% if reg.lock_info %}
+                    <div class="info-row">
+                        <span class="info-label">👤 Cajero:</span>
+                        <span class="info-value">{{ reg.lock_info.employee_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">⏰ Bloqueada hace:</span>
+                        <span class="info-value">
+                            {% if reg.lock_info.time_since_locked_minutes %}
+                                {% if reg.lock_info.time_since_locked_minutes < 60 %}
+                                    {{ reg.lock_info.time_since_locked_minutes|int }} min
+                                {% else %}
+                                    {{ (reg.lock_info.time_since_locked_minutes / 60)|round(1) }} hrs
+                                {% endif %}
+                            {% else %}
+                                Recién bloqueada
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if reg.session_info %}
+                    <div class="info-row">
+                        <span class="info-label">🛒 Items en carrito:</span>
+                        <span class="info-value">{{ reg.session_info.cart_items_count }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">👤 Sesión activa:</span>
+                        <span class="info-value">{{ reg.session_info.employee_name }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not reg.lock_info and not reg.session_info %}
+                    <div class="info-row">
+                        <span class="info-label">Estado:</span>
+                        <span class="info-value" style="color: #9e9e9e;">Sin actividad</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="register-actions">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        {% if reg.is_enabled %}
+                        <button class="btn-toggle btn-disable" onclick="toggleRegister('{{ reg.register_id }}', false)">
+                            ❌ Deshabilitar
+                        </button>
+                        {% else %}
+                        <button class="btn-toggle btn-enable" onclick="toggleRegister('{{ reg.register_id }}', true)">
+                            ✅ Habilitar
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('caja.open_register_from_stats', register_id=reg.register_id) }}" 
+                           class="btn-toggle" 
+                           style="background: #667eea; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; display: inline-block;">
+                            🚀 Abrir Caja
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <h3>No hay cajas registradas</h3>
+            <p>Abre un turno para ver las cajas disponibles</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sección de Intentos de Fraude -->
+    <div class="section">
+        <h2 class="section-title">⚠️ Intentos de Fraude Recientes (Últimas 24 horas)</h2>
+        <p style="color: #94a3b8; margin-bottom: 20px;">
+            Monitoreo de intentos de fraude detectados en el sistema
+        </p>
+        
+        {% if fraud_attempts %}
+        <div id="frauds-list">
+            {% for fraud in fraud_attempts %}
+            <div class="fraud-alert {% if fraud.authorized %}authorized{% endif %}">
+                <div class="fraud-header">
+                    <div class="fraud-title">
+                        🚨 Ticket #{{ fraud.sale_id }}
+                        {% if fraud.fraud_type == 'old_ticket' %}
+                        - Ticket Antiguo
+                        {% elif fraud.fraud_type == 'multiple_attempts' %}
+                        - Múltiples Intentos
+                        {% else %}
+                        - {{ fraud.fraud_type }}
+                        {% endif %}
+                    </div>
+                    <span class="fraud-badge {% if fraud.authorized %}authorized{% else %}unauthorized{% endif %}">
+                        {% if fraud.authorized %}
+                        ✅ Autorizado
+                        {% else %}
+                        ⚠️ Pendiente
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="fraud-details">
+                    <div><strong>Fecha/Hora:</strong> {{ fraud.timestamp[:16]|replace('T', ' ') if fraud.timestamp else 'N/A' }}</div>
+                    <div><strong>Bartender:</strong> {{ fraud.bartender }}</div>
+                    <div><strong>Barra:</strong> {{ fraud.barra }}</div>
+                    {% if fraud.item_name %}
+                    <div><strong>Item:</strong> {{ fraud.item_name }} (Cantidad: {{ fraud.qty }})</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">✅</div>
+            <h3>No hay intentos de fraude recientes</h3>
+            <p>El sistema está funcionando correctamente</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    async function toggleRegister(registerId, enabled) {
+        if (!confirm(`¿Estás seguro de que deseas ${enabled ? 'habilitar' : 'deshabilitar'} la caja ${registerId}?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/admin/api/register/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    register_id: registerId,
+                    enabled: enabled
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Recargar la página para actualizar el estado
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo cambiar el estado de la caja'));
+            }
+        } catch (error) {
+            console.error('Error al cambiar estado de caja:', error);
+            alert('Error de conexión al cambiar el estado de la caja');
+        }
+    }
+    
+    // Auto-refresh cada 10 segundos
+    setInterval(() => {
+        window.location.reload();
+    }, 10000);
+</script>
+{% endblock %}

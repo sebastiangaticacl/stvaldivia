@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+{% block title %}Abrir Turno - Inicio de Jornada BIMBA{% endblock %}
+{% block meta_description %}Apertura de turno y configuración inicial de la jornada. Selección de fiesta, fecha y configuración del sistema BIMBA para iniciar operaciones.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .open-shift-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-card h2 {
+        color: #00ff00;
+        margin-bottom: 20px;
+        font-size: 2rem;
+        text-align: center;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        color: #ccc;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        font-family: Arial, sans-serif;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .form-group small {
+        color: #aaa;
+        font-size: 0.9rem;
+        display: block;
+        margin-top: 5px;
+    }
+
+    .checkboxes-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .checkbox-item:hover {
+        border-color: #667eea;
+        background: #3a3a4e;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+        cursor: pointer;
+    }
+
+    .checkbox-item label {
+        color: #e8e8e8;
+        cursor: pointer;
+        margin: 0;
+        font-weight: normal;
+    }
+
+    .bartender-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 10px;
+        background: #2a2a3e;
+        border-radius: 8px;
+    }
+
+    .bartender-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background: #1a1a2e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .bartender-item:hover {
+        border-color: #667eea;
+    }
+
+    .bartender-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+        cursor: pointer;
+    }
+
+    .bartender-item label {
+        color: #e8e8e8;
+        cursor: pointer;
+        margin: 0;
+        font-weight: normal;
+        font-size: 0.95rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 15px 40px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: #444;
+        color: #e8e8e8;
+    }
+
+    .btn-secondary:hover {
+        background: #555;
+    }
+
+    .required {
+        color: #ff4444;
+    }
+
+    .dj-item, .manual-bartender-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        padding: 10px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+    }
+
+    .dj-item input, .manual-bartender-item input {
+        flex: 1;
+        padding: 8px;
+        background: #1a1a2e;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 6px;
+        color: #fff;
+        font-size: 0.95rem;
+    }
+
+    .dj-item button, .manual-bartender-item button {
+        padding: 8px 12px;
+        background: rgba(244, 67, 54, 0.3);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+        border-radius: 6px;
+        color: #f44336;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+
+    .dj-item button:hover, .manual-bartender-item button:hover {
+        background: rgba(244, 67, 54, 0.5);
+        border-color: rgba(244, 67, 54, 0.7);
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestión de DJs
+    const djsContainer = document.getElementById('djs-container');
+    const addDjBtn = document.getElementById('add-dj-btn');
+    let djCount = 0;
+
+    // Cargar DJs existentes si estamos modificando
+    {% if is_modifying and current_shift and current_shift.djs %}
+    const existingDjsStr = '{{ current_shift.djs|default("") }}';
+    if (existingDjsStr) {
+        const existingDjs = existingDjsStr.split(',').map(d => d.trim()).filter(d => d);
+        existingDjs.forEach(dj => {
+            if (dj) addDjField(dj);
+        });
+    }
+    {% endif %}
+    
+    // Si no hay DJs, agregar un campo vacío por defecto
+    if (djsContainer.children.length === 0) {
+        addDjField('');
+    }
+
+    function addDjField(value = '') {
+        djCount++;
+        const djItem = document.createElement('div');
+        djItem.className = 'dj-item';
+        djItem.innerHTML = `
+            <input 
+                type="text" 
+                name="djs_list[]" 
+                placeholder="Ej: DJ Juan"
+                value="${value}"
+                autocomplete="off"
+            >
+            <button type="button" onclick="this.parentElement.remove()">🗑️ Eliminar</button>
+        `;
+        djsContainer.appendChild(djItem);
+    }
+
+    addDjBtn.addEventListener('click', function() {
+        addDjField('');
+    });
+
+    // Gestión de Bartenders Manuales
+    const manualBartendersContainer = document.getElementById('manual-bartenders-container');
+    const addBartenderBtn = document.getElementById('add-bartender-btn');
+    let bartenderCount = 0;
+
+    // Cargar bartenders manuales existentes si estamos modificando
+    {% if is_modifying and current_shift and current_shift.bartenders %}
+    const existingBartenders = {{ (current_shift.bartenders or [])|tojson }};
+    const systemBartenders = {{ bartenders|map(attribute='name')|list|tojson }};
+    existingBartenders.forEach(bartender => {
+        // Solo agregar si no está en la lista del sistema
+        if (bartender && !systemBartenders.includes(bartender)) {
+            addManualBartenderField(bartender);
+        }
+    });
+    {% endif %}
+
+    function addManualBartenderField(value = '') {
+        bartenderCount++;
+        const bartenderItem = document.createElement('div');
+        bartenderItem.className = 'manual-bartender-item';
+        bartenderItem.innerHTML = `
+            <input 
+                type="text" 
+                name="manual_bartenders[]" 
+                placeholder="Nombre del bartender"
+                value="${value}"
+                autocomplete="off"
+            >
+            <button type="button" onclick="this.parentElement.remove()">🗑️ Eliminar</button>
+        `;
+        manualBartendersContainer.appendChild(bartenderItem);
+    }
+
+    addBartenderBtn.addEventListener('click', function() {
+        addManualBartenderField('');
+    });
+
+    // Procesar formulario antes de enviar
+    document.querySelector('form').addEventListener('submit', function(e) {
+        // Recopilar DJs
+        const djInputs = djsContainer.querySelectorAll('input[name="djs_list[]"]');
+        const djs = Array.from(djInputs)
+            .map(input => input.value.trim())
+            .filter(dj => dj.length > 0);
+        
+        // Crear campo oculto con DJs separados por comas
+        if (djs.length > 0) {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'djs';
+            hiddenInput.value = djs.join(', ');
+            this.appendChild(hiddenInput);
+        }
+
+        // Recopilar bartenders manuales
+        const manualBartenderInputs = manualBartendersContainer.querySelectorAll('input[name="manual_bartenders[]"]');
+        const manualBartenders = Array.from(manualBartenderInputs)
+            .map(input => input.value.trim())
+            .filter(bartender => bartender.length > 0);
+        
+        // Agregar bartenders manuales como checkboxes ocultos
+        manualBartenders.forEach(bartender => {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'bartenders';
+            hiddenInput.value = bartender;
+            this.appendChild(hiddenInput);
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="open-shift-container">
+    <div class="form-card">
+        {% if is_modifying %}
+        <h2>✏️ Modificar Turno Abierto</h2>
+        <div style="background: rgba(255, 193, 7, 0.1); border: 2px solid rgba(255, 193, 7, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+            <p style="text-align: center; color: #ffc107; margin: 0; font-weight: bold;">
+                ⚠️ Hay un turno abierto. Puedes modificar la información sin cerrar el turno.
+            </p>
+            {% if current_shift %}
+            <p style="text-align: center; color: #aaa; margin: 10px 0 0 0; font-size: 0.9rem;">
+                Turno abierto el {{ current_shift.shift_date }} a las {{ current_shift.opened_at[:16] if current_shift.opened_at else 'N/A' }}
+            </p>
+            {% endif %}
+        </div>
+        {% else %}
+        <h2>📅 Abrir Nuevo Turno</h2>
+        {% endif %}
+        <p style="text-align: center; color: #aaa; margin-bottom: 30px;">
+            {% if is_modifying %}
+            Modifica la información del turno. Los cambios se aplicarán inmediatamente.
+            {% else %}
+            Complete la información de la fiesta para iniciar el turno. Esta información se utilizará en todo el sistema.
+            {% endif %}
+        </p>
+
+        <form method="POST" action="{{ url_for('routes.open_shift') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <!-- Nombre de la Fiesta -->
+            <div class="form-group">
+                <label for="fiesta_nombre">
+                    Nombre de la Fiesta <span class="required">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="fiesta_nombre" 
+                    name="fiesta_nombre" 
+                    required
+                    placeholder="Ej: Noche de Verano, Fiesta VIP, etc."
+                    autocomplete="off"
+                    value="{% if is_modifying and current_shift %}{{ current_shift.fiesta_nombre or '' }}{% endif %}"
+                >
+                <small>Este nombre aparecerá en encuestas y estadísticas</small>
+            </div>
+
+            <!-- DJs -->
+            <div class="form-group">
+                <label>DJs (Opcional)</label>
+                <div id="djs-container" style="margin-top: 10px;">
+                    <!-- Los DJs se agregarán dinámicamente aquí -->
+                </div>
+                <button type="button" id="add-dj-btn" style="margin-top: 10px; padding: 8px 16px; background: rgba(102, 126, 234, 0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #667eea; cursor: pointer; font-size: 0.9rem;">
+                    ➕ Agregar DJ
+                </button>
+                <small>Agrega los DJs que estarán en el evento. Puedes agregar múltiples.</small>
+            </div>
+
+            <!-- Barras Disponibles -->
+            <div class="form-group">
+                <label>Barras Disponibles <span class="required">*</span></label>
+                <div class="checkboxes-group">
+                    {% for barra in barras_default %}
+                    <div class="checkbox-item">
+                        <input 
+                            type="checkbox" 
+                            id="barra_{{ loop.index }}" 
+                            name="barras_disponibles" 
+                            value="{{ barra }}"
+                            {% if is_modifying and current_shift %}
+                                {% if barra in (current_shift.barras_disponibles or []) %}checked{% endif %}
+                            {% else %}
+                                checked
+                            {% endif %}
+                        >
+                        <label for="barra_{{ loop.index }}">{{ barra }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <small>Seleccione las barras que estarán operativas durante el turno</small>
+            </div>
+
+            <!-- Bartenders -->
+            <div class="form-group">
+                <label>Bartenders (Opcional)</label>
+                
+                <!-- Lista de bartenders del sistema -->
+                {% if bartenders %}
+                <div class="bartender-list" style="margin-bottom: 15px;">
+                    <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 10px;">Bartenders del sistema:</p>
+                    {% for bartender in bartenders %}
+                    <div class="bartender-item">
+                        <input 
+                            type="checkbox" 
+                            id="bartender_{{ bartender.id }}" 
+                            name="bartenders" 
+                            value="{{ bartender.name }}"
+                            class="bartender-checkbox"
+                            {% if is_modifying and current_shift %}
+                                {% if bartender.name in (current_shift.bartenders or []) %}checked{% endif %}
+                            {% endif %}
+                        >
+                        <label for="bartender_{{ bartender.id }}">{{ bartender.name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Agregar bartenders manualmente -->
+                <div style="border-top: 1px solid rgba(102, 126, 234, 0.3); padding-top: 15px; margin-top: 15px;">
+                    <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 10px;">Agregar bartenders manualmente:</p>
+                    <div id="manual-bartenders-container" style="margin-top: 10px;">
+                        <!-- Los bartenders manuales se agregarán dinámicamente aquí -->
+                    </div>
+                    <button type="button" id="add-bartender-btn" style="margin-top: 10px; padding: 8px 16px; background: rgba(76, 175, 80, 0.3); border: 1px solid rgba(76, 175, 80, 0.5); border-radius: 6px; color: #4caf50; cursor: pointer; font-size: 0.9rem;">
+                        ➕ Agregar Persona
+                    </button>
+                </div>
+                <small>Selecciona bartenders del sistema o agrega personas manualmente. Se pueden seleccionar durante las entregas también.</small>
+            </div>
+
+            <!-- Cajeros -->
+            <div class="form-group">
+                <label>Cajeros que Trabajarán Hoy (Opcional)</label>
+                
+                <!-- Lista de cajeros del sistema -->
+                {% if cashiers %}
+                <div class="bartender-list" style="margin-bottom: 15px;">
+                    <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 10px;">Cajeros disponibles:</p>
+                    {% for cashier in cashiers %}
+                    <div class="bartender-item">
+                        <input 
+                            type="checkbox" 
+                            id="cashier_{{ cashier.id }}" 
+                            name="cashiers" 
+                            value="{{ cashier.name }}"
+                            class="cashier-checkbox"
+                            {% if is_modifying and current_shift %}
+                                {% if cashier.name in (current_shift.cashiers or []) %}checked{% endif %}
+                            {% endif %}
+                        >
+                        <label for="cashier_{{ cashier.id }}">{{ cashier.name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <p style="color: #ffc107; font-size: 0.9rem; margin: 0; text-align: center;">
+                        ⚠️ No se pudieron cargar los cajeros desde la API. Los cajeros podrán iniciar sesión normalmente.
+                    </p>
+                </div>
+                {% endif %}
+                <small>Selecciona los cajeros que trabajarán durante este turno. Esto ayuda a planificar y monitorear las Cajas.</small>
+            </div>
+
+            <!-- Botones -->
+            <div class="form-actions">
+                <a href="{{ url_for('routes.admin_logs') }}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    {% if is_modifying %}
+                    ✏️ Modificar
+                    {% else %}
+                    📅 Abrir Turno
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+

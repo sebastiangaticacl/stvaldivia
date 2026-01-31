@@ -1,0 +1,2524 @@
+{% extends "base.html" %}
+{% block title %}Panel de Control y Configuración - BIMBA{% endblock %}
+{% block meta_description %}Panel de control completo del sistema BIMBA. Configuración, ajustes del sistema, gestión de servicios y herramientas administrativas avanzadas.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .panel-control-container {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+        overflow-y: visible;
+        overflow-x: hidden;
+        max-width: 100vw;
+        
+    }
+
+    body.has-admin-nav .panel-control-container {
+        /* Sin restricción de altura para evitar doble scroll */
+    }
+    
+    /* Prevenir scroll en el contenedor padre cuando está en panel de control */
+    body:has(.panel-control-container) .container {
+        overflow-y: visible;
+        max-height: none;
+    }
+
+    .category-section {
+        margin-top: 15px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .category-title {
+        font-size: 1.2rem !important;
+        padding: 10px 15px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .panel-header {
+        display: none;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .info-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .info-card .icon {
+        font-size: 2rem;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .info-card h3 {
+        color: #e8e8e8;
+        margin: 0 0 8px 0;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+
+    .info-card p {
+        color: #aaa;
+        margin: 5px 0;
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
+
+    .info-card .badge {
+        display: inline-block;
+        margin-top: 5px;
+        padding: 3px 8px;
+        background: rgba(102, 126, 234, 0.2);
+        border-radius: 15px;
+        font-size: 0.7rem;
+        color: #667eea;
+    }
+
+    .btn-config {
+        padding: 10px 20px;
+        background: rgba(102, 126, 234, 0.3);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 600;
+        width: 100%;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-config:hover {
+        background: rgba(102, 126, 234, 0.5);
+        border-color: rgba(102, 126, 234, 0.7);
+        color: #fff;
+    }
+
+    .time-display {
+        font-size: 1.5rem;
+        color: #667eea;
+        font-weight: bold;
+        margin: 10px 0;
+        font-family: 'Courier New', monospace;
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-online {
+        background: #4caf50;
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+    }
+
+    .status-offline {
+        background: #f44336;
+        box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="info-grid">
+        <!-- Información de Fecha y Hora (Compacta) -->
+        <div class="info-card"
+            style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); border-color: rgba(102, 126, 234, 0.5); padding: 10px;">
+            <span class="icon" style="font-size: 1.5rem; margin-bottom: 5px;">🕐</span>
+            <h3 style="font-size: 0.9rem; margin: 0 0 5px 0;">Fecha y Hora</h3>
+            <p class="time-display" id="current-time-display" style="font-size: 0.9rem; margin: 3px 0;">{{
+                system_info.current_time }}</p>
+            <p style="font-size: 0.7rem; color: #e8e8e8; margin: 2px 0;">
+                <strong>{{ system_info.day_name }}</strong>, {{ system_info.current_date }}
+            </p>
+            <p style="font-size: 0.65rem; color: #aaa; margin: 2px 0;">
+                {{ system_info.timezone }}
+            </p>
+            <span class="badge"
+                style="background: rgba(102, 126, 234, 0.3); color: #667eea; font-size: 0.65rem; padding: 2px 6px; margin-top: 3px;">
+                Tiempo real
+            </span>
+        </div>
+
+        <!-- Toggle Base de Datos (Solo Superadmin) -->
+        {% if is_superadmin %}
+        <div class="info-card" style="border-color: rgba(255, 193, 7, 0.5); background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);">
+            <span class="icon">🗄️</span>
+            <h3>Base de Datos</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Cambiar entre base de datos de desarrollo y producción<br>
+                <span style="font-size: 0.75rem; color: #888;">Ambas bases de datos están en el servidor VM</span>
+            </p>
+            
+            <div style="margin-top: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <span style="color: #e8e8e8; font-size: 0.85rem;">Modo actual:</span>
+                    <span id="db-mode-display" style="color: #ffc107; font-weight: bold; font-size: 0.9rem; text-transform: uppercase;">
+                        {{ db_info.mode|default('PROD') }}
+                    </span>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button id="db-switch-dev" 
+                            class="btn-config" 
+                            style="flex: 1; {% if db_info.mode == 'dev' %}background: rgba(76, 175, 80, 0.3); border-color: rgba(76, 175, 80, 0.5); color: #4caf50;{% endif %}"
+                            onclick="switchDatabase('dev')">
+                        🧪 Desarrollo
+                    </button>
+                    <button id="db-switch-prod" 
+                            class="btn-config" 
+                            style="flex: 1; {% if db_info.mode == 'prod' %}background: rgba(244, 67, 54, 0.3); border-color: rgba(244, 67, 54, 0.5); color: #f44336;{% endif %}"
+                            onclick="switchDatabase('prod')">
+                        🚀 Producción
+                    </button>
+                </div>
+                
+                <p id="db-status" style="font-size: 0.75rem; color: #aaa; margin-top: 10px; min-height: 20px;"></p>
+            </div>
+            
+            <span class="badge" style="background: rgba(255, 193, 7, 0.3); color: #ffc107;">
+                {% if db_info.mode == 'dev' %}Modo Desarrollo{% else %}Modo Producción{% endif %}
+            </span>
+        </div>
+        {% endif %}
+
+        <!-- EQUIPO -->
+        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.5);">
+            <span class="icon">👥</span>
+            <h3>EQUIPO</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Gestiona el equipo del sistema de forma local
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('equipo.listar') }}" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center;">
+                    👥 Gestionar Equipo
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(102, 126, 234, 0.3); color: #667eea;">
+                Gestión Local
+            </span>
+        </div>
+
+        <!-- Ecommerce -->
+        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.5);">
+            <span class="icon">🛒</span>
+            <h3>Ecommerce</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Gestión de compras y compradores online
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('admin_ecommerce.list_compras') }}" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center;">
+                    🛒 Ver Compras
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(102, 126, 234, 0.3); color: #667eea;">
+                Ventas Online
+            </span>
+        </div>
+
+        <!-- Dashboard de TPV -->
+        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.5);">
+            <span class="icon">🏪</span>
+            <h3>Dashboard de TPV</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Monitoreo en tiempo real de puntos de venta
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('inventory_admin.dashboard') }}" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(102, 126, 234, 0.3); border-color: rgba(102, 126, 234, 0.5); color: #667eea;">
+                    🏪 Ver Dashboard
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(102, 126, 234, 0.3); color: #667eea;">
+                Monitoreo
+            </span>
+        </div>
+
+        <!-- Administración de TPV -->
+        <div class="info-card" style="border-color: rgba(255, 193, 7, 0.5);">
+            <span class="icon">💰</span>
+            <h3>Administración de TPV</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Crea, edita y gestiona los puntos de venta (TPV) del sistema
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="/admin/cajas/" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(255, 193, 7, 0.3); border-color: rgba(255, 193, 7, 0.5); color: #ffc107;">
+                    💰 Gestionar TPV
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(255, 193, 7, 0.3); color: #ffc107;">
+                Configuración
+            </span>
+        </div>
+
+        <!-- Gestión de Cargos -->
+        <div class="info-card" style="border-color: rgba(156, 39, 176, 0.5);">
+            <span class="icon">👔</span>
+            <h3>Gestión de Cargos</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Crea, edita o elimina los cargos disponibles para asignar a los miembros del equipo
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('equipo.listar') }}#cargos-sueldos" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(156, 39, 176, 0.3); border-color: rgba(156, 39, 176, 0.5); color: #9c27b0;">
+                    👔 Gestionar Cargos
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(156, 39, 176, 0.3); color: #9c27b0;">
+                Configuración
+            </span>
+        </div>
+
+        <!-- Generar Pagos -->
+        <div class="info-card" style="border-color: rgba(255, 193, 7, 0.5);">
+            <span class="icon">💵</span>
+            <h3>Generar Pagos</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Visualiza y gestiona todos los pagos pendientes agrupados por trabajador. Paga completo o realiza
+                abonos.
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('routes.admin_generar_pagos') }}" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(255, 193, 7, 0.3); border-color: rgba(255, 193, 7, 0.5); color: #ffc107;">
+                    💵 Generar Pagos
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(255, 193, 7, 0.3); color: #ffc107;">
+                Gestión de Pagos
+            </span>
+        </div>
+
+        <!-- Actualizar Sitio en Producción -->
+        <div class="info-card" style="border-color: rgba(76, 175, 80, 0.5);">
+            <span class="icon">🚀</span>
+            <h3>Actualizar Sitio</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Despliega los últimos cambios a producción (stvaldivia.cl). Esto actualiza el sitio en vivo.
+            </p>
+            <div style="margin-top: 15px;">
+                <button onclick="deployToProduction(); return false;" id="deploy-btn" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(76, 175, 80, 0.3); border-color: rgba(76, 175, 80, 0.5); color: #4caf50; cursor: pointer;">
+                    🚀 Actualizar Sitio
+                </button>
+            </div>
+            <div id="deploy-status"
+                style="display: none; margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 0.85rem;"></div>
+            <span class="badge" style="background: rgba(76, 175, 80, 0.3); color: #4caf50;">
+                Deployment
+            </span>
+        </div>
+
+        <!-- Monitoreo de Servicios -->
+        <div class="info-card" style="border-color: rgba(0, 255, 255, 0.5);">
+            <span class="icon">🔍</span>
+            <h3>Monitoreo de Servicios</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Monitorea el estado en tiempo real de todos los servicios del sistema: base de datos, cache, APIs y servicios del sistema.
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('routes.admin_monitoreo_servicios') }}" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(0, 255, 255, 0.3); border-color: rgba(0, 255, 255, 0.5); color: #00ffff;">
+                    🔍 Ver Monitoreo
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(0, 255, 255, 0.3); color: #00ffff;">
+                Tiempo Real
+            </span>
+        </div>
+
+        <!-- Logs del Sistema -->
+        <div class="info-card" style="border-color: rgba(76, 175, 80, 0.5);">
+            <span class="icon">📋</span>
+            <h3>Logs del Sistema</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Visualiza y exporta todos los logs de entregas de productos. Filtra por bartender, barra, venta o fecha.
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('routes.admin_panel_control_logs') }}" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(76, 175, 80, 0.3); border-color: rgba(76, 175, 80, 0.5); color: #4caf50;">
+                    📋 Ver Logs
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(76, 175, 80, 0.3); color: #4caf50;">
+                Auditoría
+            </span>
+        </div>
+
+        <!-- Logs del Agente BIMBA -->
+        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.5);">
+            <span class="icon">🤖</span>
+            <h3>Logs del Agente BIMBA</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Visualiza logs de conversaciones del agente de IA BIMBA, prueba respuestas y monitorea el rendimiento del agente.
+            </p>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <a href="{{ url_for('admin.bot_logs') }}" class="btn-config"
+                    style="text-decoration: none; flex: 1; text-align: center; background: rgba(102, 126, 234, 0.3); border-color: rgba(102, 126, 234, 0.5); color: #667eea;">
+                    📋 Ver Logs
+                </a>
+                <a href="{{ url_for('admin.bot_config') }}" class="btn-config"
+                    style="text-decoration: none; flex: 1; text-align: center; background: rgba(102, 126, 234, 0.3); border-color: rgba(102, 126, 234, 0.5); color: #667eea;">
+                    ⚙️ Configurar
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(102, 126, 234, 0.3); color: #667eea;">
+                Agente BIMBA
+            </span>
+        </div>
+
+        <!-- Monitor de Base de Datos -->
+        <div class="info-card" style="border-color: rgba(255, 152, 0, 0.5);">
+            <span class="icon">🗄️</span>
+            <h3>Monitor de Base de Datos</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Monitorea estadísticas detalladas de PostgreSQL: tamaño, conexiones activas, tablas más grandes, índices y pool de conexiones.
+            </p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('routes.admin_db_monitor') }}" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(255, 152, 0, 0.3); border-color: rgba(255, 152, 0, 0.5); color: #ff9800;">
+                    🗄️ Ver Monitor DB
+                </a>
+            </div>
+            <span class="badge" style="background: rgba(255, 152, 0, 0.3); color: #ff9800;">
+                PostgreSQL
+            </span>
+        </div>
+
+        <!-- Sincronizar Datos (solo en desarrollo local) -->
+        {% if not is_production %}
+        <div class="info-card" style="border-color: rgba(33, 150, 243, 0.5);">
+            <span class="icon">🔄</span>
+            <h3>Sincronizar Datos</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Sincroniza datos entre la versión local y la VM de Google (producción). Actualiza empleados, jornadas, planilla y más.
+            </p>
+            <div style="margin-top: 15px;">
+                <button onclick="startSync()" id="sync-btn" class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(33, 150, 243, 0.3); border-color: rgba(33, 150, 243, 0.5); color: #2196f3; width: 100%;">
+                    🔄 Sincronizar Ahora
+                </button>
+            </div>
+        {% else %}
+        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.3); opacity: 0.6;">
+            <span class="icon">🔄</span>
+            <h3>Sincronizar Datos</h3>
+            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+                Esta función solo está disponible en el ambiente local. En producción no se usan archivos locales.
+            </p>
+            <div style="margin-top: 15px;">
+                <button disabled class="btn-config"
+                    style="text-decoration: none; display: block; text-align: center; background: rgba(102, 126, 234, 0.2); border-color: rgba(102, 126, 234, 0.3); color: #667eea; width: 100%; cursor: not-allowed; opacity: 0.6;">
+                    🔄 No disponible en producción
+                </button>
+            </div>
+        {% endif %}
+            <div id="sync-status" style="display: none; margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 0.85rem;"></div>
+            <div id="sync-progress" style="display: none; margin-top: 10px;">
+                <div style="background: rgba(26, 26, 46, 0.5); border-radius: 8px; padding: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="color: #aaa; font-size: 0.85rem;">Progreso</span>
+                        <span id="sync-progress-text" style="color: #2196f3; font-size: 0.85rem;">0%</span>
+                    </div>
+                    <div style="background: rgba(33, 150, 243, 0.1); border-radius: 4px; height: 8px; overflow: hidden;">
+                        <div id="sync-progress-bar" style="background: #2196f3; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+                <div id="sync-tables" style="margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 0.8rem;"></div>
+            </div>
+            <span class="badge" style="background: rgba(33, 150, 243, 0.3); color: #2196f3;">
+                Sincronización
+            </span>
+        </div>
+
+        <!-- Integración n8n - Movida aquí para mayor visibilidad -->
+        <div class="category-section" style="margin-top: 20px; margin-bottom: 20px;">
+            <h2 class="category-title"
+                style="color: #e8e8e8; font-size: 1.3rem; margin-bottom: 15px; text-align: center; padding: 12px 20px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.2) 100%); border-radius: 10px; border: 2px solid rgba(34, 197, 94, 0.5); box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);">
+                🔗 Integración n8n</h2>
+            <div class="tools-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div class="tool-card"
+                    style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%); padding: 30px; border-radius: 15px; border: 2px solid rgba(34, 197, 94, 0.4); box-shadow: 0 4px 20px rgba(34, 197, 94, 0.15);">
+                    <span
+                        style="display: inline-block; background: rgba(34, 197, 94, 0.4); color: #22c55e; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; margin-bottom: 15px;">NUEVO</span>
+                    <span class="icon"
+                        style="font-size: 3rem; display: block; margin-bottom: 15px;">⚙️</span>
+                    <h3 style="color: #fff; margin: 15px 0; font-size: 1.5rem; font-weight: bold;">Configurar n8n</h3>
+                    <p style="color: #aaa; margin: 15px 0; font-size: 1rem; line-height: 1.6;">Configura la integración con n8n para automatización de flujos de trabajo. Conecta tu aplicación con workflows de n8n para automatizar procesos.</p>
+                    <button id="btn-configurar-n8n" onclick="openN8nConfigModal()"
+                        style="margin-top: 20px; padding: 15px 30px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; color: white; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3); transition: all 0.3s ease;">
+                        ⚙️ Configurar n8n
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control de Servicios Externos - REMOVED -->
+
+        <!-- Modal para Gestionar Equipo -->
+        <div id="employees-modal"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 10000; align-items: center; justify-content: center;  box-sizing: border-box;">
+            <div
+                style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid rgba(102, 126, 234, 0.5); border-radius: 15px; padding: 30px; max-width: 900px; width: 90%; max-height: 90vh; margin: 20px auto; box-sizing: border-box; ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="color: #e8e8e8; margin: 0;">👥 Gestión de Equipo</h2>
+                    <button onclick="closeEmployeesModal()"
+                        style="background: rgba(244, 67, 54, 0.3); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; border-radius: 5px; padding: 8px 16px; cursor: pointer; font-size: 1.2rem; line-height: 1;">
+                        ✕
+                    </button>
+                </div>
+                <!-- Estadísticas del equipo -->
+                <div id="employees-stats"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div
+                        style="background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 10px; padding: 15px; text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 5px;">👥</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;" id="total-employees">-</div>
+                        <div style="font-size: 0.85rem; color: #aaa;">Total</div>
+                    </div>
+                    <div
+                        style="background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 10px; padding: 15px; text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 5px;">✅</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #4caf50;" id="active-employees">-</div>
+                        <div style="font-size: 0.85rem; color: #aaa;">Activos</div>
+                    </div>
+                    <div
+                        style="background: rgba(255, 152, 0, 0.2); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 10px; padding: 15px; text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 5px;">❌</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #ff9800;" id="inactive-employees">-
+                        </div>
+                        <div style="font-size: 0.85rem; color: #aaa;">Inactivos</div>
+
+                        <!-- Barra de búsqueda y filtros -->
+                        <div
+                            style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <input type="text" id="employee-search" placeholder="🔍 Buscar por nombre o cargo..."
+                                    style="width: 100%; padding: 10px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem;"
+                                    onkeyup="filterEmployees()">
+                            </div>
+                            <select id="employee-filter-cargo" onchange="filterEmployees()"
+                                style="padding: 10px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem; cursor: pointer;">
+                                <option value="">Todos los cargos</option>
+                                <option value="BARRA">BARRA</option>
+                                <option value="CAJA">CAJA</option>
+                                <option value="GUARDIA">GUARDIA</option>
+                                <option value="ANFITRIONA">ANFITRIONA</option>
+                                <option value="ASEO">ASEO</option>
+                                <option value="GUARDARROP">GUARDARROP</option>
+                                <option value="TÉCNICA">TÉCNICA</option>
+                                <option value="DRAG">DRAG</option>
+                                <option value="DJ">DJ</option>
+                            </select>
+                            <select id="employee-filter-status" onchange="filterEmployees()"
+                                style="padding: 10px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem; cursor: pointer;">
+                                <option value="">Todos</option>
+                                <option value="active">Solo activos</option>
+                                <option value="inactive">Solo inactivos</option>
+                            </select>
+                            <button onclick="openAddEmployeeForm()"
+                                style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">
+                                ➕ Agregar
+                            </button>
+                        </div>
+                        <div id="employees-list" style="max-height: 500px; ">
+                            <p style="text-align: center; color: #aaa; padding: 20px;">Cargando equipo...</p>
+                        </div>
+                        <div id="add-employee-form"
+                            style="display: none; margin-top: 20px; padding: 20px; background: rgba(26, 26, 46, 0.5); border-radius: 10px; border: 1px solid rgba(102, 126, 234, 0.3); box-sizing: border-box; position: relative; z-index: 1;">
+                            <h3 style="color: #e8e8e8; margin-top: 0;">Agregar/Editar Miembro del Equipo</h3>
+                            <form id="employee-form" onsubmit="saveEmployee(event)">
+                                <input type="hidden" id="employee-id" name="employee_id">
+
+                                <div style="margin-bottom: 15px;">
+                                    <label
+                                        style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                                        Nombre:
+                                    </label>
+                                    <input type="text" id="employee-name" name="name" required
+                                        style="width: 100%; padding: 10px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem;"
+                                        placeholder="Nombre completo">
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <label
+                                        style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                                        Cargo:
+                                    </label>
+                                    <select id="employee-cargo" name="cargo" required
+                                        style="width: 100%; padding: 10px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem;">
+                                        <option value="">Seleccionar cargo...</option>
+                                        <optgroup label="Barra">
+                                            <option value="BARRA">BARRA</option>
+                                        </optgroup>
+                                        <optgroup label="Coperx">
+                                            <option value="COPERX 1">COPERX 1</option>
+                                        </optgroup>
+                                        <optgroup label="Caja">
+                                            <option value="CAJA 1">CAJA 1</option>
+                                            <option value="CAJA 2">CAJA 2</option>
+                                            <option value="CAJA 3">CAJA 3</option>
+                                        </optgroup>
+                                        <optgroup label="Guardia">
+                                            <option value="GUARDIA 1">GUARDIA 1</option>
+                                            <option value="GUARDIA 2">GUARDIA 2</option>
+                                            <option value="GUARDIA 3">GUARDIA 3</option>
+                                        </optgroup>
+                                        <optgroup label="Servicio">
+                                            <option value="ANFITRIONA">ANFITRIONA</option>
+                                            <option value="ASEO">ASEO</option>
+                                            <option value="GUARDARROP">GUARDARROP</option>
+                                        </optgroup>
+                                        <optgroup label="Técnica">
+                                            <option value="TÉCNICA">TÉCNICA</option>
+                                        </optgroup>
+                                        <optgroup label="Artistas">
+                                            <option value="DRAG">DRAG</option>
+                                            <option value="DJ 1">DJ 1</option>
+                                            <option value="DJ 2">DJ 2</option>
+                                        </optgroup>
+                                        <optgroup label="Otros">
+                                            <option value="Supervisor">Supervisor</option>
+                                            <option value="Administrador">Administrador</option>
+                                            <option value="Otro">Otro</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <label
+                                        style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                                        PIN (4 dígitos):
+                                    </label>
+                                    <input type="text" id="employee-pin" name="pin" maxlength="4" pattern="[0-9]{4}"
+                                        style="width: 100%; padding: 10px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem; font-family: monospace;"
+                                        placeholder="1234">
+                                    <p style="font-size: 0.85rem; color: #aaa; margin-top: 5px;">
+                                        PIN numérico de 4 dígitos para autenticación
+                                    </p>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <label
+                                        style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                                        Activo:
+                                    </label>
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="employee-active" name="active" checked
+                                            style="margin-right: 10px; width: 20px; height: 20px; cursor: pointer;">
+                                        <span style="color: #e8e8e8;">Miembro activo en el sistema</span>
+                                    </label>
+                                </div>
+                                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                                    <button type="button" onclick="cancelEmployeeForm()"
+                                        style="padding: 10px 20px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit"
+                                        style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                        💾 Guardar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <script>
+                            // ==========================================
+                            // FUNCIONES N8N - Definidas globalmente ANTES de todo
+                            // Esto asegura que estén disponibles para onclick en el HTML
+                            // ==========================================
+                            function openN8nConfigModal() {
+                                const modal = document.getElementById('n8n-config-modal');
+                                if (!modal) {
+                                    alert('Error: No se pudo encontrar el modal. Por favor, recarga la página.');
+                                    return;
+                                }
+                                
+                                // Mostrar modal con todos los estilos necesarios
+                                modal.style.cssText = 'display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: rgba(0, 0, 0, 0.8) !important; z-index: 10002 !important; align-items: center !important; justify-content: center !important;';
+                                
+                                // Cargar configuración actual
+                                fetch('/admin/api/n8n/config')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success && data.config) {
+                                            const urlInput = document.getElementById('n8n-webhook-url');
+                                            const secretInput = document.getElementById('n8n-webhook-secret');
+                                            const apiKeyInput = document.getElementById('n8n-api-key');
+                                            
+                                            if (urlInput) urlInput.value = data.config.webhook_url || '';
+                                            if (secretInput && data.config.webhook_secret_set) {
+                                                secretInput.value = '';
+                                                secretInput.placeholder = '*** Configurado (dejar vacío para mantener)';
+                                            }
+                                            if (apiKeyInput && data.config.api_key_set) {
+                                                apiKeyInput.value = '';
+                                                apiKeyInput.placeholder = '*** Configurado (dejar vacío para mantener)';
+                                            }
+                                        }
+                                    })
+                                    .catch(error => console.error('Error cargando configuración:', error));
+                            }
+                            
+                            function closeN8nConfigModal() {
+                                const modal = document.getElementById('n8n-config-modal');
+                                const messageDiv = document.getElementById('n8n-config-message');
+                                const form = document.getElementById('n8n-config-form');
+                                
+                                if (modal) modal.style.display = 'none';
+                                if (messageDiv) {
+                                    messageDiv.style.display = 'none';
+                                    messageDiv.textContent = '';
+                                }
+                                if (form) form.reset();
+                            }
+                            
+                            function saveN8nConfig(event) {
+                                event.preventDefault();
+                                const messageDiv = document.getElementById('n8n-config-message');
+                                const submitBtn = event.target.querySelector('button[type="submit"]');
+                                const originalText = submitBtn ? submitBtn.textContent : '';
+
+                                const configData = {
+                                    webhook_url: document.getElementById('n8n-webhook-url').value.trim(),
+                                    webhook_secret: document.getElementById('n8n-webhook-secret').value.trim(),
+                                    api_key: document.getElementById('n8n-api-key').value.trim()
+                                };
+
+                                if (submitBtn) {
+                                    submitBtn.textContent = '⏳ Guardando...';
+                                    submitBtn.disabled = true;
+                                }
+                                messageDiv.style.display = 'block';
+                                messageDiv.style.background = 'rgba(255, 152, 0, 0.2)';
+                                messageDiv.textContent = '⏳ Guardando configuración...';
+
+                                fetch('/admin/api/n8n/config', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(configData)
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        messageDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                                        messageDiv.style.color = '#4caf50';
+                                        messageDiv.textContent = '✅ ' + (data.message || 'Configuración guardada correctamente');
+                                        setTimeout(closeN8nConfigModal, 1500);
+                                    } else {
+                                        messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                        messageDiv.style.color = '#f44336';
+                                        messageDiv.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
+                                    }
+                                    if (submitBtn) {
+                                        submitBtn.textContent = originalText;
+                                        submitBtn.disabled = false;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    messageDiv.style.color = '#f44336';
+                                    messageDiv.textContent = '❌ Error de conexión: ' + (error.message || 'No se pudo conectar con el servidor');
+                                    if (submitBtn) {
+                                        submitBtn.textContent = originalText;
+                                        submitBtn.disabled = false;
+                                    }
+                                });
+                            }
+                            
+                            function testN8nConnection() {
+                                const messageDiv = document.getElementById('n8n-config-message');
+                                const webhookUrl = document.getElementById('n8n-webhook-url').value.trim();
+                                
+                                if (!webhookUrl) {
+                                    messageDiv.style.display = 'block';
+                                    messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    messageDiv.style.color = '#f44336';
+                                    messageDiv.textContent = '❌ Por favor, ingresa la URL del webhook primero';
+                                    return;
+                                }
+
+                                messageDiv.style.display = 'block';
+                                messageDiv.style.background = 'rgba(255, 152, 0, 0.2)';
+                                messageDiv.textContent = '⏳ Probando conexión...';
+
+                                fetch('/admin/api/n8n/test', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        messageDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                                        messageDiv.style.color = '#4caf50';
+                                        messageDiv.textContent = '✅ ' + (data.message || 'Conexión exitosa');
+                                    } else {
+                                        messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                        messageDiv.style.color = '#f44336';
+                                        messageDiv.textContent = '❌ ' + (data.error || 'Error al probar conexión');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    messageDiv.style.color = '#f44336';
+                                    messageDiv.textContent = '❌ Error de conexión: ' + (error.message || 'No se pudo conectar con el servidor');
+                                });
+                            }
+                            
+                            // Funciones n8n ya están definidas globalmente arriba, no es necesario redefinirlas aquí
+                            
+                            // ==========================================
+                            // FIN FUNCIONES N8N
+                            // ==========================================
+                            
+                            // Actualizar hora en tiempo real
+                            function updateCurrentTime() {
+                                const now = new Date();
+                                const hours = String(now.getHours()).padStart(2, '0');
+                                const minutes = String(now.getMinutes()).padStart(2, '0');
+                                const seconds = String(now.getSeconds()).padStart(2, '0');
+                                const timeElement = document.getElementById('current-time-display');
+                                if (timeElement) {
+                                    timeElement.textContent = `${hours}:${minutes}:${seconds}`;
+                                }
+                            }
+
+                            // Actualizar cada segundo
+                            updateCurrentTime();
+                            setInterval(updateCurrentTime, 1000);
+
+                            // Funciones para el modal de configuración de API
+                            function openApiConfigModal() {
+                                const modal = document.getElementById('api-config-modal');
+                                if (modal) {
+                                    modal.style.display = 'flex';
+                                }
+                            }
+
+                            function closeApiConfigModal() {
+                                const modal = document.getElementById('api-config-modal');
+                                if (modal) {
+                                    modal.style.display = 'none';
+                                }
+                                // Limpiar mensajes
+                                const messageDiv = document.getElementById('api-config-message');
+                                if (messageDiv) {
+                                    messageDiv.style.display = 'none';
+                                    messageDiv.textContent = '';
+                                }
+                            }
+
+                            function saveApiConfig(event) {
+                                event.preventDefault();
+
+                                const form = event.target;
+                                const apiUrl = document.getElementById('api-url-input').value.trim();
+                                const apiKey = document.getElementById('api-key-input').value.trim();
+                                const messageDiv = document.getElementById('api-config-message');
+                                const submitBtn = form.querySelector('button[type="submit"]');
+
+                                // Validar
+                                if (!apiUrl || !apiKey) {
+                                    messageDiv.style.display = 'block';
+                                    messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    messageDiv.style.color = '#f44336';
+                                    messageDiv.textContent = '❌ Por favor, completa todos los campos';
+                                    return;
+                                }
+
+                                // Mostrar loading
+                                const originalText = submitBtn.textContent;
+                                submitBtn.textContent = '⏳ Guardando...';
+                                submitBtn.disabled = true;
+
+                                // Enviar datos
+                                fetch('/admin/api/update-config', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        api_url: apiUrl,
+                                        api_key: apiKey
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        messageDiv.style.display = 'block';
+                                        messageDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                                        messageDiv.style.color = '#4caf50';
+                                        messageDiv.textContent = '✅ Configuración guardada correctamente';
+                                    } else {
+                                        messageDiv.style.display = 'block';
+                                        messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                        messageDiv.style.color = '#f44336';
+                                        messageDiv.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
+                                    }
+                                    submitBtn.textContent = originalText;
+                                    submitBtn.disabled = false;
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    messageDiv.style.display = 'block';
+                                    messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    messageDiv.style.color = '#f44336';
+                                    messageDiv.textContent = '❌ Error de conexión: ' + (error.message || 'No se pudo conectar con el servidor');
+                                    submitBtn.textContent = originalText;
+                                    submitBtn.disabled = false;
+                                });
+                            }
+
+                            document.addEventListener('click', function (event) {
+                                const modal = document.getElementById('api-config-modal');
+                                if (modal && event.target === modal) {
+                                    closeApiConfigModal();
+                                }
+                            });
+
+                            // Actualizar estado de API periódicamente
+                            function refreshApiStatus() {
+                                fetch('/api/services/status')
+                                .then(response => response.json())
+                                .then(data => {
+                                    // Actualizar estado si es necesario
+                                })
+                                .catch(error => {
+                                    console.error('Error al actualizar estado:', error);
+                                });
+                            }
+
+                            function loadApiLogs() {
+                                const container = document.getElementById('api-logs-container');
+                                if (!container) return;
+
+                                container.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">Cargando...</div>';
+
+                                fetch('/admin/api/connection-logs')
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success && data.logs) {
+                                        let html = '<div style="max-height: 400px; overflow-y: auto;">';
+                                        data.logs.forEach(log => {
+                                            html += `<div style="padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem;">
+                                                <span style="color: #888;">${log.timestamp || ''}</span>
+                                                <span style="color: ${log.success ? '#4caf50' : '#f44336'}; margin-left: 10px;">${log.message || ''}</span>
+                                            </div>`;
+                                        });
+                                        html += '</div>';
+                                        container.innerHTML = html;
+                                    } else {
+                                        container.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">No hay logs disponibles</div>';
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error al cargar logs:', error);
+                                    container.innerHTML = '<div style="text-align: center; color: #f44336; padding: 20px;">Error al cargar logs</div>';
+                                });
+                            }
+
+                            function checkApiConnection() {
+                                const checkBtn = document.getElementById('check-connection-btn');
+                                const resultDiv = document.getElementById('connection-check-result');
+
+                                if (!checkBtn || !resultDiv) return;
+
+                                // Deshabilitar botón y mostrar loading
+                                const originalText = checkBtn.textContent;
+                                checkBtn.disabled = true;
+                                checkBtn.textContent = '⏳ Comprobando...';
+                                checkBtn.style.opacity = '0.6';
+                                resultDiv.style.display = 'none';
+
+                                // Llamar al endpoint de verificación manual
+                                fetch('/admin/api/check-connection', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    resultDiv.style.display = 'block';
+                                    if (data.success) {
+                                        resultDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                                        resultDiv.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                                        resultDiv.style.color = '#4caf50';
+                                        resultDiv.textContent = '✅ ' + (data.message || 'Conexión exitosa');
+                                    } else {
+                                        resultDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                        resultDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                        resultDiv.style.color = '#f44336';
+                                        resultDiv.textContent = '❌ ' + (data.error || 'Error de conexión');
+                                    }
+                                    checkBtn.disabled = false;
+                                    checkBtn.textContent = originalText;
+                                    checkBtn.style.opacity = '1';
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    resultDiv.style.display = 'block';
+                                    resultDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    resultDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    resultDiv.style.color = '#f44336';
+                                    resultDiv.textContent = '❌ Error de conexión: ' + (error.message || 'No se pudo conectar');
+                                    checkBtn.disabled = false;
+                                    checkBtn.textContent = originalText;
+                                    checkBtn.style.opacity = '1';
+                                });
+                            }
+
+                            function openEmployeesModal() {
+                                const modal = document.getElementById('employees-modal');
+                                if (modal) {
+                                    modal.style.display = 'flex';
+                                    loadEmployees();
+                                }
+                            }
+
+                            function closeEmployeesModal() {
+                                const modal = document.getElementById('employees-modal');
+                                if (modal) {
+                                    modal.style.display = 'none';
+                                    cancelEmployeeForm();
+                                }
+                            }
+
+                            // Variable global para almacenar todo el equipo
+                            let allEmployees = [];
+
+                            function getCargoIcon(cargo) {
+                                if (!cargo) return '👤';
+                                const cargoUpper = cargo.toUpperCase();
+                                if (cargoUpper.includes('BARRA')) return '🍺';
+                                if (cargoUpper.includes('CAJA')) return '💰';
+                                if (cargoUpper.includes('GUARDIA')) return '🛡️';
+                                if (cargoUpper.includes('ANFITRIONA')) return '👋';
+                                if (cargoUpper.includes('ASEO')) return '🧹';
+                                if (cargoUpper.includes('GUARDARROP')) return '🧥';
+                                if (cargoUpper.includes('TÉCNICA') || cargoUpper.includes('TECNICA')) return '🔧';
+                                if (cargoUpper.includes('DRAG')) return '🎭';
+                                if (cargoUpper.includes('DJ')) return '🎵';
+                                if (cargoUpper.includes('COPERX')) return '🍸';
+                                return '👤';
+                            }
+
+                            function loadEmployees() {
+                                const listDiv = document.getElementById('employees-list');
+                                if (!listDiv) return;
+
+                                listDiv.innerHTML = '<p style="text-align: center; color: #aaa; padding: 20px;">Cargando equipo...</p>';
+
+                                fetch('/admin/api/employees')
+                            function updateEmployeesStats() {
+                                const total = allEmployees.length;
+                                const active = allEmployees.filter(e => e.active).length;
+                                const inactive = total - active;
+
+                                document.getElementById('total-employees').textContent = total;
+                                document.getElementById('active-employees').textContent = active;
+                                document.getElementById('inactive-employees').textContent = inactive;
+                            }
+
+                            function filterEmployees() {
+                                const searchTerm = (document.getElementById('employee-search')?.value || '').toLowerCase();
+                                const filterCargo = document.getElementById('employee-filter-cargo')?.value || '';
+                                const filterStatus = document.getElementById('employee-filter-status')?.value || '';
+
+                                const filtered = allEmployees.filter(emp => {
+                                    // Búsqueda por nombre o cargo
+                                    const matchesSearch = !searchTerm ||
+                                        (emp.name || '').toLowerCase().includes(searchTerm) ||
+                                        (emp.cargo || '').toLowerCase().includes(searchTerm);
+
+                                    // Filtro por cargo
+                                    const matchesCargo = !filterCargo ||
+                                        (emp.cargo || '').toUpperCase().includes(filterCargo.toUpperCase());
+
+                                    // Filtro por estado
+                                    const matchesStatus = !filterStatus ||
+                                        (filterStatus === 'active' && emp.active) ||
+                                        (filterStatus === 'inactive' && !emp.active);
+
+                                    return matchesSearch && matchesCargo && matchesStatus;
+                                });
+
+                                displayEmployees(filtered);
+                            }
+
+                            function displayEmployees(employees) {
+                                const listDiv = document.getElementById('employees-list');
+                                if (!listDiv) return;
+
+                                if (employees.length === 0) {
+                                    listDiv.innerHTML = `
+            <div style="text-align: center; padding: 40px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 10px;">
+                <p style="color: #667eea; font-size: 1.1rem; margin: 0;">No se encontraron miembros del equipo</p>
+                <p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Intenta ajustar los filtros de búsqueda</p>
+            </div>
+        `;
+                                    return;
+                                }
+
+                                // Ordenar por nombre
+                                employees.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+                                let html = '<div style="display: grid; gap: 12px;">';
+                                employees.forEach(emp => {
+                                    const empId = String(emp.id);
+                                    const empName = (emp.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                                    const cargoIcon = getCargoIcon(emp.cargo);
+
+                                    html += `
+            <div style="background: rgba(26, 26, 46, 0.5); border: 1px solid ${emp.active ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255, 152, 0, 0.3)'}; border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;" 
+                 onmouseover="this.style.borderColor='${emp.active ? 'rgba(76, 175, 80, 0.6)' : 'rgba(255, 152, 0, 0.6)'}'; this.style.transform='translateY(-2px)'"
+                 onmouseout="this.style.borderColor='${emp.active ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255, 152, 0, 0.3)'}'; this.style.transform='translateY(0)'">
+                <div style="flex: 1; display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 2.5rem;">${cargoIcon}</div>
+                    <div style="flex: 1;">
+                        <h4 style="color: #e8e8e8; margin: 0 0 5px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            ${emp.name || 'Sin nombre'}
+                            ${emp.active ? '<span style="display: inline-block; width: 8px; height: 8px; background: #4caf50; border-radius: 50%;"></span>' : '<span style="display: inline-block; width: 8px; height: 8px; background: #ff9800; border-radius: 50%;"></span>'}
+                        </h4>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.9rem; color: #aaa;">
+                            <span><strong>Cargo:</strong> <span style="color: #667eea;">${emp.cargo || 'N/A'}</span></span>
+                            <span><strong>PIN:</strong> <span style="color: ${emp.pin ? '#4caf50' : '#ff9800'};">${emp.pin ? '****' : 'No configurado'}</span></span>
+                            <span><strong>Estado:</strong> <span style="color: ${emp.active ? '#4caf50' : '#ff9800'};">${emp.active ? '✅ Activo' : '⏸️ Inactivo'}</span></span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="editEmployee('${empId}')" style="padding: 8px 16px; background: rgba(102, 126, 234, 0.3); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s;"
+                            onmouseover="this.style.background='rgba(102, 126, 234, 0.5)'"
+                            onmouseout="this.style.background='rgba(102, 126, 234, 0.3)'">
+                        ✏️ Editar
+                    </button>
+                    <button onclick="deleteEmployee('${empId}', '${empName}')" style="padding: 8px 16px; background: rgba(244, 67, 54, 0.3); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s;"
+                            onmouseover="this.style.background='rgba(244, 67, 54, 0.5)'"
+                            onmouseout="this.style.background='rgba(244, 67, 54, 0.3)'">
+                        🗑️ Eliminar
+                    </button>
+        `;
+                                });
+                                html += '</div>';
+                                listDiv.innerHTML = html;
+                            }
+
+                            function updateEmployeesDisplay() {
+                                filterEmployees();
+                            }
+
+                            function openAddEmployeeForm() {
+                                const formDiv = document.getElementById('add-employee-form');
+                                const listDiv = document.getElementById('employees-list');
+
+                                if (formDiv) {
+                                    // Limpiar formulario
+                                    document.getElementById('employee-form').reset();
+                                    document.getElementById('employee-id').value = '';
+                                    document.getElementById('employee-active').checked = true;
+
+                                    // Ocultar lista y mostrar formulario
+                                    if (listDiv) {
+                                        listDiv.style.display = 'none';
+                                    }
+                                    formDiv.style.display = 'block';
+
+                                    // Scroll suave al formulario
+                                    setTimeout(() => {
+                                        formDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                    }, 100);
+                                }
+                            }
+
+                            function cancelEmployeeForm() {
+                                const formDiv = document.getElementById('add-employee-form');
+                                const listDiv = document.getElementById('employees-list');
+
+                                if (formDiv) {
+                                    // Limpiar formulario
+                                    document.getElementById('employee-form').reset();
+                                    document.getElementById('employee-id').value = '';
+                                    document.getElementById('employee-active').checked = true;
+
+                                    // Ocultar formulario y mostrar lista
+                                    formDiv.style.display = 'none';
+                                    if (listDiv) {
+                                        listDiv.style.display = 'block';
+                                    }
+                                }
+                            }
+
+                            function editEmployee(id) {
+                                fetch(`/admin/api/employees/${encodeURIComponent(id)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success && data.employee) {
+                                        const emp = data.employee;
+                                        document.getElementById('employee-id').value = emp.id;
+                                        document.getElementById('employee-name').value = emp.name || '';
+                                        document.getElementById('employee-cargo').value = emp.cargo || '';
+                                        document.getElementById('employee-pin').value = emp.pin || '';
+                                        document.getElementById('employee-active').checked = emp.active !== false;
+                                        openAddEmployeeForm();
+                                    } else {
+                                        alert('❌ Error al cargar empleado: ' + (data.error || 'Error desconocido'));
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    alert('❌ Error de conexión al cargar empleado');
+                                });
+                            }
+
+                            function deleteEmployee(id, name) {
+                                if (!confirm(`¿Estás seguro de que deseas eliminar al miembro del equipo "${name}"?\n\nEsta acción no se puede deshacer.`)) {
+                                    return;
+                                }
+
+                                fetch(`/admin/api/employees/${encodeURIComponent(id)}`, {
+                                    method: 'DELETE'
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        showEmployeeMessage('✅ Empleado eliminado correctamente', 'success');
+                                        loadEmployees();
+                                        cancelEmployeeForm();
+                                    } else {
+                                        showEmployeeMessage('❌ Error: ' + (data.error || 'Error desconocido'), 'error');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    showEmployeeMessage('❌ Error de conexión al eliminar empleado', 'error');
+                                });
+                            }
+
+                            function saveEmployee(event) {
+                                event.preventDefault();
+
+                                const form = event.target;
+                                const employeeId = document.getElementById('employee-id').value;
+
+                                const data = {
+                                    name: document.getElementById('employee-name').value.trim(),
+                                    cargo: document.getElementById('employee-cargo').value.trim(),
+                                    pin: document.getElementById('employee-pin').value.trim(),
+                                    active: document.getElementById('employee-active').checked
+                                };
+
+                                if (!data.name) {
+                                    alert('❌ El nombre es obligatorio');
+                                    return;
+                                }
+
+                                const url = employeeId ? `/admin/api/employees/${encodeURIComponent(employeeId)}` : '/admin/api/employees';
+                                const method = employeeId ? 'PUT' : 'POST';
+
+                                const submitBtn = form.querySelector('button[type="submit"]');
+                                const originalText = submitBtn.textContent;
+                                submitBtn.disabled = true;
+                                submitBtn.textContent = '⏳ Guardando...';
+
+                                fetch(url, {
+                                    method: method,
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(data)
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        showEmployeeMessage(employeeId ? '✅ Empleado actualizado correctamente' : '✅ Empleado agregado correctamente', 'success');
+                                        loadEmployees();
+                                        cancelEmployeeForm();
+                                    } else {
+                                        showEmployeeMessage('❌ Error: ' + (data.error || 'Error desconocido'), 'error');
+                                    }
+                                    submitBtn.disabled = false;
+                                    submitBtn.textContent = originalText;
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    showEmployeeMessage('❌ Error de conexión al guardar empleado', 'error');
+                                    submitBtn.disabled = false;
+                                    submitBtn.textContent = originalText;
+                                });
+                            }
+
+                            function showEmployeeMessage(message, type) {
+                                const messageDiv = document.createElement('div');
+                                messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        background: ${type === 'success' ? 'rgba(76, 175, 80, 0.9)' : 'rgba(244, 67, 54, 0.9)'};
+        color: white;
+        border-radius: 8px;
+        z-index: 10001;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    `;
+                                messageDiv.textContent = message;
+                                document.body.appendChild(messageDiv);
+
+                                setTimeout(() => {
+                                    messageDiv.style.animation = 'slideOut 0.3s ease';
+                                    setTimeout(() => messageDiv.remove(), 300);
+                                }, 3000);
+                            }
+
+                            // Validación mejorada del PIN
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const pinInput = document.getElementById('employee-pin');
+                                if (pinInput) {
+                                    pinInput.addEventListener('input', function (e) {
+                                        // Solo permitir números
+                                        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                                        // Limitar a 4 dígitos
+                                        if (e.target.value.length > 4) {
+                                            e.target.value = e.target.value.slice(0, 4);
+                                        }
+                                    });
+                                }
+                            });
+
+                            // Cerrar modal de equipo al hacer clic fuera
+                            document.addEventListener('click', function (event) {
+                                const modal = document.getElementById('employees-modal');
+                                if (modal && event.target === modal) {
+                                    closeEmployeesModal();
+                                }
+                            });
+
+                            // Agregar estilos de animación
+                            const style = document.createElement('style');
+                            style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+                            document.head.appendChild(style);
+
+
+                            // Funciones para control de servicios externos
+                            function loadServicesStatus() {
+                                fetch('/admin/api/services/status')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data && data.services) {
+                                            updateServicesUI(data.services);
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error al cargar estado de servicios:', error);
+                                    });
+                            }
+
+                            function updateServicesUI(services) {
+                                // Actualizar estado de API
+                                const apiBtn = document.getElementById('toggle-api-btn');
+                                const apiStatus = document.getElementById('api-service-status');
+                                if (apiBtn && apiStatus) {
+                                    const enabled = services.api.enabled;
+                                    apiBtn.textContent = enabled ? '🟢 Activar' : '🔴 Desactivar';
+                                    apiBtn.style.background = enabled ? 'rgba(76, 175, 80, 0.3)' : 'rgba(244, 67, 54, 0.3)';
+                                    apiBtn.style.borderColor = enabled ? 'rgba(76, 175, 80, 0.5)' : 'rgba(244, 67, 54, 0.5)';
+                                    apiBtn.style.color = enabled ? '#4caf50' : '#f44336';
+                                    if (enabled) {
+                                        apiStatus.classList.remove('status-offline');
+                                        apiStatus.classList.add('status-online');
+                                    } else {
+                                        apiStatus.classList.remove('status-online');
+                                        apiStatus.classList.add('status-offline');
+                                    }
+                                }
+
+                                // Actualizar estado de OpenAI
+                                const openaiBtn = document.getElementById('toggle-openai-btn');
+                                const openaiStatus = document.getElementById('openai-service-status');
+                                if (openaiBtn && openaiStatus) {
+                                    const enabled = services.openai.enabled;
+                                    // Si está activo, mostrar opción de desactivar. Si está inactivo, mostrar opción de activar.
+                                    openaiBtn.textContent = enabled ? '🔴 Desactivar' : '🟢 Activar';
+                                    openaiBtn.style.background = enabled ? 'rgba(244, 67, 54, 0.3)' : 'rgba(76, 175, 80, 0.3)';
+                                    openaiBtn.style.borderColor = enabled ? 'rgba(244, 67, 54, 0.5)' : 'rgba(76, 175, 80, 0.5)';
+                                    openaiBtn.style.color = enabled ? '#f44336' : '#4caf50';
+                                    if (enabled) {
+                                        openaiStatus.classList.remove('status-offline');
+                                        openaiStatus.classList.add('status-online');
+                                    } else {
+                                        openaiStatus.classList.remove('status-online');
+                                        openaiStatus.classList.add('status-offline');
+                                    }
+                                }
+
+                            }
+
+                            function toggleService(serviceName) {
+                                // Obtener estado actual
+                                fetch('/admin/api/services/status')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data && data.services && data.services[serviceName]) {
+                                            const currentState = data.services[serviceName].enabled;
+                                            const newState = !currentState;
+                                            
+                                            // Llamar a la API para toggle
+                                            fetch('/admin/api/services/toggle', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                body: JSON.stringify({
+                                                    service: serviceName,
+                                                    enabled: newState
+                                                })
+                                            })
+                                            .then(response => response.json())
+                                            .then(result => {
+                                                if (result.success) {
+                                                    // Recargar estado
+                                                    loadServicesStatus();
+                                                } else {
+                                                    console.error('Error al toggle servicio:', result.error);
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error('Error al toggle servicio:', error);
+                                            });
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error al obtener estado de servicios:', error);
+                                    });
+                            }
+
+                            document.addEventListener('DOMContentLoaded', function () {
+                                // Solo inicializar si existe la UI de servicios externos
+                                const el = document.querySelector('[data-services-control]') || document.getElementById('openai-service-status');
+                                if (!el) return;
+                                loadServicesStatus();
+                            });
+
+                            // Funciones para mostrar/ocultar logs de servicios (colapso)
+                            function toggleServiceLog(serviceName) {
+                                const collapse = document.getElementById(`${serviceName}-log-collapse`);
+                                const content = document.getElementById(`${serviceName}-log-content`);
+
+                                if (!collapse || !content) {
+                                    console.error(`No se encontró el colapso para ${serviceName}`);
+                                    return;
+                                }
+
+                                // Si está oculto, mostrar y cargar logs
+                                if (collapse.style.display === 'none' || !collapse.style.display) {
+                                    collapse.style.display = 'block';
+                                    content.innerHTML = '<div style="text-align: center; padding: 20px; color: #aaa;">⏳ Cargando logs...</div>';
+                                    loadServiceLogs(serviceName);
+                                } else {
+                                    // Si está visible, ocultar
+                                    collapse.style.display = 'none';
+                                }
+                            }
+
+                            function loadServiceLogs(serviceName) {
+                                const content = document.getElementById(`${serviceName}-log-content`);
+
+                                if (!content) {
+                                    console.error(`No se encontró el contenido de logs para ${serviceName}`);
+                                    return;
+                                }
+
+                                fetch(`/admin/api/services/${serviceName}/logs`, {
+                                    credentials: 'same-origin',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            return response.json().then(err => {
+                                                throw new Error(err.message || `Error HTTP ${response.status}`);
+                                            });
+                                        }
+                                        return response.json();
+                                    })
+                                    .then(data => {
+                                        if (data && data.success) {
+                                            if (data.logs && data.logs.length > 0) {
+                                                let html = '<div style="max-height: 400px; ">';
+                                                html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">';
+                                                html += '<thead><tr style="border-bottom: 2px solid rgba(102, 126, 234, 0.5); background: rgba(26, 26, 46, 0.95);">';
+                                                html += '<th style="padding: 10px; text-align: left; color: #667eea; font-weight: 600;">Fecha/Hora</th>';
+                                                html += '<th style="padding: 10px; text-align: left; color: #667eea; font-weight: 600;">Estado</th>';
+                                                html += '<th style="padding: 10px; text-align: left; color: #667eea; font-weight: 600;">Mensaje</th>';
+                                                html += '</tr></thead><tbody>';
+
+                                                data.logs.forEach(log => {
+                                                    const statusColor = log.status === 'online' || log.status === 'success' ? '#4caf50' :
+                                                        (log.status === 'offline' || log.status === 'error' ? '#f44336' : '#ff9800');
+                                                    const statusIcon = log.status === 'online' || log.status === 'success' ? '✅' :
+                                                        (log.status === 'offline' || log.status === 'error' ? '❌' : '⚠️');
+
+                                                    html += '<tr style="border-bottom: 1px solid rgba(102, 126, 234, 0.2);">';
+                                                    html += `<td style="padding: 8px; color: #aaa; font-size: 0.8rem;">${log.timestamp || 'N/A'}</td>`;
+                                                    html += `<td style="padding: 8px; color: ${statusColor}; font-weight: bold; font-size: 0.8rem;">${statusIcon} ${(log.status || 'unknown').toUpperCase()}</td>`;
+                                                    html += `<td style="padding: 8px; color: #888; font-size: 0.8rem;">${log.message || log.error || 'N/A'}</td>`;
+                                                    html += '</tr>';
+                                                });
+
+                                                html += '</tbody></table></div>';
+                                                content.innerHTML = html;
+                                            } else {
+                                                content.innerHTML = `
+                        <div style="text-align: center; padding: 30px; color: #aaa;">
+                            <p style="font-size: 1rem; margin-bottom: 10px;">📭</p>
+                            <p>No hay logs disponibles para este servicio aún.</p>
+                        </div>
+                    `;
+                                            }
+                                        } else {
+                                            content.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #f44336;">
+                        <p style="font-size: 1rem; margin-bottom: 10px;">❌</p>
+                        <p>Error al cargar los logs.</p>
+                        <p style="font-size: 0.85rem; margin-top: 10px;">${data?.message || 'Error desconocido'}</p>
+                    </div>
+                `;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error al cargar logs:', error);
+                                        content.innerHTML = `
+                <div style="text-align: center; padding: 30px; color: #f44336;">
+                    <p style="font-size: 1rem; margin-bottom: 10px;">❌</p>
+                    <p>Error al cargar los logs.</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px;">${error.message || 'Error desconocido'}</p>
+                </div>
+            `;
+                                    });
+                            }
+
+
+                            // Función para reiniciar todo el sistema
+                            function restartEverything() {
+                                const btn = document.getElementById('restart-everything-btn');
+                                const messageDiv = document.getElementById('restart-everything-message');
+
+                                // Confirmar acción con advertencia clara
+                                const confirmMessage = '¿Estás seguro de que deseas REINICIAR TODO el sistema?\n\n' +
+                                    'Esto incluirá:\n' +
+                                    '• Reinicio de todos los servicios\n' +
+                                    '• Limpieza de cachés\n' +
+                                    '• Recarga de configuración\n' +
+                                    '• La página se recargará automáticamente\n\n' +
+                                    'Esta acción no se puede deshacer.';
+
+                                if (!confirm(confirmMessage)) {
+                                    return;
+                                }
+
+                                // Deshabilitar botón
+                                const originalText = btn.textContent;
+                                btn.disabled = true;
+                                btn.textContent = '⏳ Reiniciando Todo...';
+                                btn.style.opacity = '0.7';
+                                btn.style.cursor = 'not-allowed';
+
+
+                                // Llamar a la API
+                                fetch('/admin/api/restart-everything', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        messageDiv.style.display = 'block';
+                                        messageDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                                        messageDiv.style.color = '#4caf50';
+                                        messageDiv.textContent = '✅ Sistema reiniciado. La página se recargará en 3 segundos...';
+                                        setTimeout(() => {
+                                            window.location.reload();
+                                        }, 3000);
+                                    } else {
+                                        btn.disabled = false;
+                                        btn.textContent = originalText;
+                                        btn.style.opacity = '1';
+                                        btn.style.cursor = 'pointer';
+                                        messageDiv.style.display = 'block';
+                                        messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                        messageDiv.style.color = '#f44336';
+                                        messageDiv.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
+                                    }
+                                })
+                                .catch(error => {
+                                    btn.disabled = false;
+                                    btn.textContent = originalText;
+                                    btn.style.opacity = '1';
+                                    btn.style.cursor = 'pointer';
+                                    messageDiv.style.display = 'block';
+                                    messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    messageDiv.style.color = '#f44336';
+                                    messageDiv.textContent = '❌ Error de conexión: ' + error.message;
+                                });
+                            }
+
+                            function openServiceConfig(serviceName) {
+                                const modal = document.getElementById('service-config-modal');
+                                const title = document.getElementById('service-config-title');
+                                const content = document.getElementById('service-config-content');
+
+                                if (!modal || !title || !content) return;
+
+                                // Configurar título y contenido según el servicio
+                                let serviceTitle = '';
+                                let serviceConfigHTML = '';
+
+                                if (serviceName === 'openai') {
+                                    serviceTitle = '🤖 Configurar OpenAI';
+                                    serviceConfigHTML = `
+            <p style="color: #aaa; margin-bottom: 20px; font-size: 0.9rem;">
+                Configura las credenciales de OpenAI para habilitar el agente virtual de redes sociales.
+            </p>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                    API Key:
+                </label>
+                <input type="password" id="openai-api-key" name="api_key" 
+                       placeholder="sk-..."
+                       style="width: 100%; padding: 12px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem; font-family: monospace;"
+                       required>
+                <p style="font-size: 0.85rem; color: #aaa; margin-top: 5px;">
+                    Tu API key de OpenAI (comienza con sk-)
+                </p>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                    Organization ID (Opcional):
+                </label>
+                <input type="text" id="openai-org-id" name="org_id" 
+                       placeholder="org-..."
+                       style="width: 100%; padding: 12px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem;">
+                <p style="font-size: 0.85rem; color: #aaa; margin-top: 5px;">
+                    ID de organización de OpenAI (opcional)
+                </p>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                    Project ID (Opcional):
+                </label>
+                <input type="text" id="openai-project-id" name="project_id" 
+                       placeholder="proj-..."
+                       style="width: 100%; padding: 12px; background: rgba(26, 26, 46, 0.5); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #e8e8e8; font-size: 0.95rem;">
+                <p style="font-size: 0.85rem; color: #aaa; margin-top: 5px;">
+                    ID de proyecto de OpenAI (opcional)
+                </p>
+            </div>
+            <input type="hidden" name="service" value="openai">
+        `;
+                                }
+
+                                title.textContent = serviceTitle;
+                                content.innerHTML = serviceConfigHTML;
+                                modal.style.display = 'flex';
+                            }
+
+                            function closeServiceConfigModal() {
+                                const modal = document.getElementById('service-config-modal');
+                                const messageDiv = document.getElementById('service-config-message');
+                                if (modal) {
+                                    modal.style.display = 'none';
+                                }
+                                if (messageDiv) {
+                                    messageDiv.style.display = 'none';
+                                    messageDiv.textContent = '';
+                                }
+                                // Limpiar formulario
+                                const form = document.getElementById('service-config-form');
+                                if (form) {
+                                    form.reset();
+                                }
+                            }
+
+                            function saveServiceConfig(event) {
+                                event.preventDefault();
+                                const form = event.target;
+                                const formData = new FormData(form);
+                                const service = formData.get('service');
+                                const messageDiv = document.getElementById('service-config-message');
+                                const submitBtn = form.querySelector('button[type="submit"]');
+
+                                // Preparar datos según el servicio
+                                const configData = {
+                                    service: service
+                                };
+
+                                if (service === 'openai') {
+                                    configData.api_key = document.getElementById('openai-api-key').value.trim();
+                                    configData.org_id = document.getElementById('openai-org-id').value.trim() || null;
+                                    configData.project_id = document.getElementById('openai-project-id').value.trim() || null;
+                                }
+
+                                // Mostrar mensaje de carga
+                                const originalText = submitBtn ? submitBtn.textContent : '';
+                                if (submitBtn) {
+                                    submitBtn.textContent = '⏳ Guardando...';
+                                    submitBtn.disabled = true;
+                                }
+                                messageDiv.style.display = 'block';
+                                messageDiv.style.background = 'rgba(255, 152, 0, 0.2)';
+
+                                // Enviar a la API
+                                fetch('/admin/api/services/configure', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(configData)
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        messageDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                                        messageDiv.style.color = '#4caf50';
+                                        messageDiv.textContent = '✅ ' + (data.message || 'Configuración guardada correctamente');
+                                        setTimeout(() => {
+                                            closeServiceConfigModal();
+                                        }, 1500);
+                                    } else {
+                                        messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                        messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                        messageDiv.style.color = '#f44336';
+                                        messageDiv.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
+                                    }
+                                    submitBtn.textContent = originalText;
+                                    submitBtn.disabled = false;
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    messageDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    messageDiv.style.color = '#f44336';
+                                    messageDiv.textContent = '❌ Error de conexión: ' + (error.message || 'No se pudo conectar con el servidor');
+                                    submitBtn.textContent = originalText;
+                                    submitBtn.disabled = false;
+                                });
+                            }
+
+                            // Funciones n8n ya están definidas globalmente arriba, no es necesario redefinirlas aquí
+                            
+                            window.showN8nMetrics = showN8nMetrics;
+
+                            function deployToProduction() {
+                                console.log('🚀 deployToProduction() llamada');
+                                const btn = document.getElementById('deploy-btn');
+                                const statusDiv = document.getElementById('deploy-status');
+
+                                if (!btn || !statusDiv) {
+                                    console.error('❌ No se encontraron los elementos del botón de deployment', { btn, statusDiv });
+                                    alert('Error: No se pudo encontrar el botón de deployment. Por favor, recarga la página.');
+                                    return;
+                                }
+
+                                console.log('✅ Elementos encontrados, procediendo con deployment');
+
+                                // Confirmar
+                                if (!confirm('¿Estás seguro de que quieres actualizar el sitio en producción?\n\nEsto desplegará los últimos cambios a stvaldivia.cl')) {
+                                    return;
+                                }
+
+                                // Deshabilitar botón
+                                const originalText = btn.innerHTML;
+                                btn.disabled = true;
+                                btn.innerHTML = '⏳ Desplegando...';
+                                btn.style.opacity = '0.6';
+
+                                // Mostrar status
+                                statusDiv.style.display = 'block';
+                                statusDiv.style.background = 'rgba(102, 126, 234, 0.2)';
+                                statusDiv.style.border = '1px solid rgba(102, 126, 234, 0.5)';
+                                statusDiv.style.color = '#667eea';
+                                statusDiv.innerHTML = '⏳ Iniciando deployment...';
+
+                                // Obtener token CSRF del meta tag
+                                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+                                // Preparar headers
+                                const headers = {
+                                    'Content-Type': 'application/json'
+                                };
+
+                                // Agregar token CSRF si está disponible
+                                if (csrfToken) {
+                                    headers['X-CSRFToken'] = csrfToken;
+                                }
+
+                                // Llamar al endpoint
+                                fetch('/admin/api/deploy', {
+                                    method: 'POST',
+                                    headers: headers,
+                                    credentials: 'same-origin'
+                                })
+                                .then(response => {
+                                    // Verificar si la respuesta es JSON
+                                    const contentType = response.headers.get('content-type');
+                                    if (!contentType || !contentType.includes('application/json')) {
+                                        return response.text().then(text => {
+                                            console.error('❌ Respuesta no es JSON. Status:', response.status, 'Content:', text.substring(0, 200));
+                                            throw new Error(`El servidor respondió con un error (Status: ${response.status}). Por favor, verifica los logs del servidor.`);
+                                        });
+                                    }
+
+                                    if (!response.ok) {
+                                        return response.json().then(err => {
+                                            throw new Error(err.error || `Error HTTP ${response.status}`);
+                                        }).catch(() => {
+                                            throw new Error(`Error HTTP ${response.status}`);
+                                        });
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    if (data.success) {
+                                        statusDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                                        statusDiv.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                                        statusDiv.style.color = '#4caf50';
+                                        statusDiv.innerHTML = '✅ ' + (data.message || 'Deployment iniciado correctamente. El proceso se ejecuta en segundo plano.');
+                                        btn.disabled = false;
+                                        btn.innerHTML = originalText;
+                                        btn.style.opacity = '1';
+                                    } else {
+                                        statusDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                        statusDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                        statusDiv.style.color = '#f44336';
+                                        statusDiv.innerHTML = '❌ Error: ' + (data.error || 'Error desconocido');
+                                        btn.disabled = false;
+                                        btn.innerHTML = originalText;
+                                        btn.style.opacity = '1';
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('❌ Error en deployment:', error);
+                                    statusDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    statusDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    statusDiv.style.color = '#f44336';
+                                    statusDiv.innerHTML = '❌ Error: ' + (error.message || 'No se pudo conectar con el servidor. Verifica la consola del navegador para más detalles.');
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalText;
+                                    btn.style.opacity = '1';
+                                });
+                            }
+                            
+                            // Funciones de sincronización
+                            let syncInterval = null;
+                            
+                            function startSync() {
+                                const btn = document.getElementById('sync-btn');
+                                const statusDiv = document.getElementById('sync-status');
+                                const progressDiv = document.getElementById('sync-progress');
+                                const progressBar = document.getElementById('sync-progress-bar');
+                                const progressText = document.getElementById('sync-progress-text');
+                                const tablesDiv = document.getElementById('sync-tables');
+                                
+                                if (!btn || !statusDiv) return;
+                                
+                                // Confirmar
+                                if (!confirm('¿Iniciar sincronización de datos desde producción?\n\nEsto actualizará la base de datos local con los datos de la VM de Google.')) {
+                                    return;
+                                }
+                                
+                                // Deshabilitar botón
+                                const originalText = btn.innerHTML;
+                                btn.disabled = true;
+                                btn.innerHTML = '⏳ Sincronizando...';
+                                btn.style.opacity = '0.6';
+                                
+                                // Mostrar status
+                                statusDiv.style.display = 'block';
+                                statusDiv.style.background = 'rgba(33, 150, 243, 0.2)';
+                                statusDiv.style.border = '1px solid rgba(33, 150, 243, 0.5)';
+                                statusDiv.style.color = '#2196f3';
+                                statusDiv.innerHTML = '⏳ Creando backup y preparando sincronización...';
+                                
+                                // Mostrar progreso
+                                progressDiv.style.display = 'block';
+                                progressBar.style.width = '0%';
+                                progressText.textContent = '0%';
+                                tablesDiv.innerHTML = '';
+                                
+                                // Iniciar sincronización
+                                fetch('/admin/api/sync/start', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        statusDiv.innerHTML = '💾 Backup creado. Sincronización iniciada. Monitoreando progreso...';
+                                        // Iniciar polling de estado
+                                        startSyncPolling();
+                                    } else {
+                                        statusDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                        statusDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                        statusDiv.style.color = '#f44336';
+                                        statusDiv.innerHTML = '❌ Error: ' + (data.error || 'Error desconocido');
+                                        btn.disabled = false;
+                                        btn.innerHTML = originalText;
+                                        btn.style.opacity = '1';
+                                    }
+                                })
+                                .catch(error => {
+                                    statusDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                    statusDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                    statusDiv.style.color = '#f44336';
+                                    statusDiv.innerHTML = '❌ Error al iniciar sincronización: ' + error.message;
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalText;
+                                    btn.style.opacity = '1';
+                                });
+                            }
+                            
+                            function startSyncPolling() {
+                                // Polling cada 2 segundos
+                                syncInterval = setInterval(checkSyncStatus, 2000);
+                                // Primera verificación inmediata
+                                checkSyncStatus();
+                            }
+                            
+                            function stopSyncPolling() {
+                                if (syncInterval) {
+                                    clearInterval(syncInterval);
+                                    syncInterval = null;
+                                }
+                            }
+                            
+                            function checkSyncStatus() {
+                                fetch('/admin/api/sync/status')
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (!data.success) {
+                                        console.error('Error al obtener estado:', data.error);
+                                        return;
+                                    }
+                                    
+                                    const status = data.status;
+                                    const statusDiv = document.getElementById('sync-status');
+                                    const progressDiv = document.getElementById('sync-progress');
+                                    const progressBar = document.getElementById('sync-progress-bar');
+                                    const progressText = document.getElementById('sync-progress-text');
+                                    const tablesDiv = document.getElementById('sync-tables');
+                                    const btn = document.getElementById('sync-btn');
+                                    
+                                    if (!status.running) {
+                                        // Sincronización completada
+                                        stopSyncPolling();
+                                        
+                                        if (status.error) {
+                                            statusDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                                            statusDiv.style.border = '1px solid rgba(244, 67, 54, 0.5)';
+                                            statusDiv.style.color = '#f44336';
+                                            statusDiv.innerHTML = '❌ Error: ' + status.error;
+                                        } else {
+                                            const summary = status.results.summary || {};
+                                            let backupInfo = '';
+                                            if (status.backup) {
+                                                if (status.backup.error) {
+                                                    backupInfo = `<br><small style="color: #ff9800;">⚠️ Backup: ${status.backup.error}</small>`;
+                                                } else {
+                                                    const backupSize = (status.backup.size / 1024).toFixed(2);
+                                                    backupInfo = `<br><small style="color: #4caf50;">💾 Backup creado: ${backupSize} KB (${status.backup.timestamp})</small>`;
+                                                }
+                                            }
+                                            statusDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                                            statusDiv.style.border = '1px solid rgba(76, 175, 80, 0.5)';
+                                            statusDiv.style.color = '#4caf50';
+                                            statusDiv.innerHTML = `✅ Sincronización completada: ${summary.tables_synced || 0} tablas, ${summary.total_changes || 0} cambios (${summary.total_inserted || 0} insertados, ${summary.total_updated || 0} actualizados)${backupInfo}`;
+                                        }
+                                        
+                                        if (btn) {
+                                            btn.disabled = false;
+                                            btn.innerHTML = '🔄 Sincronizar Ahora';
+                                            btn.style.opacity = '1';
+                                        }
+                                        
+                                        progressBar.style.width = '100%';
+                                        progressText.textContent = '100%';
+                                    } else {
+                                        // Sincronización en curso
+                                        statusDiv.innerHTML = '⏳ Sincronizando... ' + (status.current_table || '');
+                                        
+                                        // Actualizar progreso
+                                        const progress = status.progress || {};
+                                        const tables = Object.keys(progress);
+                                        const totalTables = tables.length;
+                                        let completedTables = 0;
+                                        let totalProgress = 0;
+                                        
+                                        let tablesHTML = '';
+                                        tables.forEach(tableName => {
+                                            const tableProgress = progress[tableName];
+                                            if (tableProgress.status === 'completado') {
+                                                completedTables++;
+                                                totalProgress += 100;
+                                            } else if (tableProgress.status === 'procesando') {
+                                                totalProgress += tableProgress.progress || 0;
+                                            }
+                                            
+                                            const icon = getTableIcon(tableName);
+                                            const statusIcon = tableProgress.status === 'completado' ? '✅' : 
+                                                              tableProgress.status === 'error' ? '❌' : 
+                                                              tableProgress.status === 'procesando' ? '⏳' : '⏸️';
+                                            
+                                            tablesHTML += `<div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(33, 150, 243, 0.1);">
+                                                <span style="color: #aaa;">${statusIcon} ${icon} ${tableName}</span>
+                                                <span style="color: #2196f3;">${tableProgress.progress || 0}%</span>
+                                            </div>`;
+                                        });
+                                        
+                                        if (totalTables > 0) {
+                                            const avgProgress = Math.round(totalProgress / totalTables);
+                                            progressBar.style.width = avgProgress + '%';
+                                            progressText.textContent = avgProgress + '%';
+                                            tablesDiv.innerHTML = tablesHTML;
+                                        }
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error al verificar estado:', error);
+                                });
+                            }
+                            
+                            function getTableIcon(tableName) {
+                                const icons = {
+                                    'employees': '👥',
+                                    'cargos': '💼',
+                                    'cargo_salary_configs': '💰',
+                                    'jornadas': '📅',
+                                    'planilla_trabajadores': '📋',
+                                    'guardarropia_items': '🧥',
+                                    'register_closes': '💵',
+                                    'notifications': '🔔'
+                                };
+                                return icons[tableName] || '📦';
+                            }
+                            
+                            // Limpiar polling al salir de la página
+                            window.addEventListener('beforeunload', function() {
+                                stopSyncPolling();
+                            });
+                            
+                            document.addEventListener('click', function (event) {
+                                const modal = document.getElementById('service-config-modal');
+                                if (modal && event.target === modal) {
+                                    closeServiceConfigModal();
+                                }
+                            });
+                            }
+                        </script>
+
+                        <script>
+                            // Funciones n8n - Definidas en scope global inmediatamente
+
+                            // Confirmación personalizada para reiniciar servicio
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const restartForm = document.getElementById('restart-form');
+                                if (restartForm) {
+                                    restartForm.addEventListener('submit', async function (e) {
+                                        e.preventDefault();
+
+                                        const confirmed = await confirmDanger(
+                                            '¿Estás seguro de que deseas reiniciar el servicio? El servidor se reiniciará y deberás esperar unos segundos antes de poder usarlo nuevamente.',
+                                            '⚠️ Reiniciar Servicio'
+                                        );
+
+                                        if (confirmed) {
+                                            showLoading('Reiniciando servicio...');
+
+                                            // Enviar formulario
+                                            const formData = new FormData(this);
+
+                                            try {
+                                                const response = await fetch('{{ url_for("routes.restart_service") }}', {
+                                                    method: 'POST',
+                                                    body: formData
+                                                });
+
+                                                hideLoading();
+
+                                                if (response.ok) {
+                                                    showSuccess('✅ Servicio reiniciado. La página se recargará en unos segundos...');
+                                                    setTimeout(() => {
+                                                        window.location.reload();
+                                                    }, 2000);
+                                                } else {
+                                                    showError('❌ Error al reiniciar el servicio');
+                                                }
+                                            } catch (error) {
+                                                hideLoading();
+                                                console.error('Error:', error);
+                                                showError('❌ Error de conexión al reiniciar el servicio');
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        </script>
+
+                        <!-- Modal para Configurar Servicios -->
+                        <div id="service-config-modal"
+                            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10002; align-items: center; justify-content: center;">
+                            <div
+                                style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid rgba(102, 126, 234, 0.5); border-radius: 15px; padding: 30px; max-width: 600px; width: 90%; max-height: 90vh;  box-shadow: 0 10px 50px rgba(0,0,0,0.5);">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <h2 id="service-config-title" style="color: #e8e8e8; margin: 0; font-size: 1.5rem;">
+                                        ⚙️ Configurar Servicio</h2>
+                                    <button onclick="closeServiceConfigModal()"
+                                        style="background: rgba(244, 67, 54, 0.3); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; border-radius: 5px; padding: 8px 16px; cursor: pointer; font-size: 1.2rem; line-height: 1;">
+                                        ✕
+                                    </button>
+                                </div>
+                                <form id="service-config-form" onsubmit="saveServiceConfig(event)">
+                                    <div id="service-config-content">
+                                        <!-- Contenido se carga dinámicamente -->
+                                    </div>
+                                    <div id="service-config-message"
+                                        style="display: none; padding: 12px; border-radius: 8px; margin: 15px 0; font-size: 0.9rem;">
+                                    </div>
+                                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                                        <button type="button" onclick="closeServiceConfigModal()"
+                                            style="padding: 12px 24px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit"
+                                            style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                            💾 Guardar Configuración
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Modal para Configurar n8n -->
+                        <div id="n8n-config-modal"
+                            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10002; align-items: center; justify-content: center;">
+                            <div
+                                style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid rgba(34, 197, 94, 0.5); border-radius: 15px; padding: 30px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.5);">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <h2 style="color: #e8e8e8; margin: 0; font-size: 1.5rem;">
+                                        🔗 Configurar Integración n8n</h2>
+                                    <button onclick="closeN8nConfigModal()"
+                                        style="background: rgba(244, 67, 54, 0.3); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; border-radius: 5px; padding: 8px 16px; cursor: pointer; font-size: 1.2rem; line-height: 1;">
+                                        ✕
+                                    </button>
+                                </div>
+                                <form id="n8n-config-form" onsubmit="saveN8nConfig(event)">
+                                    <div style="margin-bottom: 20px;">
+                                        <label style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                                            URL del Webhook de n8n
+                                        </label>
+                                        <input type="url" id="n8n-webhook-url" name="webhook_url"
+                                            placeholder="https://tu-n8n-instance.com/webhook/bimba"
+                                            style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; box-sizing: border-box;">
+                                        <p style="color: #aaa; font-size: 0.8rem; margin-top: 5px;">
+                                            URL donde n8n recibirá eventos desde esta aplicación
+                                        </p>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 20px;">
+                                        <label style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                                            Secreto del Webhook (opcional)
+                                        </label>
+                                        <input type="password" id="n8n-webhook-secret" name="webhook_secret"
+                                            placeholder="Dejar vacío para no usar firma"
+                                            style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; box-sizing: border-box;">
+                                        <p style="color: #aaa; font-size: 0.8rem; margin-top: 5px;">
+                                            Secreto para validar firmas HMAC de webhooks entrantes
+                                        </p>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 20px;">
+                                        <label style="display: block; color: #e8e8e8; margin-bottom: 8px; font-weight: 600;">
+                                            API Key (opcional)
+                                        </label>
+                                        <input type="password" id="n8n-api-key" name="api_key"
+                                            placeholder="Dejar vacío para no usar autenticación"
+                                            style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e8e8e8; font-size: 0.9rem; box-sizing: border-box;">
+                                        <p style="color: #aaa; font-size: 0.8rem; margin-top: 5px;">
+                                            API Key para autenticar webhooks entrantes desde n8n
+                                        </p>
+                                    </div>
+                                    
+                                    <div id="n8n-config-message"
+                                        style="display: none; padding: 12px; border-radius: 8px; margin: 15px 0; font-size: 0.9rem;">
+                                    </div>
+                                    
+                                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                                        <button type="button" onclick="testN8nConnection()"
+                                            style="padding: 12px 24px; background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.5); color: #22c55e; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                            🧪 Probar Conexión
+                                        </button>
+                                        <button type="button" onclick="showN8nMetrics()"
+                                            style="padding: 12px 24px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                            📊 Ver Métricas
+                                        </button>
+                                        <button type="button" onclick="closeN8nConfigModal()"
+                                            style="padding: 12px 24px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.5); color: #667eea; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit"
+                                            style="padding: 12px 24px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                            💾 Guardar Configuración
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Agente de Redes Sociales -->
+                        <div class="category-section" style="margin-top: 10px; margin-bottom: 10px;">
+                            <h2 class="category-title"
+                                style="color: #e8e8e8; font-size: 1.1rem; margin-bottom: 8px; text-align: center; padding: 8px 12px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); border-radius: 8px; border: 2px solid rgba(102, 126, 234, 0.3);">
+                                🤖 Agente de Redes Sociales (BIMBA)</h2>
+                            <div class="tools-grid"
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 8px;">
+                                <a href="{{ url_for('routes.admin_social_media') }}" class="tool-card"
+                                    style="border-color: rgba(102, 126, 234, 0.3); background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%); padding: 12px; border-radius: 8px; text-decoration: none; color: inherit; transition: all 0.3s ease; border: 2px solid rgba(102, 126, 234, 0.3);">
+                                    <span
+                                        style="display: inline-block; background: rgba(102, 126, 234, 0.3); color: #667eea; padding: 3px 8px; border-radius: 15px; font-size: 0.7rem; font-weight: bold; margin-bottom: 5px;">1.1</span>
+                                    <span class="icon"
+                                        style="font-size: 1.8rem; display: block; margin-bottom: 5px;">💬</span>
+                                    <h3 style="color: #fff; margin: 5px 0; font-size: 1rem;">Gestión del Agente</h3>
+                                    <p style="color: #aaa; margin: 5px 0; font-size: 0.8rem;">Gestiona el agente virtual
+                                        que responde mensajes en redes sociales usando OpenAI</p>
+                                    <span class="badge"
+                                        style="background: rgba(102, 126, 234, 0.2); color: #667eea; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; display: inline-block; margin-top: 5px;">IA</span>
+                                </a>
+                                <a href="{{ url_for('admin.bot_logs') }}" class="tool-card"
+                                    style="border-color: rgba(102, 126, 234, 0.3); background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%); padding: 12px; border-radius: 8px; text-decoration: none; color: inherit; transition: all 0.3s ease; border: 2px solid rgba(102, 126, 234, 0.3);">
+                                    <span
+                                        style="display: inline-block; background: rgba(102, 126, 234, 0.3); color: #667eea; padding: 3px 8px; border-radius: 15px; font-size: 0.7rem; font-weight: bold; margin-bottom: 5px;">1.2</span>
+                                    <span class="icon"
+                                        style="font-size: 1.8rem; display: block; margin-bottom: 5px;">📋</span>
+                                    <h3 style="color: #fff; margin: 5px 0; font-size: 1rem;">Logs y Pruebas</h3>
+                                    <p style="color: #aaa; margin: 5px 0; font-size: 0.8rem;">Ver logs de conversaciones y probar el agente BIMBA</p>
+                                    <span class="badge"
+                                        style="background: rgba(102, 126, 234, 0.2); color: #667eea; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; display: inline-block; margin-top: 5px;">Logs</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Seguridad y Configuración -->
+                        <div class="category-section" style="margin-bottom: 10px;">
+                            <h2 class="category-title"
+                                style="color: #e8e8e8; font-size: 1.1rem; margin-bottom: 8px; text-align: center; padding: 8px 12px; background: linear-gradient(135deg, rgba(244, 67, 54, 0.2) 0%, rgba(244, 67, 54, 0.1) 100%); border-radius: 8px; border: 2px solid rgba(244, 67, 54, 0.3);">
+                                🔒 Seguridad y Configuración</h2>
+                            <div class="tools-grid"
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                                <a href="{{ url_for('routes.fraud_config') }}" class="tool-card security"
+                                    style="background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%); padding: 25px; border-radius: 15px; text-decoration: none; color: inherit; transition: all 0.3s ease; border: 2px solid rgba(244, 67, 54, 0.3);">
+                                    <span
+                                        style="display: inline-block; background: rgba(244, 67, 54, 0.3); color: #f44336; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px;">2.1</span>
+                                    <span class="icon"
+                                        style="font-size: 2.5rem; display: block; margin-bottom: 10px;">🛡️</span>
+                                    <h3 style="color: #fff; margin: 10px 0; font-size: 1.3rem;">Configuración
+                                        Anti-Fraude</h3>
+                                    <p style="color: #aaa; margin: 10px 0;">Ajusta los parámetros de detección de
+                                        fraudes en entregas</p>
+                                </a>
+
+                                <a href="{{ url_for('routes.fraud_history') }}" class="tool-card security"
+                                    style="background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%); padding: 25px; border-radius: 15px; text-decoration: none; color: inherit; transition: all 0.3s ease; border: 2px solid rgba(244, 67, 54, 0.3);">
+                                    <span
+                                        style="display: inline-block; background: rgba(244, 67, 54, 0.3); color: #f44336; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px;">2.2</span>
+                                    <span class="icon"
+                                        style="font-size: 2.5rem; display: block; margin-bottom: 10px;">⚠️</span>
+                                    <h3 style="color: #fff; margin: 10px 0; font-size: 1.3rem;">Historial de Fraudes
+                                    </h3>
+                                    <p style="color: #aaa; margin: 10px 0;">Revisa todos los intentos de fraude
+                                        detectados y autorizados</p>
+                                </a>
+
+                                <form action="{{ url_for('routes.restart_service') }}" method="POST"
+                                    style="margin: 0; display: block;" id="restart-form">
+                                    <button type="submit" class="tool-card security"
+                                        style="border: 2px solid rgba(244, 67, 54, 0.3); width: 100%; cursor: pointer; background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%); text-align: left; padding: 25px; transition: all 0.3s ease; font-family: inherit; text-decoration: none; color: inherit; border-radius: 15px;">
+                                        <span
+                                            style="display: inline-block; background: rgba(244, 67, 54, 0.3); color: #f44336; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px;">2.3</span>
+                                        <span class="icon"
+                                            style="font-size: 2.5rem; display: block; margin-bottom: 10px;">🔄</span>
+                                        <h3 style="color: #fff; margin: 10px 0; font-size: 1.3rem;">Reiniciar Servicio
+                                        </h3>
+                                        <p style="color: #aaa; margin: 10px 0;">Reinicia el servidor Flask para aplicar
+                                            cambios y configuraciones</p>
+                                        <span class="badge"
+                                            style="background: rgba(244, 67, 54, 0.2); color: #f44336; padding: 5px 12px; border-radius: 15px; font-size: 0.85rem; display: inline-block; margin-top: 10px;">Reinicio
+                                            Seguro</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Reinicio Total del Sistema - Al Final -->
+                        <div
+                            style="margin-top: 10px; padding: 15px; text-align: center; background: rgba(26, 26, 46, 0.5); border: 2px solid rgba(255, 87, 34, 0.3); border-radius: 8px;">
+                            <h3 style="color: #e8e8e8; margin: 0 0 8px 0; font-size: 1rem;">⚡ Reinicio Total del Sistema
+                            </h3>
+                            <p style="color: #aaa; margin: 0 0 10px 0; font-size: 0.75rem;">
+                                Esta acción reiniciará todos los servicios, limpiará cachés y recargará la configuración
+                                del sistema.
+                            </p>
+                            <button onclick="restartEverything()" id="restart-everything-btn" style="padding: 10px 25px; background: linear-gradient(135deg, #ff5722 0%, #f44336 100%); 
+                   border: none; color: white; border-radius: 8px; cursor: pointer; 
+                   font-size: 0.9rem; font-weight: 600; transition: all 0.3s ease;
+                   box-shadow: 0 3px 10px rgba(255, 87, 34, 0.4);"
+                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 15px rgba(255, 87, 34, 0.6)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 10px rgba(255, 87, 34, 0.4)'">
+                                ⚡ Reinicio Total del Sistema
+                            </button>
+                            <div id="restart-everything-message"
+                                style="display: none; margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 0.85rem;">
+                            </div>
+                        </div>
+
+    <!-- Script para toggle de base de datos -->
+    <script>
+        function switchDatabase(mode) {
+            const statusEl = document.getElementById('db-status');
+            const devBtn = document.getElementById('db-switch-dev');
+            const prodBtn = document.getElementById('db-switch-prod');
+            const modeDisplay = document.getElementById('db-mode-display');
+            
+            // Confirmar cambio
+            const currentMode = '{{ db_info.mode|default("prod") }}';
+            if (mode === currentMode) {
+                statusEl.textContent = 'Ya estás en modo ' + mode.toUpperCase();
+                statusEl.style.color = '#aaa';
+                return;
+            }
+            
+            const confirmMsg = mode === 'prod' 
+                ? '⚠️ ADVERTENCIA: Cambiarás a PRODUCCIÓN. ¿Estás seguro?'
+                : 'Cambiar a modo DESARROLLO. ¿Continuar?';
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            // Deshabilitar botones durante la operación
+            devBtn.disabled = true;
+            prodBtn.disabled = true;
+            statusEl.textContent = 'Cambiando...';
+            statusEl.style.color = '#ffc107';
+            
+            // Hacer petición
+            fetch('{{ url_for("routes.admin_api_database_switch") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ mode: mode })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusEl.textContent = '✅ ' + data.message;
+                    statusEl.style.color = '#4caf50';
+                    
+                    // Actualizar UI
+                    modeDisplay.textContent = mode.toUpperCase();
+                    
+                    // Actualizar estilos de botones
+                    if (mode === 'dev') {
+                        devBtn.style.background = 'rgba(76, 175, 80, 0.3)';
+                        devBtn.style.borderColor = 'rgba(76, 175, 80, 0.5)';
+                        devBtn.style.color = '#4caf50';
+                        prodBtn.style.background = 'rgba(102, 126, 234, 0.3)';
+                        prodBtn.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+                        prodBtn.style.color = '#667eea';
+                    } else {
+                        prodBtn.style.background = 'rgba(244, 67, 54, 0.3)';
+                        prodBtn.style.borderColor = 'rgba(244, 67, 54, 0.5)';
+                        prodBtn.style.color = '#f44336';
+                        devBtn.style.background = 'rgba(102, 126, 234, 0.3)';
+                        devBtn.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+                        devBtn.style.color = '#667eea';
+                    }
+                    
+                    // Mostrar mensaje de reinicio requerido
+                    statusEl.textContent = '✅ ' + data.message + ' ⚠️ Se requiere reiniciar la aplicación para aplicar el cambio.';
+                    statusEl.style.color = '#ffc107';
+                    
+                    // No recargar automáticamente - el usuario debe reiniciar manualmente
+                    // setTimeout(() => {
+                    //     window.location.reload();
+                    // }, 2000);
+                } else {
+                    statusEl.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
+                    statusEl.style.color = '#f44336';
+                    devBtn.disabled = false;
+                    prodBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                statusEl.textContent = '❌ Error de conexión: ' + error.message;
+                statusEl.style.color = '#f44336';
+                devBtn.disabled = false;
+                prodBtn.disabled = false;
+            });
+        }
+        
+        // Actualizar estado cada 30 segundos
+        setInterval(() => {
+            fetch('{{ url_for("routes.admin_api_database_info") }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.mode) {
+                        const modeDisplay = document.getElementById('db-mode-display');
+                        if (modeDisplay) {
+                            modeDisplay.textContent = data.mode.toUpperCase();
+                        }
+                    }
+                })
+                .catch(err => console.error('Error al actualizar estado BD:', err));
+        }, 30000);
+    </script>
+    
+    <!-- Log General de Auditoría (Solo Superadmin) -->
+    {% if is_superadmin %}
+    <div class="section" style="margin-top: 30px;">
+        <div class="section-header">
+            <h2 class="section-title">📋 Log General de Auditoría</h2>
+            {% if audit_alerts_count > 0 %}
+            <span class="badge badge-warning" style="font-size: 1rem; padding: 8px 16px;">
+                ⚠️ {{ audit_alerts_count }} acción(es) requieren atención
+            </span>
+            {% else %}
+            <span class="badge badge-success" style="font-size: 1rem; padding: 8px 16px;">
+                ✅ Sin acciones pendientes
+            </span>
+            {% endif %}
+        </div>
+        
+        {% if audit_alerts_count > 0 %}
+        <div class="alert alert-warning" style="margin-bottom: 20px;">
+            <strong>⚠️ Atención requerida:</strong> Hay {{ audit_alerts_count }} acción(es) crítica(s) en las últimas 24 horas que requieren revisión.
+        </div>
+        {% endif %}
+        
+        {% if audit_logs %}
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fecha/Hora</th>
+                        <th>Acción</th>
+                        <th>Entidad</th>
+                        <th>Usuario</th>
+                        <th>Detalles</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in audit_logs %}
+                    <tr>
+                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') if log.timestamp else 'N/A' }}</td>
+                        <td>
+                            <span class="badge {% if log.action in ['delete', 'update_salary', 'mark_payment', 'close_shift', 'update'] %}badge-danger{% elif log.action == 'create' %}badge-success{% else %}badge-info{% endif %}">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td>{{ log.entity_type }}{% if log.cargo_nombre %}: {{ log.cargo_nombre }}{% endif %}</td>
+                        <td><strong>{{ log.username }}</strong></td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {% if log.old_values or log.new_values %}
+                                {% if log.old_value %}
+                                    Antes: {{ log.old_value[:50] }}{% if log.old_value|length > 50 %}...{% endif %}
+                                {% endif %}
+                                {% if log.new_value %}
+                                    → Después: {{ log.new_value[:50] }}{% if log.new_value|length > 50 %}...{% endif %}
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem; color: #94a3b8;">{{ log.ip_address or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <h3>No hay registros de auditoría</h3>
+            <p>Los cambios y modificaciones aparecerán aquí</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+        {% endblock %}

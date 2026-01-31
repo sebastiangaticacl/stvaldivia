@@ -1,0 +1,3864 @@
+{% extends "base.html" %}
+{% block title %}Caja - Ventas{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bimba_ui.css') }}">
+<!-- Módulos Getnet Linux para integración con POS -->
+<!-- NOTA: Los módulos se cargan como ES modules y exponen funciones globales -->
+<script type="module">
+    // Cargar módulos Getnet solo si estamos en un entorno que soporta Web Serial (Chromium/Linux)
+    window.GETNET_MODULES_LOADED = false;
+    window.getnetAPI = null;
+    
+    // Intentar cargar módulos Getnet (solo en navegadores compatibles)
+    if ('serial' in navigator) {
+        import('{{ url_for("static", filename="js/getnet_linux.js") }}').then(module => {
+            console.log('✅ Módulo Getnet Linux cargado');
+            
+            // Inicializar Getnet con metadatos de la caja
+            const metaCaja = {
+                caja_codigo: window.CURRENT_REGISTER_ID || 'caja1',
+                cajero: window.CURRENT_EMPLOYEE_NAME || 'TOTEM_AUTO_1'
+            };
+            
+            // Configurar callbacks
+            module.initGetnetLinux(
+                metaCaja,
+                // onVentaAprobada
+                async (resp, ventaBackend) => {
+                    console.log('✅ Venta aprobada por Getnet:', ventaBackend);
+                    // Limpiar carrito
+                    if (typeof localCart !== 'undefined') {
+                        localCart = [];
+                        localCartTotal = 0;
+                        if (typeof updateCartDisplay === 'function') {
+                            updateCartDisplay();
+                        }
+                    }
+                    
+                    // Abrir voucher si hay venta_id
+                    if (ventaBackend.venta_id) {
+                        window.open(`/caja/voucher/${ventaBackend.venta_id}`, '_blank');
+                    }
+                    
+                    alert('✅ Pago procesado correctamente');
+                },
+                // onVentaRechazada
+                (resp) => {
+                    console.log('❌ Venta rechazada por Getnet:', resp);
+                    const mensaje = 'No se pudo completar la operación. ¿Quieres volver a intentarlo?';
+                    if (confirm(mensaje + '\n\nAceptar = Volver a intentar\nCancelar = Cancelar compra')) {
+                        // Reintentar (se llamará desde pagarConTarjeta)
+                        if (typeof pagarConTarjeta === 'function') {
+                            const total = typeof obtenerTotalActual === 'function' ? obtenerTotalActual() : 0;
+                            pagarConTarjeta();
+                        }
+                    } else {
+                        // Cancelar compra
+                        if (typeof clearCart === 'function') {
+                            clearCart();
+                        }
+                    }
+                },
+                // onError
+                (error) => {
+                    console.error('Error en Getnet:', error);
+                    alert('Error: ' + (error.mensaje || 'Error desconocido'));
+                }
+            );
+            
+            // Exponer API globalmente
+            window.getnetAPI = {
+                pagarGetnet: module.pagarGetnet,
+                conectarPos: module.conectarPos,
+                initGetnetLinux: module.initGetnetLinux
+            };
+            
+            window.GETNET_MODULES_LOADED = true;
+        }).catch(err => {
+            console.warn('⚠️ No se pudo cargar módulo Getnet Linux:', err);
+            window.GETNET_MODULES_LOADED = false;
+        });
+    } else {
+        console.log('ℹ️ Web Serial API no disponible, usando modo simulación');
+        window.GETNET_MODULES_LOADED = false;
+    }
+</script>
+<style>
+    /* Ocultar menú superior en esta página */
+    .admin-top-nav {
+        display: none !important;
+    }
+    
+    /* Estilos para impresión de tickets en vertical */
+    @media print {
+        @page {
+            size: portrait;
+            margin: 0;
+        }
+        
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: white !important;
+        }
+        
+        /* Ocultar todo excepto el recibo/carrito */
+        .caja-header,
+        .caja-footer,
+        .products-section,
+        .payment-buttons,
+        .admin-top-nav,
+        .flash-container,
+        .titulo-sistema-principal,
+        .footer-bar,
+        .btn-clear-cart-secondary,
+        .toast-container,
+        .screen-lock-overlay {
+            display: none !important;
+        }
+        
+        /* Mostrar solo el recibo - Layout vertical optimizado */
+        .caja-container {
+            display: block !important;
+            grid-template-columns: none !important;
+            height: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+        }
+        
+        .cart-section {
+            width: 80mm !important;
+            max-width: 80mm !important;
+            height: auto !important;
+            min-height: auto !important;
+            position: static !important;
+            background: white !important;
+            color: black !important;
+            padding: 10px !important;
+            margin: 0 auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            display: block !important;
+            page-break-inside: avoid;
+        }
+        
+        .cart-logo {
+            max-width: 150px !important;
+            margin: 0 auto 10px auto !important;
+            display: block !important;
+        }
+        
+        .cart-section h2 {
+            text-align: center !important;
+            font-size: 1rem !important;
+            margin-bottom: 10px !important;
+            border-bottom: 1px solid #000 !important;
+            padding-bottom: 5px !important;
+            color: black !important;
+        }
+        
+        .cart-items {
+            max-height: none !important;
+            overflow: visible !important;
+            margin-bottom: 10px !important;
+        }
+        
+        .cart-item {
+            page-break-inside: avoid;
+            margin-bottom: 5px !important;
+            padding: 5px 0 !important;
+            border-bottom: 1px dashed #333 !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+        }
+        
+        .cart-item-remove {
+            display: none !important;
+        }
+        
+        .cart-item-name {
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+            color: black !important;
+        }
+        
+        .cart-item-price {
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            color: black !important;
+        }
+        
+        .cart-total {
+            font-size: 1.3rem !important;
+            font-weight: bold !important;
+            margin-top: 15px !important;
+            padding-top: 15px !important;
+            border-top: 2px solid #000 !important;
+            text-align: center !important;
+            color: black !important;
+        }
+    }
+    
+    /* Reset para usar toda la pantalla - solo para esta página */
+    body.caja-page {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh !important;
+        box-sizing: border-box !important;
+    }
+    
+    body.caja-page * {
+        box-sizing: border-box;
+    }
+    
+    body.caja-page .container, 
+    body.caja-page .main-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+    
+    /* Asegurar que el contenido del POS ocupe toda la pantalla */
+    body.caja-page #content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    /* Ocultar título del sistema en POS */
+    body.caja-page .titulo-sistema-principal {
+        display: none !important;
+    }
+    
+    /* Ocultar footer del sistema en POS */
+    body.caja-page .footer-bar {
+        display: none !important;
+    }
+    
+    /* Header ultra compacto - sin scroll */
+    .caja-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 4px 10px;
+        background: var(--card-bg, #1a1a2e);
+        border-bottom: 2px solid var(--primary-color, #667eea);
+        height: 35px;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+    
+    .caja-header-info {
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    /* Footer sticky para información y botones */
+    .caja-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 15px;
+        background: #0f0f0f;
+        border-top: 1px solid #333;
+        min-height: 45px;
+        box-sizing: border-box;
+        z-index: 1000;
+    }
+    
+    .caja-footer-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        color: #ffffff;
+        font-size: 0.8rem;
+    }
+    
+    .caja-footer-info span {
+        color: #ab47bc;
+        font-weight: 600;
+    }
+    
+    .caja-footer-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+    
+    /* Estilo unificado para todos los botones del footer */
+   .caja-footer-actions button,
+   .caja-footer-actions button[type="submit"],
+   .caja-footer-actions form,
+   .btn-close-shift,
+   .btn-lock-screen,
+   .btn-refresh,
+   .btn-logout,
+   .btn-sos-drawer,
+   .btn-test-print {
+       margin: 0;
+       padding: 0;
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+   }
+   
+   .btn-sos-drawer {
+       background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%) !important;
+       animation: pulse-sos 2s infinite;
+   }
+   
+   .btn-sos-drawer:hover {
+       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+       transform: translateY(-1px);
+       box-shadow: 0 3px 8px rgba(245, 87, 108, 0.4);
+   }
+   
+   @keyframes pulse-sos {
+       0%, 100% {
+           opacity: 1;
+       }
+       50% {
+           opacity: 0.8;
+       }
+   }
+    
+    .caja-footer-actions form {
+        display: inline-flex;
+        margin: 0;
+    }
+    
+   .caja-footer-actions button,
+   .caja-footer-actions button[type="submit"],
+   .caja-footer-actions a,
+   .btn-close-shift,
+   .btn-lock-screen,
+   .btn-refresh,
+   .btn-logout,
+   .btn-sos-drawer,
+   .btn-test-print {
+       padding: 6px 14px;
+       background: #4a4a4a;
+       color: white;
+       border: none;
+       border-radius: 6px;
+       cursor: pointer;
+       font-size: 0.75rem;
+       font-weight: 600;
+       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+       transition: all 0.2s ease;
+       white-space: nowrap;
+       line-height: 1.3;
+       height: 32px;
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       vertical-align: middle;
+       text-decoration: none;
+   }
+    
+    .caja-footer-actions button:hover,
+    .caja-footer-actions button[type="submit"]:hover,
+    .caja-footer-actions a:hover,
+    .btn-close-shift:hover,
+    .btn-lock-screen:hover,
+    .btn-refresh:hover,
+    .btn-logout:hover,
+    .btn-test-print:hover {
+        background: #5a5a5a;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    }
+    
+    /* Overlay de bloqueo de pantalla */
+    .screen-lock-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 10000;
+        display: none !important; /* Forzar oculto por defecto */
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        pointer-events: none; /* No bloquear clics cuando está oculto */
+    }
+    
+    .screen-lock-overlay.active {
+        display: flex !important;
+        pointer-events: auto; /* Permitir clics solo cuando está activo */
+    }
+    
+    /* Modal de cierre de caja */
+    .close-register-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 10001;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        overflow-y: auto;
+    }
+    
+    .close-register-modal.active {
+        display: flex;
+    }
+    
+    .close-register-modal-content {
+        background: #1a1a1a;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        max-width: 900px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        margin: auto;
+    }
+    
+    .close-register-modal-header {
+        position: sticky;
+        top: 0;
+        background: #1a1a1a;
+        padding: 15px 20px;
+        border-bottom: 2px solid #ab47bc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+    }
+    
+    .close-register-modal-header h2 {
+        color: #ab47bc;
+        font-size: 1.5rem;
+        margin: 0;
+    }
+    
+    .close-register-modal-close {
+        background: #4a4a4a;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .close-register-modal-close:hover {
+        background: #5a5a5a;
+        transform: rotate(90deg);
+    }
+    
+    .close-register-modal-body {
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    .close-register-modal-body iframe {
+        width: 100%;
+        height: calc(90vh - 70px);
+        border: none;
+        display: block;
+    }
+    
+    .screen-lock-overlay.active {
+        display: flex !important;
+        pointer-events: auto; /* Permitir clics solo cuando está activo */
+    }
+    
+    .screen-lock-content {
+        text-align: center;
+        padding: 40px;
+        background: #1a1a1a;
+        border-radius: 12px;
+        border: 2px solid #ab47bc;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 20px rgba(171, 71, 188, 0.3);
+        min-width: 0;
+        max-width: 90vw;
+    }
+    
+    .screen-lock-content h2 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+        color: #ab47bc;
+    }
+    
+    .screen-lock-content p {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+        color: #ccc;
+    }
+    
+    .pin-input-container {
+        margin-bottom: 25px;
+    }
+    
+    .pin-display-lock {
+        font-size: 2rem;
+        letter-spacing: 8px;
+        padding: 15px 20px;
+        background: #2a2a2a;
+        border: 2px solid #444;
+        border-radius: 8px;
+        color: white;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        font-family: monospace;
+    }
+    
+    .pin-display-lock.empty {
+        color: #666;
+    }
+    
+    .numeric-keyboard-lock {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 15px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    
+    .keyboard-btn-lock {
+        padding: 12px 20px;
+        background: #4a4a4a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        aspect-ratio: 2 / 1;
+        min-height: 50px;
+    }
+    
+    .keyboard-btn-lock:hover {
+        background: #5a5a5a;
+        transform: scale(1.05);
+    }
+    
+    .keyboard-btn-lock:active {
+        transform: scale(0.95);
+    }
+    
+    .keyboard-actions-lock {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .btn-unlock {
+        padding: 12px 30px;
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transition: all 0.2s ease;
+    }
+    
+    .btn-unlock:hover {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+    
+    .btn-unlock:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .btn-clear-pin {
+        padding: 12px 20px;
+        background: #4a4a4a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-clear-pin:hover {
+        background: #5a5a5a;
+    }
+    
+    .error-message {
+        color: #f5576c;
+        font-size: 0.9rem;
+        margin-top: 10px;
+        min-height: 20px;
+    }
+    
+    .btn-clear-cart {
+        padding: 6px 15px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .btn-clear-cart:hover {
+        background: #c82333;
+    }
+    
+    /* Contenedor principal - Layout tipo POS profesional, RESPONSIVO */
+    .caja-container {
+        display: grid;
+        gap: var(--gap-2, 8px);
+        height: calc(100vh - 45px); /* 45px footer sticky */
+        padding: var(--gap-2, 8px) var(--gap-2, 8px) 53px var(--gap-2, 8px);
+        box-sizing: border-box;
+        overflow: hidden;
+        background: var(--bg, #0f0f0f);
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    /* Mobile: Stack vertical */
+    @media (max-width: 768px) {
+        .caja-container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+            height: auto;
+            min-height: calc(100vh - 45px);
+        }
+    }
+    
+    /* Tablet: Sidebar */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .caja-container {
+            grid-template-columns: 320px 1fr;
+        }
+    }
+    
+    /* Desktop: Sidebar fija */
+    @media (min-width: 1025px) {
+        .caja-container {
+            grid-template-columns: 360px 1fr;
+        }
+    }
+    
+    /* Sección de productos - Centro, grid tipo POS profesional RESPONSIVO */
+    .products-section {
+        background: var(--bg-panel, #1a1a1a);
+        border-radius: var(--radius-lg, 12px);
+        padding: var(--gap-2, 12px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border: none;
+        box-shadow: var(--shadow-lg, 0 4px 20px rgba(0, 0, 0, 0.3));
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+    
+    @media (max-width: 768px) {
+        .products-section {
+            order: 2;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+    
+    .products-section h2 {
+        display: none; /* Ocultar "Productos Disponibles" */
+    }
+    
+    .products-scrollable {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 0;
+        min-width: 0;
+        padding: 4px;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .category-section {
+        margin-bottom: 4px;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+    
+    .category-title {
+        color: #ffffff;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        padding: 8px 12px;
+        display: block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Grid de productos - RESPONSIVO y TÁCTIL */
+    .products-grid {
+        display: grid;
+        gap: var(--gap-1, 4px);
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+    
+    /* Mobile: 2 columnas */
+    @media (max-width: 480px) {
+        .products-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--gap-1, 4px);
+        }
+    }
+    
+    /* Tablet: 3 columnas */
+    @media (min-width: 481px) and (max-width: 768px) {
+        .products-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    
+    /* Tablet Landscape: 4 columnas */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .products-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+    
+    /* Desktop: Auto-fit */
+    @media (min-width: 1025px) {
+        .products-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+    }
+    
+    .product-card {
+        background: var(--bg-panel2, #252525);
+        border-radius: var(--radius-md, 10px);
+        padding: var(--gap-2, 8px);
+        cursor: pointer;
+        transition: all var(--transition, 0.2s ease);
+        border: 1px solid var(--border, #444);
+        min-height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.2));
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Todos los productos del mismo color */
+    .products-grid .product-card {
+        background: var(--bg-panel2, #252525);
+        border: 1px solid var(--border, #444);
+    }
+    
+    .product-card:hover,
+    .product-card:focus {
+        background: #2d2d2d;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md, 0 4px 16px rgba(102, 126, 234, 0.4));
+        border-color: var(--accent, #667eea);
+    }
+    
+    .product-card:active {
+        transform: scale(0.95);
+        box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.2));
+    }
+    
+    /* Táctil: Botones más grandes en mobile */
+    @media (max-width: 768px) {
+        .product-card {
+            min-height: 100px;
+            padding: var(--gap-2, 12px);
+        }
+    }
+    
+    .product-name {
+        font-weight: normal;
+        color: var(--text, #ffffff);
+        font-size: clamp(14px, 1.6vw, 16px);
+        word-break: break-word;
+        font-size: 0.9rem;
+        margin-bottom: 0px;
+        line-height: 1.0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        min-height: 28px;
+    }
+    
+    .product-price {
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: bold;
+        margin-top: 2px;
+    }
+    
+    /* Sección de carrito - Panel izquierdo tipo recibo POS */
+    .cart-section {
+        background: var(--bg-panel, #1a1a1a);
+        border-radius: var(--radius-lg, 12px);
+        padding: var(--gap-2, 12px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: none;
+        box-shadow: var(--shadow-lg, 0 4px 20px rgba(0, 0, 0, 0.3));
+    }
+    
+    /* Mobile: Carrito sticky arriba o drawer */
+    @media (max-width: 768px) {
+        .cart-section {
+            order: 1;
+            max-height: 50vh;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid var(--border, rgba(255, 255, 255, 0.1));
+        }
+    }
+    
+    /* Tablet y Desktop: Sidebar fija */
+    @media (min-width: 769px) {
+        .cart-section {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-width: 100%;
+            min-width: 0;
+            overflow-x: hidden;
+            max-width: 100%;
+            min-width: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+    
+    .cart-logo {
+        width: 100%;
+        max-width: 200px;
+        height: auto;
+        margin: 0 auto 12px auto;
+        display: block;
+    }
+    
+    .cart-section h2 {
+        margin: 0 0 12px 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #ffffff;
+        flex-shrink: 0;
+        padding: 0;
+        text-align: left;
+        background: transparent;
+        border-bottom: 1px solid #333;
+        padding-bottom: 8px;
+    }
+    
+    /* Botones de pago - Debajo del carrito */
+    .payment-buttons {
+        display: grid;
+        gap: var(--gap-2, 8px);
+        flex-shrink: 0;
+        margin-top: var(--gap-2, 8px);
+        width: 100%;
+    }
+    
+    /* Mobile: 1 columna */
+    @media (max-width: 768px) {
+        .payment-buttons {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Tablet y Desktop: 2 columnas */
+    @media (min-width: 769px) {
+        .payment-buttons {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    .payment-btn {
+        padding: var(--gap-3, 18px);
+        border: none;
+        border-radius: var(--radius-lg, 12px);
+        font-size: clamp(16px, 2vw, 20px);
+        font-weight: 700;
+        cursor: pointer;
+        transition: all var(--transition, 0.2s ease);
+        width: 100%;
+        min-height: 64px; /* Táctil-friendly */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.3));
+        letter-spacing: 0.5px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Mobile: Botones más grandes */
+    @media (max-width: 480px) {
+        .payment-btn {
+            min-height: 72px;
+            font-size: 18px;
+        }
+    }
+    
+    .payment-btn.cash {
+        background: #4a4a4a;
+        color: #fff;
+    }
+    
+    .payment-btn.debit {
+        background: #4a4a4a;
+        color: #fff;
+    }
+    
+    .payment-btn.credit {
+        background: #4a4a4a;
+        color: #fff;
+    }
+    
+    .payment-btn:hover:not(:disabled) {
+        background: #5a5a5a;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+    
+    .payment-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    /* Modal de confirmación de pago */
+    .payment-confirm-modal {
+        display: none;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+    }
+    
+    .payment-confirm-modal::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+    
+    .payment-confirm-modal.active {
+        display: flex;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    
+    .payment-confirm-content {
+        background: #1a1a1a;
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        border: 2px solid #ab47bc;
+        animation: slideUp 0.3s ease;
+        text-align: center;
+        position: relative;
+        z-index: 10001;
+        cursor: default;
+    }
+    
+    /* MEJORA: Estilos para alertas de stock */
+    .stock-alert-item {
+        background: rgba(255, 152, 0, 0.1);
+        border: 1px solid rgba(255, 152, 0, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .stock-alert-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        color: #fff;
+        font-size: 1.1rem;
+    }
+    
+    .stock-alert-icon {
+        font-size: 1.5rem;
+    }
+    
+    .stock-alert-details {
+        color: #ccc;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        margin-left: 35px;
+    }
+    
+    .stock-alert-details div {
+        margin-bottom: 5px;
+    }
+    
+    .stock-critical {
+        color: #ff4444;
+        font-weight: bold;
+    }
+    
+    .stock-warning {
+        color: #ffaa00;
+        font-weight: bold;
+    }
+    
+    .stock-deficit {
+        color: #ff4444;
+        margin-top: 5px;
+        padding-top: 5px;
+        border-top: 1px solid rgba(255, 68, 68, 0.3);
+    }
+    
+    @keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .payment-confirm-icon {
+        font-size: 4rem;
+        margin-bottom: 15px;
+    }
+    
+    .payment-confirm-title {
+        font-size: 1.5rem;
+        color: #ab47bc;
+        margin: 0 0 15px 0;
+        font-weight: 700;
+    }
+    
+    .payment-confirm-message {
+        font-size: 1.1rem;
+        color: #ccc;
+        margin: 0 0 20px 0;
+        line-height: 1.5;
+    }
+    
+    .payment-confirm-message span {
+        color: #fff;
+        font-weight: 600;
+    }
+    
+    .payment-confirm-total {
+        font-size: 1.8rem;
+        color: #38ef7d;
+        font-weight: 700;
+        margin: 0 0 25px 0;
+        padding: 15px;
+        background: rgba(56, 239, 125, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(56, 239, 125, 0.3);
+    }
+    
+    .payment-confirm-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+    
+    .payment-confirm-cancel,
+    .payment-confirm-ok {
+        padding: 14px 32px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 120px;
+    }
+    
+    .payment-confirm-cancel {
+        background: #4a4a4a;
+        color: #fff;
+    }
+    
+    .payment-confirm-cancel:hover {
+        background: #5a5a5a;
+        transform: translateY(-2px);
+    }
+    
+    .payment-confirm-ok {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: #fff;
+    }
+    
+    .payment-confirm-ok:hover {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+    }
+    
+    /* Items del carrito - estilo recibo POS */
+    .cart-items {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-bottom: 4px;
+        min-height: 0;
+        background: transparent;
+        padding: 3px;
+    }
+    
+    .cart-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 4px;
+        border-bottom: 1px solid #999;
+        font-size: 1rem;
+        margin-bottom: 2px;
+    }
+    
+    .cart-item:nth-child(odd) {
+        background: #252525;
+    }
+    
+    .cart-item:nth-child(even) {
+        background: #1f1f1f;
+    }
+    
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+    
+    .cart-item-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .cart-item-name {
+        font-weight: normal;
+        color: #ffffff;
+        font-size: 1rem;
+        line-height: 1.3;
+    }
+    
+    .cart-item-price {
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 1rem;
+        margin-right: 4px;
+        text-align: right;
+        min-width: 60px;
+    }
+    
+    .cart-item-remove {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 2px;
+        padding: 2px 6px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: bold;
+        min-width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .cart-item-remove:hover {
+        background: #c82333;
+    }
+    
+    /* Total - estilo recibo POS */
+    .cart-total {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #ffffff;
+        text-align: left;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        margin-bottom: 8px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        border: none;
+    }
+    
+    .btn-clear-cart-secondary {
+        padding: 8px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: bold;
+        width: 100%;
+        margin-top: 4px;
+        flex-shrink: 0;
+        min-height: 38px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    .btn-clear-cart-secondary:hover {
+        background: #c82333;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    /* Scrollbar personalizado */
+    .products-section::-webkit-scrollbar,
+    .cart-items::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .products-section::-webkit-scrollbar-track,
+    .cart-items::-webkit-scrollbar-track {
+        background: #1a1a2e;
+    }
+    
+    .products-section::-webkit-scrollbar-thumb,
+    .cart-items::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 4px;
+    }
+    
+    /* Notificaciones toast (no modales) */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .toast-container.center {
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+    }
+    
+    .toast {
+        background: #2a2a2a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        min-width: 250px;
+        max-width: 400px;
+        animation: slideIn 0.3s ease;
+        border-left: 4px solid #667eea;
+    }
+    
+    .toast-container.center .toast {
+        animation: fadeIn 0.3s ease;
+        min-width: 400px;
+        padding: 20px 24px;
+        font-size: 1.1rem;
+        background: #1a1a1a;
+        border: 2px solid #4facfe;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 20px rgba(79, 172, 254, 0.3);
+    }
+    
+    .toast-container.center .toast button {
+        padding: 14px 24px;
+        font-size: 1.1rem;
+        min-width: 120px;
+    }
+    
+    .toast.success {
+        border-left-color: #38ef7d;
+    }
+    
+    .toast.error {
+        border-left-color: #f5576c;
+    }
+    
+    .toast.info {
+        border-left-color: #4facfe;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    .toast.hiding {
+        animation: slideOut 0.3s ease forwards;
+    }
+    
+    .toast-container.center .toast.hiding {
+        animation: fadeIn 0.3s ease reverse forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<script>
+    // ============================================
+    // FUNCIONES CRÍTICAS - DEFINIR PRIMERO
+    // ============================================
+    
+    // Asegurar que addToCart esté disponible globalmente desde el inicio
+    window.addToCart = window.addToCart || function(itemId, name, price) {
+        console.warn('addToCart llamada antes de inicialización, reintentando...', { itemId, name, price });
+        // Reintentar después de un breve delay
+        setTimeout(() => {
+            if (typeof window.addToCart === 'function' && window.addToCart.toString().includes('async function')) {
+                window.addToCart(itemId, name, price);
+            } else {
+                console.error('addToCart aún no está disponible');
+            }
+        }, 100);
+    };
+    
+    // Función showToast (deshabilitada pero disponible para evitar errores)
+    function showToast(message, type = 'info') {
+        // Función deshabilitada para ahorrar recursos
+        return;
+    }
+    window.showToast = showToast;
+    
+    // Variables globales
+    // SINGLE SOURCE OF TRUTH: window.paymentState
+    window.paymentState = {
+        type: null,
+        provider: 'GETNET'
+    };
+    // Contexto de caja actual (para habilitar flujo GETNET agent-only en TEST001)
+    window.CURRENT_REGISTER_ID = "{{ register_id or '' }}";
+    window.CURRENT_EMPLOYEE_ID = "{{ session.pos_employee_id or '' }}";
+    window.CURRENT_EMPLOYEE_NAME = "{{ employee_name or '' }}";
+    window.CURRENT_REGISTER_NAME = "{{ register_name or '' }}";
+    let paymentConfirmCallback = null;
+
+    // Overlay simple para “Esperando terminal GETNET…”
+    function showGetnetWaiting(message) {
+        try {
+            let el = document.getElementById('getnet-wait-overlay');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'getnet-wait-overlay';
+                el.style.position = 'fixed';
+                el.style.inset = '0';
+                el.style.background = 'rgba(0,0,0,0.65)';
+                el.style.zIndex = '99999';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.padding = '24px';
+                el.innerHTML = '<div style=\"max-width:520px;width:100%;background:#111;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:18px;color:#fff;font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\">' +
+                    '<div style=\"font-size:1.1rem;font-weight:700;margin-bottom:8px;\">Esperando terminal GETNET…</div>' +
+                    '<div id=\"getnet-wait-msg\" style=\"opacity:0.9;line-height:1.4;\"></div>' +
+                    '</div>';
+                document.body.appendChild(el);
+            }
+            const msgEl = document.getElementById('getnet-wait-msg');
+            if (msgEl) msgEl.textContent = message || 'Procesa el pago en el terminal físico y espera confirmación.';
+            el.style.display = 'flex';
+        } catch (e) {}
+    }
+    function hideGetnetWaiting() {
+        const el = document.getElementById('getnet-wait-overlay');
+        if (el) el.style.display = 'none';
+    }
+
+    function setPaymentProvider(provider) {
+        // NO setear payment_type aquí, solo provider
+        window.paymentState.provider = String(provider || '').trim() || 'GETNET';
+        console.log('provider_active:', window.paymentState.provider);
+    }
+    window.setPaymentProvider = setPaymentProvider;
+    
+    // ============================================
+    // FUNCIÓN UTILITARIA: toNumber
+    // ============================================
+    // Convierte valores a números de forma robusta
+    // Maneja formatos con $, espacios, puntos como separadores de miles, comas como decimales
+    function toNumber(v) {
+        if (v === null || v === undefined) return 0;
+        if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+        const s = String(v).trim()
+            .replace(/\$/g, '')
+            .replace(/\s/g, '')
+            .replace(/\./g, '')     // quita miles
+            .replace(/,/g, '.');    // coma decimal -> punto
+        const n = Number(s);
+        return Number.isFinite(n) ? n : 0;
+    }
+    
+    // Función utilitaria robusta para normalizar números CLP (formato chileno)
+    // Maneja: "$3.500", "3.500", "3500,0", null, undefined, etc.
+    function toNumberCLP(value) {
+        if (value === null || value === undefined) return 0;
+
+        if (typeof value === 'number') {
+            return Number.isFinite(value) ? value : 0;
+        }
+
+        let s = String(value).trim();
+
+        // eliminar símbolos y espacios
+        s = s.replace(/\$/g, '').replace(/\s/g, '');
+
+        // eliminar separador de miles
+        s = s.replace(/\./g, '');
+
+        // coma decimal → punto
+        s = s.replace(/,/g, '.');
+
+        const n = Number(s);
+        return Number.isFinite(n) ? n : 0;
+    }
+    
+    // Función helper para calcular el subtotal de un item de forma segura
+    // Maneja qty vacío, discount undefined, precios en formato CLP, etc.
+    function calculateItemSubtotal(item) {
+        const price = toNumberCLP(item.price || item.unit_price || 0);
+        const qty = toNumberCLP(item.qty || item.quantity || 1);
+        const discount = toNumberCLP(item.discount || 0);
+        
+        // Calcular subtotal: (precio * cantidad) - descuento
+        const subtotal = (price * qty) - discount;
+        
+        // Asegurar que no sea negativo
+        return Math.max(0, subtotal);
+    }
+    
+    // Función helper para calcular el total del carrito de forma segura
+    function calculateCartTotal(cart) {
+        if (!cart || !Array.isArray(cart)) return 0;
+        return cart.reduce((sum, item) => {
+            const subtotal = calculateItemSubtotal(item);
+            return sum + subtotal;
+        }, 0);
+    }
+    
+    // Función para calcular totales del carrito antes de cerrar venta (OBJETIVO 2)
+    function calculateCartTotals(cart) {
+        const items = (cart && Array.isArray(cart)) ? cart : [];
+        let subtotal = 0;
+
+        for (const item of items) {
+            const price = toNumberCLP(item.price || item.unit_price || 0);
+            const qty = Number.isFinite(Number(item.quantity ?? item.qty ?? 1)) ? Number(item.quantity ?? item.qty ?? 1) : 1;
+            subtotal += price * qty;
+        }
+
+        subtotal = Math.round(subtotal);
+
+        if (!Number.isFinite(subtotal) || subtotal < 0) {
+            console.error("TOTAL INVALIDO", { subtotal, cart });
+            throw new Error("Error de cálculo en totales");
+        }
+
+        return { subtotal, total: subtotal };
+    }
+    
+    // Estado local del carrito
+    let localCart = [];
+    let localCartTotal = 0;
+    let pendingOperations = new Map();
+    let syncTimeout = null;
+    let isSyncing = false;
+    
+    // ============================================
+    // FUNCIONES DE SOPORTE - DEFINIR ANTES DE addToCart
+    // ============================================
+    
+    // Función para actualizar visualmente el carrito
+    function updateCartDisplay(cart, total) {
+        console.log('updateCartDisplay llamado:', { cartLength: cart.length, total });
+        
+        // Intentar obtener elementos del DOM, con reintentos si no están disponibles
+        let cartItemsDiv = document.getElementById('cart-items');
+        let cartTotalDiv = document.getElementById('cart-total');
+        const motivationalBadge = document.getElementById('motivational-badge');
+        
+        if (!cartItemsDiv || !cartTotalDiv) {
+            console.warn('Elementos del carrito no encontrados aún, esperando DOM...');
+            // Reintentar después de un breve delay
+            setTimeout(() => {
+                cartItemsDiv = document.getElementById('cart-items');
+                cartTotalDiv = document.getElementById('cart-total');
+                if (cartItemsDiv && cartTotalDiv) {
+                    updateCartDisplay(cart, total);
+                } else {
+                    console.error('Elementos del carrito aún no disponibles después del delay');
+                }
+            }, 100);
+            return;
+        }
+        
+        // Actualizar badge motivacional
+        if (motivationalBadge) {
+            if (cart.length === 0) {
+                motivationalBadge.textContent = '💪 ¡Vamos a vender!';
+            } else if (cart.length < 3) {
+                motivationalBadge.textContent = '⭐ ¡Sigue así!';
+            } else if (cart.length < 6) {
+                motivationalBadge.textContent = '🚀 ¡Excelente!';
+            } else {
+                motivationalBadge.textContent = '🔥 ¡Increíble!';
+            }
+        }
+        
+        // Actualizar items del carrito
+        if (cart.length === 0) {
+            const emptyCartMessages = [
+                { icon: '🛒', text: 'Tu carrito está esperando productos', subtext: '¡Agrega productos para comenzar a vender! 💪' },
+                { icon: '✨', text: 'Listo para comenzar', subtext: '¡Selecciona productos y vamos a vender! 🚀' },
+                { icon: '🎯', text: 'Carrito vacío', subtext: '¡Agrega productos y haz que suceda! ⭐' },
+            ];
+            const randomMsg = emptyCartMessages[Math.floor(Math.random() * emptyCartMessages.length)];
+            cartItemsDiv.innerHTML = `
+                <div style="text-align: center; padding: 30px 20px; color: #888;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">${randomMsg.icon}</div>
+                    <p style="font-size: 0.95rem; margin: 0; line-height: 1.5;">
+                        ${randomMsg.text}<br>
+                        <span style="color: #667eea; font-size: 0.85rem;">${randomMsg.subtext}</span>
+                    </p>
+                </div>
+            `;
+        } else {
+            console.log('🔄 Actualizando HTML del carrito con', cart.length, 'items');
+            cartItemsDiv.innerHTML = cart.map(item => {
+                const itemId = String(item.item_id || '');
+                const itemName = String(item.name || 'Producto').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                // Calcular subtotal de forma segura (puede venir mal calculado del servidor)
+                const itemSubtotal = calculateItemSubtotal(item);
+                const itemQuantity = toNumberCLP(item.quantity || item.qty || 1);
+                
+                return `
+                <div class="cart-item" data-item-id="${itemId}">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${itemQuantity} ${itemName}</div>
+                    </div>
+                    <div class="cart-item-price">$${itemSubtotal.toLocaleString('es-CL', {maximumFractionDigits: 0})}</div>
+                    <button onclick="if(typeof window.removeFromCart === 'function') { window.removeFromCart('${itemId}'); } else { console.error('removeFromCart no disponible'); }" class="cart-item-remove">✕</button>
+                </div>
+            `;
+            }).join('');
+            console.log('✅ HTML del carrito actualizado');
+        }
+        
+        // Actualizar total
+        if (cart.length > 0) {
+            cartTotalDiv.innerHTML = `Total $${toNumberCLP(total).toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+        } else {
+            cartTotalDiv.innerHTML = 'Total $0';
+        }
+        
+        // Habilitar/deshabilitar botones de pago
+        const paymentButtons = document.querySelectorAll('.payment-btn');
+        const hasItems = cart.length > 0 && total > 0 && Number.isFinite(total);
+        paymentButtons.forEach(btn => {
+            btn.disabled = !hasItems;
+            // Agregar título si está deshabilitado para explicar por qué
+            if (!hasItems && btn.disabled) {
+                if (cart.length === 0) {
+                    btn.title = 'Agregue productos al carrito para poder pagar';
+                } else if (total <= 0 || !Number.isFinite(total)) {
+                    btn.title = 'El total del carrito no es válido';
+                }
+            } else {
+                btn.title = '';
+            }
+        });
+    }
+    window.updateCartDisplay = updateCartDisplay;
+    
+    // Función para sincronizar carrito desde el servidor
+    async function syncCartFromServer() {
+        try {
+            console.log('🔄 syncCartFromServer: Sincronizando desde servidor...');
+            const response = await fetch('/caja/api/cart');
+            const data = await response.json();
+            if (data.success) {
+                const serverCart = data.cart || [];
+                const serverTotal = data.total || 0;
+                console.log('✅ syncCartFromServer: Carrito del servidor:', { 
+                    cartLength: serverCart.length, 
+                    total: serverTotal,
+                    cart: serverCart 
+                });
+                
+                // Solo actualizar si el carrito del servidor tiene items O si el local está vacío
+                if (serverCart.length > 0 || localCart.length === 0) {
+                    localCart = serverCart;
+                    localCartTotal = serverTotal || calculateCartTotal(serverCart);
+                    updateCartDisplay(localCart, localCartTotal);
+                    console.log('✅ syncCartFromServer: Carrito actualizado desde servidor');
+                } else {
+                    console.log('⚠️ syncCartFromServer: Servidor tiene carrito vacío, manteniendo carrito local');
+                }
+            } else {
+                console.error('❌ syncCartFromServer: Error del servidor:', data.error);
+            }
+        } catch (error) {
+            console.error('❌ syncCartFromServer: Error al sincronizar carrito:', error);
+            // No cambiar el carrito local si hay error al sincronizar
+        }
+    }
+    window.syncCartFromServer = syncCartFromServer;
+    
+    // Función para sincronizar operaciones pendientes con el servidor
+    async function syncPendingOperations() {
+        if (isSyncing || pendingOperations.size === 0) {
+            return;
+        }
+        
+        isSyncing = true;
+        const operations = new Map(pendingOperations);
+        pendingOperations.clear();
+        
+        try {
+            const promises = [];
+            for (const [itemId, quantity] of operations.entries()) {
+                promises.push(
+                    fetch('/caja/api/cart/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            item_id: itemId,
+                            quantity: quantity
+                        })
+                    }).then(async response => {
+                        const data = await response.json();
+                        return { success: data.success, itemId, error: data.error };
+                    }).catch(error => {
+                        return { success: false, itemId, error: error.message };
+                    })
+                );
+            }
+            
+            const results = await Promise.all(promises);
+            const failed = results.filter(r => !r.success);
+            if (failed.length > 0) {
+                console.error('Algunas operaciones fallaron:', failed);
+            }
+            
+            if (results.some(r => r.success)) {
+                await syncCartFromServer();
+            }
+        } catch (error) {
+            console.error('Error al sincronizar operaciones:', error);
+            await syncCartFromServer();
+        } finally {
+            isSyncing = false;
+            if (pendingOperations.size > 0) {
+                setTimeout(() => syncPendingOperations(), 50);
+            }
+        }
+    }
+    window.syncPendingOperations = syncPendingOperations;
+    
+    // ============================================
+    // FIN DE FUNCIONES DE SOPORTE
+    // ============================================
+    
+    // Función addToCart - DEFINIR INMEDIATAMENTE
+    async function addToCart(itemId, name, price) {
+        console.log('🛒 addToCart llamado:', { itemId, name, price, priceType: typeof price });
+        try {
+            if (!itemId) {
+                console.error('❌ Error: itemId no proporcionado');
+                alert('Error: No se pudo identificar el producto. Por favor, intenta nuevamente.');
+                return;
+            }
+            
+            // Si price ya es un número, usarlo directamente; sino convertirlo
+            let numericPrice;
+            if (typeof price === 'number') {
+                numericPrice = Number.isFinite(price) ? price : 0;
+            } else {
+                numericPrice = toNumberCLP(price);
+            }
+            
+            console.log('🔍 DEBUG addToCart - precio procesado:', { priceOriginal: price, numericPrice, priceType: typeof price, numericPriceType: typeof numericPrice });
+            
+            if (numericPrice <= 0 || !Number.isFinite(numericPrice)) {
+                console.error('❌ Error: Precio inválido:', { price, numericPrice, priceType: typeof price });
+                alert('Error: El precio del producto no es válido: ' + price + ' → ' + numericPrice);
+                return;
+            }
+            
+            console.log('📦 Buscando item existente en carrito...');
+            const existingItem = localCart.find(item => String(item.item_id) === String(itemId));
+            if (existingItem) {
+                console.log('➕ Item existente encontrado, incrementando cantidad');
+                const currentQty = toNumberCLP(existingItem.quantity || existingItem.qty || 1);
+                existingItem.quantity = currentQty + 1;
+                existingItem.qty = existingItem.quantity; // Mantener sincronizado
+                // Asegurar que el precio unitario esté disponible para cálculo
+                if (!existingItem.price && !existingItem.unit_price) {
+                    existingItem.price = numericPrice;
+                    existingItem.unit_price = numericPrice;
+                }
+                // Recalcular subtotal usando la función segura
+                existingItem.subtotal = calculateItemSubtotal(existingItem);
+            } else {
+                console.log('✨ Agregando nuevo item al carrito');
+                localCart.push({
+                    item_id: String(itemId),
+                    name: name || 'Producto',
+                    quantity: 1,
+                    qty: 1, // Mantener sincronizado
+                    price: numericPrice, // Precio unitario (para compatibilidad con backend)
+                    unit_price: numericPrice, // Guardar precio unitario para cálculos futuros
+                    subtotal: numericPrice // Subtotal inicial = precio * cantidad (1)
+                });
+            }
+            
+            localCartTotal = calculateCartTotal(localCart);
+            console.log('💰 Total del carrito actualizado:', localCartTotal);
+            console.log('📋 Carrito actual:', localCart);
+            
+            // Actualizar visualización inmediatamente
+            updateCartDisplay(localCart, localCartTotal);
+            
+            // Acumular cantidad para sincronización con servidor
+            const currentPending = pendingOperations.get(itemId) || 0;
+            pendingOperations.set(itemId, currentPending + 1);
+            
+            // Cancelar timeout anterior si existe
+            if (syncTimeout) {
+                clearTimeout(syncTimeout);
+            }
+            
+            // Sincronizar con servidor después de un breve delay (debounce)
+            syncTimeout = setTimeout(async () => {
+                await syncPendingOperations();
+            }, 100);
+        } catch (error) {
+            console.error('Error en addToCart:', error);
+            alert('Error al agregar producto: ' + error.message);
+        }
+    }
+    // Asegurar que addToCart esté disponible globalmente
+    window.addToCart = addToCart;
+    window.removeFromCart = removeFromCart;
+    
+    // Debug final: Verificar que addToCart esté disponible
+    console.log('✅ addToCart finalizada y disponible en window:', typeof window.addToCart === 'function');
+    
+    // Debug: Verificar que la función esté disponible
+    console.log('✅ addToCart definida y disponible:', typeof window.addToCart);
+    
+    // Procesar operaciones pendientes si las hay
+    if (window._pendingCartOps && window._pendingCartOps.length > 0) {
+        console.log('Procesando operaciones pendientes del carrito:', window._pendingCartOps.length);
+        window._pendingCartOps.forEach(op => {
+            addToCart(op.itemId, op.name, op.price);
+        });
+        window._pendingCartOps = [];
+    }
+    
+    // Asegurar que addToCart esté disponible en el scope global inmediatamente
+    if (typeof addToCart !== 'undefined') {
+        window.addToCart = addToCart;
+        console.log('✅ addToCart asignada a window.addToCart');
+    }
+    
+    // ============================================
+    // FUNCIONES DE PAGO Y LIMPIAR CARRO - DEFINIR INMEDIATAMENTE
+    // ============================================
+    
+    // Función para mostrar modal de confirmación de pago
+    function showPaymentConfirm(paymentType) {
+        if (!paymentType || (typeof paymentType === 'string' && paymentType.trim() === '')) {
+            console.error('Tipo de pago no especificado:', paymentType);
+            alert('Selecciona un método de pago');
+            return;
+        }
+        
+        // Normalizar paymentType a valores en inglés
+        const paymentTypeMap = {
+            'Efectivo': 'cash',
+            'Débito': 'debit',
+            'Crédito': 'credit',
+            'Transferencia': 'transfer',
+            'QR': 'qr',
+            'Cash': 'cash',
+            'Debit': 'debit',
+            'Credit': 'credit',
+            'Transfer': 'transfer',
+            'cash': 'cash',
+            'debit': 'debit',
+            'credit': 'credit',
+            'transfer': 'transfer',
+            'qr': 'qr'
+        };
+        
+        const normalized = paymentTypeMap[paymentType] || String(paymentType).trim().toLowerCase();
+        
+        // Actualizar window.paymentState como single source of truth
+        window.paymentState.type = normalized;
+        if (normalized === 'cash') {
+            window.paymentState.provider = 'NONE';
+        } else if (normalized === 'debit' || normalized === 'credit') {
+            // Débito y Crédito SIEMPRE usan GETNET
+            window.paymentState.provider = 'GETNET';
+        } else {
+            // Otros métodos (transfer, qr) usan GETNET por defecto
+            window.paymentState.provider = window.paymentState.provider || 'GETNET';
+        }
+        
+        console.log('Guardando tipo de pago:', normalized, 'provider:', window.paymentState.provider);
+        
+        const modal = document.getElementById('payment-confirm-modal');
+        const typeDisplay = document.getElementById('payment-type-display');
+        const totalDisplay = document.getElementById('payment-confirm-total');
+        
+        if (!modal) {
+            console.error('Modal de confirmación no encontrado');
+            return;
+        }
+        
+        const PAYMENT_LABELS = {
+            cash: 'Efectivo',
+            debit: 'Débito',
+            credit: 'Crédito',
+            transfer: 'Transferencia',
+            qr: 'QR',
+            courtesy: 'Cortesía'
+        };
+        const paymentTypeSpanish = PAYMENT_LABELS[normalized] || normalized;
+        
+        if (typeDisplay) {
+            typeDisplay.textContent = paymentTypeSpanish;
+        }
+        
+        if (totalDisplay) {
+            totalDisplay.textContent = `Total: $${toNumberCLP(localCartTotal).toLocaleString('es-CL', {maximumFractionDigits: 0})}`;
+        }
+        
+        modal.classList.add('active');
+        
+        const confirmBtn = document.getElementById('payment-confirm-ok');
+        if (confirmBtn) {
+            // SIEMPRE setear el botón con el valor normalizado
+            confirmBtn.setAttribute('data-payment-type', normalized);
+            setTimeout(() => confirmBtn.focus(), 100);
+        }
+    }
+    window.showPaymentConfirm = showPaymentConfirm;
+    
+    // MEJORA: Función para validar stock antes de procesar pago
+    async function validateStockBeforePayment() {
+        if (localCart.length === 0) {
+            return { valid: true, issues: [] };
+        }
+        
+        try {
+            const response = await fetch('/caja/api/stock/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cart: localCart
+                })
+            });
+            
+            if (!response.ok) {
+                console.warn('Error al validar stock, continuando con venta');
+                return { valid: true, issues: [] }; // No bloquear si falla la validación
+            }
+            
+            const data = await response.json();
+            return {
+                valid: data.valid || data.success,
+                issues: data.issues || []
+            };
+        } catch (error) {
+            console.warn('Error al validar stock:', error);
+            return { valid: true, issues: [] }; // No bloquear si falla la validación
+        }
+    }
+    
+    // Variable para guardar el tipo de pago cuando hay alertas de stock
+    let pendingPaymentType = null;
+    
+    // Función para mostrar alertas de stock
+    function showStockAlertModal(issues, paymentType) {
+        const modal = document.getElementById('stock-alert-modal');
+        if (!modal) return;
+        
+        // Guardar el tipo de pago para usar después
+        pendingPaymentType = paymentType;
+        
+        const issuesList = document.getElementById('stock-alert-issues');
+        if (issuesList) {
+            issuesList.innerHTML = '';
+            
+            issues.forEach(issue => {
+                const li = document.createElement('li');
+                li.className = 'stock-alert-item';
+                
+                const severity = issue.deficit > 0 ? 'critical' : 'warning';
+                const icon = severity === 'critical' ? '🚨' : '⚠️';
+                
+                li.innerHTML = `
+                    <div class="stock-alert-header">
+                        <span class="stock-alert-icon">${icon}</span>
+                        <strong>${issue.product_name}</strong>
+                    </div>
+                    <div class="stock-alert-details">
+                        <div>Ingrediente: <strong>${issue.ingredient_name}</strong></div>
+                        <div>Requerido: <strong>${issue.required.toFixed(2)} ${issue.unit}</strong></div>
+                        <div>Disponible: <span class="${severity === 'critical' ? 'stock-critical' : 'stock-warning'}">${issue.available.toFixed(2)} ${issue.unit}</span></div>
+                        ${issue.deficit > 0 ? `<div class="stock-deficit">Déficit: <strong>${issue.deficit.toFixed(2)} ${issue.unit}</strong></div>` : ''}
+                    </div>
+                `;
+                issuesList.appendChild(li);
+            });
+        }
+        
+        modal.classList.add('active');
+    }
+    
+    function continuePaymentDespiteStock() {
+        closeStockAlertModal();
+        if (pendingPaymentType) {
+            showPaymentConfirm(pendingPaymentType);
+            pendingPaymentType = null;
+        }
+    }
+    window.continuePaymentDespiteStock = continuePaymentDespiteStock;
+    
+    function closeStockAlertModal() {
+        const modal = document.getElementById('stock-alert-modal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+    window.closeStockAlertModal = closeStockAlertModal;
+    
+    // ============================================================================
+    // FUNCIÓN SIMPLE PARA PAGO CON GETNET (INTEGRACIÓN LOCAL)
+    // ============================================================================
+    
+    /**
+     * Función simple para pagar con tarjeta usando Getnet local
+     * La negociación real con Getnet se hace LOCAL en el tótem
+     */
+    async function pagarConTarjeta() {
+        try {
+            // 1) Obtener total actual
+            const total = obtenerTotalActual();
+            if (!total || total <= 0) {
+                alert('El carrito está vacío o el total no es válido.');
+                return;
+            }
+            
+            // 2) Construir payload de venta
+            const payloadVenta = construirPayloadVenta();
+            
+            // 3) Llamar a la integración local de Getnet
+            // IMPORTANTE: La negociación real con el POS Getnet se hace LOCAL en el tótem
+            const resultadoGetnet = await simularPagoGetnet(total);
+            
+            if (resultadoGetnet.ok) {
+                // 4) Si el pago es OK → mandamos la venta completa al backend
+                const respBackend = await fetch('/caja/api/caja/venta-ok', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        total: total,
+                        venta: payloadVenta,
+                        getnet: resultadoGetnet
+                    })
+                });
+                
+                const data = await respBackend.json();
+                if (data.ok) {
+                    // Mostrar confirmación y limpiar carrito
+                    mostrarConfirmacionVenta(data);
+                    localCart = [];
+                    localCartTotal = 0;
+                    updateCartDisplay();
+                    if (data.sale_id) {
+                        alert('✅ Venta registrada exitosamente. ID: ' + data.sale_id);
+                    }
+                } else {
+                    alert('Error registrando venta en el servidor: ' + (data.error || 'Error desconocido'));
+                }
+            } else {
+                // 5) Si el pago es rechazado → solo log en el backend
+                await fetch('/caja/api/caja/venta-fallida-log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        total: total,
+                        venta: payloadVenta,
+                        motivo: resultadoGetnet.error || resultadoGetnet.responseMessage || 'Pago rechazado por Getnet'
+                    })
+                });
+                
+                alert('❌ Pago rechazado por Getnet. No se registró la venta.\nMotivo: ' + (resultadoGetnet.error || resultadoGetnet.responseMessage || 'Rechazado'));
+            }
+        } catch (error) {
+            console.error('Error en pagarConTarjeta:', error);
+            alert('Error al procesar el pago: ' + error.message);
+        }
+    }
+    window.pagarConTarjeta = pagarConTarjeta;
+    
+    /**
+     * Obtener el total actual del carrito
+     */
+    function obtenerTotalActual() {
+        if (localCart.length === 0) {
+            syncCartFromServer();
+        }
+        return calculateCartTotal(localCart);
+    }
+    
+    /**
+     * Construir payload de venta con detalles del carrito
+     * Formato según especificación: caja_codigo, cajero, items con sku/nombre/cantidad/precio_unitario
+     */
+    function construirPayloadVenta() {
+        // Calcular items en el formato especificado
+        const items = localCart.map(item => {
+            const sku = item.item_id || item.id || '';
+            const nombre = item.name || 'Producto sin nombre';
+            const cantidad = item.quantity || item.qty || 1;
+            const precio_unitario = item.price || item.unit_price || 0;
+            
+            return {
+                sku: sku,
+                nombre: nombre,
+                cantidad: cantidad,
+                precio_unitario: precio_unitario
+            };
+        });
+        
+        return {
+            caja_codigo: window.CURRENT_REGISTER_ID || '',
+            cajero: window.CURRENT_EMPLOYEE_NAME || '',
+            items: items // Lista de productos con sku, nombre, cantidad, precio_unitario
+        };
+    }
+    
+    /**
+     * Mostrar confirmación de venta exitosa
+     */
+    function mostrarConfirmacionVenta(data) {
+        console.log('✅ Venta registrada:', data);
+    }
+    
+    /**
+     * Función para pagar con Getnet usando los módulos de integración Linux
+     * Usa getnet_linux.js para comunicación real con el POS Getnet vía Web Serial
+     * 
+     * NOTA: Los módulos Getnet se cargan como ES modules en el <head>
+     * y deben estar disponibles globalmente a través de window.getnetAPI
+     */
+    async function simularPagoGetnet(total) {
+        // Verificar si los módulos Getnet están disponibles
+        if (window.GETNET_MODULES_LOADED && window.getnetAPI) {
+            try {
+                // Obtener carrito actual
+                const carritoActual = localCart.map(item => ({
+                    sku: item.item_id || item.id || '',
+                    nombre: item.name || 'Producto sin nombre',
+                    cantidad: item.quantity || item.qty || 1,
+                    precio_unitario: item.price || item.unit_price || 0
+                }));
+                
+                // Ejecutar pago real con Getnet
+                // NOTA: Esta función es asíncrona y los callbacks manejarán la respuesta
+                await window.getnetAPI.pagarGetnet(total, carritoActual);
+                
+                // Retornar objeto pendiente (los callbacks manejarán el resultado)
+                return {
+                    ok: true,
+                    pending: true, // Indica que el resultado vendrá por callback
+                    message: 'Procesando pago con Getnet...'
+                };
+                
+            } catch (error) {
+                console.error('Error al ejecutar pago Getnet:', error);
+                return {
+                    ok: false,
+                    responseCode: '99',
+                    responseMessage: error.message || 'Error al procesar pago',
+                    error: error.message
+                };
+            }
+        } else {
+            // Fallback a simulación si los módulos no están disponibles
+            console.log('Módulos Getnet no disponibles, usando simulación');
+            return simularPagoGetnetFallback(total);
+        }
+    }
+    
+    /**
+     * Función de fallback para simular pago Getnet (solo para desarrollo/pruebas)
+     * Se usa cuando el módulo Getnet real no está disponible
+     */
+    async function simularPagoGetnetFallback(total) {
+        const aprobado = confirm('💳 Simular pago Getnet por $' + total.toLocaleString('es-CL') + ' ?\n\nAceptar = APROBADO\nCancelar = RECHAZADO');
+        
+        if (aprobado) {
+            return {
+                ok: true,
+                responseCode: '0',
+                responseMessage: 'Aprobado (SIMULADO)',
+                authorizationCode: 'SIM-' + Date.now(),
+                operationId: 'OP-' + Date.now(),
+                terminalId: 'TERM-001',
+                cardType: 'DEBIT'
+            };
+        } else {
+            return {
+                ok: false,
+                responseCode: 'XX',
+                responseMessage: 'Rechazado (SIMULADO)',
+                error: 'Simulación de rechazo',
+                cardType: 'DEBIT'
+            };
+        }
+    }
+    
+    // Función para procesar pago (MEJORADA con validación de stock)
+    async function processPayment(paymentType) {
+        if (!paymentType || (typeof paymentType === 'string' && paymentType.trim() === '')) {
+            console.error('Error: Tipo de pago no especificado en processPayment:', paymentType);
+            alert('Error: Tipo de pago no especificado');
+            return;
+        }
+        
+        // Validar carrito local ANTES de sincronizar
+        console.log('🔍 DEBUG processPayment - ANTES de sincronizar:', { 
+            localCartLength: localCart.length, 
+            localCartTotal,
+            localCart 
+        });
+        
+        if (!localCart || localCart.length === 0) {
+            // Si el carrito local está vacío, intentar sincronizar desde el servidor
+            console.log('⚠️ Carrito local vacío, sincronizando desde servidor...');
+            await syncCartFromServer();
+            localCartTotal = calculateCartTotal(localCart);
+            
+            if (!localCart || localCart.length === 0) {
+                alert('El carrito está vacío. Agrega productos antes de procesar el pago.');
+                console.error('❌ Carrito vacío después de sincronizar');
+                return;
+            }
+        } else {
+            // Si el carrito local tiene items, validar que el total sea válido
+            if (localCartTotal <= 0 || !Number.isFinite(localCartTotal)) {
+                // Recalcular total por si hay un problema
+                localCartTotal = calculateCartTotal(localCart);
+                if (localCartTotal <= 0 || !Number.isFinite(localCartTotal)) {
+                    alert('Error: El total del carrito no es válido (' + localCartTotal + '). Por favor, intenta nuevamente.');
+                    console.error('❌ Total inválido:', { localCartTotal, localCart });
+                    return;
+                }
+            }
+        }
+        
+        console.log('processPayment llamado con:', paymentType);
+        
+        // MEJORA: Validar stock antes de mostrar modal de confirmación
+        const stockValidation = await validateStockBeforePayment();
+        
+        if (!stockValidation.valid && stockValidation.issues.length > 0) {
+            // Mostrar alerta de stock antes de confirmar pago
+            showStockAlertModal(stockValidation.issues, paymentType);
+            return;
+        }
+        
+        // Si hay warnings pero no críticos, mostrar modal de confirmación normal
+        showPaymentConfirm(paymentType);
+    }
+    window.processPayment = processPayment;
+    window.closeStockAlertModal = closeStockAlertModal;
+    
+    // Función para limpiar carro
+    async function clearCart() {
+        if (localCart.length === 0) {
+            return;
+        }
+        showClearCartConfirm();
+    }
+    window.clearCart = clearCart;
+    
+    // Función para mostrar modal de confirmación de limpiar carro
+    function showClearCartConfirm() {
+        const modal = document.getElementById('clear-cart-confirm-modal');
+        if (!modal) return;
+        
+        modal.classList.add('active');
+        
+        setTimeout(() => {
+            const cancelBtn = modal.querySelector('.payment-confirm-cancel');
+            if (cancelBtn) {
+                cancelBtn.focus();
+            }
+        }, 100);
+    }
+    window.showClearCartConfirm = showClearCartConfirm;
+    
+    // Función para cerrar modal de limpiar carro
+    function closeClearCartConfirm() {
+        const modal = document.getElementById('clear-cart-confirm-modal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+    window.closeClearCartConfirm = closeClearCartConfirm;
+    
+    // Función para confirmar y limpiar el carrito
+    async function confirmClearCart() {
+        closeClearCartConfirm();
+        
+        localCart = [];
+        localCartTotal = 0;
+        pendingOperations.clear();
+        updateCartDisplay([], 0);
+        
+        try {
+            const response = await fetch('/caja/api/cart/clear', {
+                method: 'POST'
+            });
+            const data = await response.json();
+            if (data.success) {
+                localCart = [];
+                localCartTotal = 0;
+                updateCartDisplay([], 0);
+            } else {
+                await syncCartFromServer();
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            await syncCartFromServer();
+            alert('Error al limpiar carrito: ' + error);
+        }
+    }
+    window.confirmClearCart = confirmClearCart;
+    
+    // Función para cerrar modal de confirmación de pago
+    function closePaymentConfirm() {
+        const modal = document.getElementById('payment-confirm-modal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+    window.closePaymentConfirm = closePaymentConfirm;
+    
+    // Función para confirmar y procesar el pago
+    function confirmPaymentProcess() {
+        console.log('confirmPaymentProcess llamado');
+        
+        const confirmBtn = document.getElementById('payment-confirm-ok');
+        const btnType = confirmBtn?.dataset?.paymentType || confirmBtn?.getAttribute('data-payment-type');
+        const fallbackType = window.paymentState?.type;
+        const paymentType = btnType || fallbackType || 'cash';
+        
+        console.log('paymentType final:', paymentType, 'btnType:', btnType, 'fallback:', fallbackType);
+        
+        if (!paymentType || String(paymentType).trim() === '') {
+            console.error('Error: Tipo de pago no encontrado');
+            alert('Selecciona un método de pago');
+            return;
+        }
+        
+        // Actualizar window.paymentState antes de procesar (por si venía del botón)
+        window.paymentState.type = String(paymentType).trim();
+        
+        closePaymentConfirm();
+        processPaymentInternal(String(paymentType).trim());
+    }
+    window.confirmPaymentProcess = confirmPaymentProcess;
+    
+    // Función para procesar el pago internamente
+    async function processPaymentInternal(paymentType) {
+        console.log('processPaymentInternal llamado con:', paymentType);
+        
+        if (!paymentType || String(paymentType).trim() === '') {
+            alert('Selecciona un método de pago');
+            return;
+        }
+        
+        const paymentTypes = {
+            'Efectivo': 'Efectivo',
+            'Débito': 'Débito',
+            'Crédito': 'Crédito',
+            'Transferencia': 'Transferencia',
+            'QR': 'QR',
+            'Cortesía': 'Cortesía',
+            'Cortesia': 'Cortesía',
+            'Courtesy': 'Cortesía',
+            'Cash': 'Efectivo',
+            'Debit': 'Débito',
+            'Credit': 'Crédito',
+            // Valores en inglés (lowercase) para compatibilidad
+            'cash': 'Efectivo',
+            'debit': 'Débito',
+            'credit': 'Crédito',
+            'transfer': 'Transferencia',
+            'qr': 'QR'
+        };
+        
+        const normalizedType = String(paymentType).trim();
+        let paymentTypeSpanish = paymentTypes[normalizedType] || normalizedType;
+        
+        if (!paymentTypeSpanish || paymentTypeSpanish.trim() === '') {
+            alert('Error: Tipo de pago inválido: ' + paymentType);
+            return;
+        }
+        
+        // Validar carrito local ANTES de sincronizar
+        console.log('🔍 DEBUG processPayment - INICIO:', { 
+            localCartLength: localCart.length, 
+            localCartTotal,
+            localCart 
+        });
+        
+        // Primera validación: carrito local
+        if (!localCart || localCart.length === 0) {
+            // Si el carrito local está vacío, intentar sincronizar desde el servidor UNA VEZ
+            console.log('⚠️ Carrito local vacío, sincronizando desde servidor...');
+            await syncCartFromServer();
+            // Recalcular después de sincronizar
+            localCartTotal = calculateCartTotal(localCart);
+            
+            // Validar de nuevo después de sincronizar
+            if (!localCart || localCart.length === 0) {
+                alert('El carrito está vacío. Agrega productos antes de procesar el pago.');
+                console.error('❌ Carrito vacío después de sincronizar');
+                return;
+            }
+        } else if (localCartTotal <= 0 || !Number.isFinite(localCartTotal)) {
+            // Si el carrito tiene items pero el total es inválido, recalcular
+            localCartTotal = calculateCartTotal(localCart);
+            if (localCartTotal <= 0 || !Number.isFinite(localCartTotal)) {
+                alert('Error: El total del carrito no es válido. Por favor, intenta nuevamente.');
+                console.error('❌ Total inválido después de recalcular:', { localCartTotal, localCart });
+                return;
+            }
+        }
+        
+        let totals;
+        try {
+            totals = calculateCartTotals(localCart);
+            console.log('🔍 DEBUG calculateCartTotals:', { localCart, totals, localCartTotal });
+        } catch (e) {
+            alert("Error: Error de cálculo en totales. Por favor, intenta nuevamente.");
+            console.error("Error al calcular totales:", e);
+            return;
+        }
+        
+        // Validar que el total sea válido
+        if (!totals || !totals.total || totals.total <= 0 || !Number.isFinite(totals.total)) {
+            alert('Error: El total del carrito no es válido. Por favor, intenta nuevamente.');
+            console.error('❌ Total inválido:', { totals, localCart, localCartTotal });
+            return;
+        }
+        
+        try {
+            // =========================================================
+            // FIX FRONTEND: Normalizar payment_type antes de crear venta
+            // =========================================================
+            const VALID_PAYMENT_VALUES = new Set(["cash", "debit", "credit", "transfer", "qr"]);
+            
+            // Mapear paymentType a valor en inglés si viene en español
+            const paymentTypeMap = {
+                'Efectivo': 'cash',
+                'Débito': 'debit',
+                'Crédito': 'credit',
+                'Transferencia': 'transfer',
+                'QR': 'qr',
+                'Cash': 'cash',
+                'Debit': 'debit',
+                'Credit': 'credit',
+                'Transfer': 'transfer',
+                'cash': 'cash',
+                'debit': 'debit',
+                'credit': 'credit',
+                'transfer': 'transfer',
+                'qr': 'qr'
+            };
+            
+            const rawPayment = paymentTypeMap[paymentType] || (paymentType || '').trim().toLowerCase();
+
+            if (!rawPayment || !VALID_PAYMENT_VALUES.has(rawPayment)) {
+                console.error("payment_type inválido/vacío:", rawPayment, "original:", paymentType);
+                alert("Selecciona un método de pago");
+                return;
+            }
+
+            const paymentTypeNormalized = rawPayment;
+            
+            // NORMALIZACIÓN FINAL: Asegurar provider correcto
+            let provider = window.paymentState?.provider || '';
+            if (paymentTypeNormalized === 'cash') {
+                provider = 'NONE';
+            } else if (paymentTypeNormalized === 'debit' || paymentTypeNormalized === 'credit') {
+                // Si es débito/crédito y no hay provider, forzar GETNET
+                if (!provider || provider.trim() === '' || provider === 'NONE') {
+                    provider = 'GETNET';
+                }
+            } else {
+                // Para otros métodos (transfer, qr), usar GETNET si no hay provider
+                if (!provider || provider.trim() === '') {
+                    provider = 'GETNET';
+                }
+            }
+            
+            // NO permitir debit/credit con provider NONE
+            if ((paymentTypeNormalized === 'debit' || paymentTypeNormalized === 'credit') && provider === 'NONE') {
+                console.error('Error: Débito/Crédito no puede tener provider NONE');
+                alert('Error: Débito y Crédito requieren GETNET como proveedor');
+                return;
+            }
+            
+            // Preparar datos para enviar
+            const saleData = {
+                payment_type: paymentTypeNormalized,
+                payment_provider: provider,
+                cart: localCart
+            };
+
+            // DEBUG DURO
+            console.log("PAYMENT_STATE", window.paymentState);
+            console.log("SALE_DATA_FINAL", saleData);
+            
+            {% if is_superadmin_register %}
+            // Agregar datos de superadmin si aplica
+            // Si el pago es cortesía, no requerir tipo_operacion y motivo del formulario
+            // (se generará automáticamente en el backend)
+            if ((paymentTypeSpanish || '').trim() !== 'Cortesía') {
+                const tipoOperacion = document.getElementById('tipo-operacion')?.value || '';
+                const motivo = document.getElementById('motivo-operacion')?.value?.trim() || '';
+                if (tipoOperacion) {
+                    saleData.tipo_operacion = tipoOperacion;
+                }
+                if (motivo) {
+                    saleData.motivo = motivo;
+                }
+            }
+            {% endif %}
+            
+            // =========================================================
+            // FLUJO GETNET AGENT: Si register_id=1 y payment != cash
+            // =========================================================
+            const registerId = window.CURRENT_REGISTER_ID || '';
+            const isTestRegister = (registerId === '1' || registerId === 'TEST001' || registerId === '1');
+            const isGetnetPayment = (paymentTypeNormalized !== 'cash' && provider === 'GETNET');
+            
+            if (isTestRegister && isGetnetPayment) {
+                console.log('🔄 Flujo GETNET Agent: Creando PaymentIntent...');
+                console.log('🔍 DEBUG antes de crear PaymentIntent:', { 
+                    registerId, 
+                    totals, 
+                    amount_total: totals?.total, 
+                    cartLength: localCart.length,
+                    localCart,
+                    localCartTotal
+                });
+                
+                // Validación exhaustiva antes de crear PaymentIntent
+                if (!totals) {
+                    console.error('❌ totals es null/undefined');
+                    alert('Error: No se pudieron calcular los totales del carrito. Por favor, intenta nuevamente.');
+                    return;
+                }
+                
+                if (totals.total === undefined || totals.total === null) {
+                    console.error('❌ totals.total es undefined/null');
+                    alert('Error: El total del carrito no pudo ser calculado. Por favor, intenta nuevamente.');
+                    return;
+                }
+                
+                const finalTotal = Number(totals.total);
+                if (!Number.isFinite(finalTotal) || finalTotal <= 0) {
+                    console.error('❌ Total inválido antes de crear PaymentIntent:', { 
+                        totals, 
+                        finalTotal, 
+                        localCart, 
+                        localCartTotal 
+                    });
+                    alert('Error: El total del carrito no es válido (' + finalTotal + '). Por favor, agrega productos al carrito e intenta nuevamente.');
+                    return;
+                }
+                
+                try {
+                    // 1. Crear PaymentIntent en estado READY
+                    const intentResponse = await fetch('/caja/api/payment/intents', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            register_id: registerId || '1',
+                            provider: 'GETNET',
+                            amount_total: finalTotal,  // Usar la variable validada
+                            status: 'READY',
+                            cart: localCart  // Guardar carrito en PaymentIntent
+                        })
+                    });
+                    
+                    if (!intentResponse.ok) {
+                        const errorText = await intentResponse.text();
+                        console.error('Error al crear PaymentIntent:', errorText);
+                        alert('Error al iniciar pago: ' + (errorText || 'Error desconocido'));
+                        return;
+                    }
+                    
+                    const intentData = await intentResponse.json();
+                    if (!intentData.success || !intentData.intent_id) {
+                        console.error('Error: PaymentIntent no creado correctamente', intentData);
+                        alert('Error: No se pudo crear el intent de pago');
+                        return;
+                    }
+                    
+                    const intentId = intentData.intent_id;
+                    console.log('✅ PaymentIntent creado:', intentId);
+                    
+                    // 2. Mostrar overlay "Esperando terminal GETNET…"
+                    showGetnetWaiting('Esperando que el agente procese el pago en el terminal...');
+                    
+                    // 3. Polling cada 1.5 segundos hasta que el agente procese
+                    let pollAttempts = 0;
+                    const maxPollAttempts = 120; // 3 minutos máximo (120 * 1.5s)
+                    const pollInterval = 1500; // 1.5 segundos
+                    
+                    const pollIntentStatus = async () => {
+                        pollAttempts++;
+                        
+                        try {
+                            const statusResponse = await fetch(`/caja/api/payment/intents/${intentId}`, {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            
+                            if (!statusResponse.ok) {
+                                console.error('Error al consultar estado del PaymentIntent:', statusResponse.status);
+                                if (pollAttempts >= maxPollAttempts) {
+                                    hideGetnetWaiting();
+                                    alert('Error: No se pudo verificar el estado del pago. Por favor, intenta nuevamente.');
+                                    return;
+                                }
+                                setTimeout(pollIntentStatus, pollInterval);
+                                return;
+                            }
+                            
+                            const statusData = await statusResponse.json();
+                            const currentStatus = statusData.status || statusData.intent?.status;
+                            
+                            console.log(`📊 PaymentIntent ${intentId} status:`, currentStatus, `(intento ${pollAttempts})`);
+                            
+                            if (currentStatus === 'CONFIRMED' || currentStatus === 'APPROVED') {
+                                // 4. Cuando está confirmado, crear la venta con payment_intent_id
+                                hideGetnetWaiting();
+                                console.log('✅ PaymentIntent confirmado, creando venta...');
+                                
+                                saleData.payment_intent_id = intentId;
+                                
+                                const saleResponse = await fetch('/caja/api/sale/create', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(saleData)
+                                });
+                                
+                                const contentType = saleResponse.headers.get('content-type') || '';
+                                if (!contentType.includes('application/json')) {
+                                    const text = await saleResponse.text();
+                                    console.error('Error: El servidor devolvió HTML en lugar de JSON');
+                                    alert('Error: El servidor devolvió una respuesta no válida.');
+                                    return;
+                                }
+                                
+                                const saleResult = await saleResponse.json();
+                                
+                                if (saleResult.success) {
+                                    // Si hay ticket con QR, abrirlo en nueva ventana para imprimir
+                                    if (saleResult.ticket && saleResult.ticket.ticket_url) {
+                                        window.open(saleResult.ticket.ticket_url, '_blank', 'width=800,height=600');
+                                        // Pequeño delay para que el usuario vea el ticket antes de recargar
+                                        setTimeout(() => {
+                                            localCart = [];
+                                            localCartTotal = 0;
+                                            pendingOperations.clear();
+                                            updateCartDisplay([], 0);
+                                            location.reload();
+                                        }, 1000);
+                                    } else {
+                                        localCart = [];
+                                        localCartTotal = 0;
+                                        pendingOperations.clear();
+                                        updateCartDisplay([], 0);
+                                        setTimeout(() => location.reload(), 500);
+                                    }
+                                } else {
+                                    console.error('Error del servidor al crear venta:', saleResult);
+                                    alert('Error: ' + (saleResult.error || 'Error desconocido al crear la venta'));
+                                }
+                                return;
+                            }
+                            
+                            if (currentStatus === 'DECLINED' || currentStatus === 'ERROR' || currentStatus === 'CANCELLED') {
+                                // Pago rechazado o cancelado
+                                hideGetnetWaiting();
+                                const errorMsg = statusData.error_message || statusData.intent?.error_message || 'Pago rechazado';
+                                alert('Pago rechazado: ' + errorMsg);
+                                return;
+                            }
+                            
+                            // Continuar polling si aún está en proceso
+                            if (pollAttempts >= maxPollAttempts) {
+                                hideGetnetWaiting();
+                                alert('Tiempo de espera agotado. El pago no se completó. Por favor, intenta nuevamente.');
+                                return;
+                            }
+                            
+                            setTimeout(pollIntentStatus, pollInterval);
+                            
+                        } catch (pollError) {
+                            console.error('Error en polling:', pollError);
+                            if (pollAttempts >= maxPollAttempts) {
+                                hideGetnetWaiting();
+                                alert('Error al verificar el estado del pago: ' + pollError.message);
+                                return;
+                            }
+                            setTimeout(pollIntentStatus, pollInterval);
+                        }
+                    };
+                    
+                    // Iniciar polling después de un breve delay
+                    setTimeout(pollIntentStatus, pollInterval);
+                    return; // Salir aquí, el polling continuará
+                    
+                } catch (intentError) {
+                    console.error('Error en flujo GETNET Agent:', intentError);
+                    hideGetnetWaiting();
+                    alert('Error al iniciar pago con GETNET: ' + intentError.message);
+                    return;
+                }
+            }
+            
+            // Flujo normal (efectivo o register_id != 1)
+            const response = await fetch('/caja/api/sale/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(saleData)
+            });
+            
+            // Verificar Content-Type antes de parsear JSON
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Error: El servidor devolvió HTML en lugar de JSON');
+                console.error('Status:', response.status);
+                console.error('Content-Type:', contentType);
+                console.error('Respuesta (primeros 500 caracteres):', text.substring(0, 500));
+                alert('Error: El servidor devolvió una respuesta no válida. Por favor, verifica la configuración de la API.');
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Si hay ticket con QR, abrirlo en nueva ventana para imprimir
+                if (data.ticket && data.ticket.ticket_url) {
+                    window.open(data.ticket.ticket_url, '_blank', 'width=800,height=600');
+                    // Pequeño delay para que el usuario vea el ticket antes de recargar
+                    setTimeout(() => {
+                        localCart = [];
+                        localCartTotal = 0;
+                        pendingOperations.clear();
+                        updateCartDisplay([], 0);
+                        location.reload();
+                    }, 1000);
+                } else {
+                    localCart = [];
+                    localCartTotal = 0;
+                    pendingOperations.clear();
+                    updateCartDisplay([], 0);
+                    setTimeout(() => location.reload(), 500);
+                }
+            } else {
+                console.error('Error del servidor:', data);
+                alert('Error: ' + (data.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error al procesar venta:', error);
+            // Mostrar mensaje más descriptivo
+            if (error.message && error.message.includes('JSON')) {
+                alert('Error al procesar venta: El servidor devolvió una respuesta no válida. Por favor, verifica la configuración de la API.');
+            } else {
+                alert('Error al procesar venta: ' + error.message);
+            }
+        }
+    }
+    window.processPaymentInternal = processPaymentInternal;
+    
+    // Función para remover producto del carrito
+    async function removeFromCart(itemId) {
+        console.log('🗑️ removeFromCart llamado:', itemId);
+        // Actualización optimista inmediata
+        const itemIndex = localCart.findIndex(item => item.item_id == itemId || item.item_id === itemId);
+        if (itemIndex !== -1) {
+            const item = localCart[itemIndex];
+            if (toNumberCLP(item.quantity || item.qty || 1) > 1) {
+                const currentQty = toNumberCLP(item.quantity || item.qty || 1);
+                item.quantity = currentQty - 1;
+                item.qty = item.quantity; // Mantener sincronizado
+                // Recalcular subtotal usando la función segura
+                item.subtotal = calculateItemSubtotal(item);
+            } else {
+                localCart.splice(itemIndex, 1);
+            }
+            
+            localCartTotal = calculateCartTotal(localCart);
+            updateCartDisplay(localCart, localCartTotal);
+        }
+        
+        try {
+            const response = await fetch('/caja/api/cart/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                    quantity: 1
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                localCart = data.cart || [];
+                localCartTotal = data.total || 0;
+                updateCartDisplay(localCart, localCartTotal);
+            } else {
+                await syncCartFromServer();
+            }
+        } catch (error) {
+            await syncCartFromServer();
+        }
+    }
+    window.removeFromCart = removeFromCart;
+    
+    // ============================================
+    // FIN DE FUNCIONES DE PAGO Y LIMPIAR CARRO
+    // ============================================
+    
+    // ============================================
+    // FIN DE FUNCIONES CRÍTICAS
+    // ============================================
+    
+    // Agregar clase al body para estilos específicos del POS
+    if (document.body) {
+        document.body.classList.add('caja-page');
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('caja-page');
+        });
+    }
+    
+    // Mostrar mensaje de bienvenida al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            const welcomeMessages = [
+                '💪 ¡Listo para vender! ¡Vamos a hacer un excelente trabajo!',
+                '🚀 ¡Bienvenido! ¡Hoy será un día exitoso!',
+                '⭐ ¡Hola! ¡Estamos contigo para brillar!',
+                '🔥 ¡Vamos a superar todas las metas hoy!',
+            ];
+            const randomMsg = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+            showToast(randomMsg, 'info', 4000);
+        }, 500);
+    });
+</script>
+<div class="caja-container">
+    <!-- Panel Izquierdo: Carrito/Recibo -->
+    <div class="cart-section">
+        <img src="{{ url_for('static', filename='img/bimba-logo.png') }}" alt="BIMBA Logo" class="cart-logo" onerror="this.style.display='none'">
+        
+        <!-- Items del carrito -->
+        <div class="cart-items" id="cart-items">
+            {% if cart %}
+                {% for item in cart %}
+                <div class="cart-item" data-item-id="{{ item.item_id }}">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">{{ item.quantity }} {{ item.name }}</div>
+                    </div>
+                    <div class="cart-item-price">${{ "{:,.0f}".format(item.subtotal|float) }}</div>
+                    <button onclick="removeFromCart('{{ item.item_id }}')" class="cart-item-remove">✕</button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 30px 20px; color: #888;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🛒</div>
+                    <p style="font-size: 0.95rem; margin: 0; line-height: 1.5;">
+                        Tu carrito está esperando productos<br>
+                        <span style="color: #667eea; font-size: 0.85rem;">¡Agrega productos para comenzar a vender! 💪</span>
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Total -->
+        <div class="cart-total" id="cart-total">
+            {% if cart %}
+            Total ${{ "{:,.0f}".format(total|float) }}
+            {% else %}
+            Total $0
+            {% endif %}
+        </div>
+        
+        <!-- Selector de tipo de operación para caja SUPERADMIN -->
+        {% if is_superadmin_register %}
+        <div style="background: rgba(255, 152, 0, 0.1); border: 2px solid #ff9800; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+            <h3 style="color: #ff9800; margin: 0 0 10px 0; font-size: 1rem;">🔐 {{ register_name }}</h3>
+            <div style="margin-bottom: 10px;">
+                <label style="display: block; color: #fff; margin-bottom: 5px; font-weight: 600;">Tipo de Operación:</label>
+                <select id="tipo-operacion" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid #ff9800; border-radius: 6px; color: #fff; font-size: 1rem;">
+                    <option value="">Selecciona...</option>
+                    <option value="CORTESIA">Cortesía (Total $0)</option>
+                    <option value="PRUEBA_DEPLOY">Prueba de Deploy</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; color: #fff; margin-bottom: 5px; font-weight: 600;">Motivo (obligatorio):</label>
+                <textarea id="motivo-operacion" rows="3" placeholder="Explica el motivo de esta operación..." style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid #ff9800; border-radius: 6px; color: #fff; font-family: inherit; resize: vertical;"></textarea>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Botones de pago debajo del carrito -->
+        <div class="payment-buttons">
+            <button 
+                class="payment-btn cash" 
+                onclick="if(typeof window.processPayment === 'function') { window.processPayment('cash'); } else { console.error('processPayment no disponible'); alert('Error: processPayment no disponible'); }"
+                {% if not cart or total == 0 %}disabled{% endif %}>
+                💵 EFECTIVO
+            </button>
+            <button 
+                class="payment-btn debit" 
+                onclick="if(typeof window.processPayment === 'function') { window.processPayment('debit'); } else { console.error('processPayment no disponible'); alert('Error: processPayment no disponible'); }"
+                {% if not cart or total == 0 %}disabled{% endif %}>
+                💳 DÉBITO
+            </button>
+            <button 
+                class="payment-btn credit" 
+                onclick="if(typeof window.processPayment === 'function') { window.processPayment('credit'); } else { console.error('processPayment no disponible'); alert('Error: processPayment no disponible'); }"
+                {% if not cart or total == 0 %}disabled{% endif %}>
+                💳 CRÉDITO
+            </button>
+            <button 
+                class="payment-btn getnet" 
+                onclick="pagarConTarjeta()"
+                style="background: linear-gradient(135deg, #00c853 0%, #00e676 100%); border: 2px solid #00c853;"
+                {% if not cart or total == 0 %}disabled{% endif %}>
+                💳 PAGAR CON TARJETA (GETNET)
+            </button>
+            {% if is_superadmin_register %}
+            <button 
+                class="payment-btn courtesy" 
+                onclick="if(typeof window.processPayment === 'function') { window.processPayment('Cortesía'); } else { console.error('processPayment no disponible'); alert('Error: processPayment no disponible'); }"
+                style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); border: 2px solid #ff9800;"
+                {% if not cart or total == 0 %}disabled{% endif %}>
+                🎁 CORTESÍA
+            </button>
+            {% endif %}
+        </div>
+        
+        <button 
+            class="btn-clear-cart-secondary" 
+            onclick="clearCart()">
+            LIMPIAR CARRO
+        </button>
+        
+        <!-- Modal de confirmación de pago -->
+        <div id="payment-confirm-modal" class="payment-confirm-modal">
+            <div class="payment-confirm-content">
+                <div class="payment-confirm-icon">💰</div>
+                <h3 class="payment-confirm-title">Confirmar Pago</h3>
+                <p class="payment-confirm-message" id="payment-confirm-message">¿Confirmar venta por <span id="payment-type-display"></span>?</p>
+                <div class="payment-confirm-total" id="payment-confirm-total">Total: $0</div>
+                <div class="payment-confirm-buttons">
+                    <button class="payment-confirm-cancel" onclick="closePaymentConfirm()">Cancelar</button>
+                    <button class="payment-confirm-ok" id="payment-confirm-ok" onclick="confirmPaymentProcess()" data-payment-type="">Confirmar</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal de confirmación para limpiar carrito -->
+        <div id="clear-cart-confirm-modal" class="payment-confirm-modal">
+            <div class="payment-confirm-content">
+                <div class="payment-confirm-icon">🗑️</div>
+                <h3 class="payment-confirm-title">Limpiar Carrito</h3>
+                <p class="payment-confirm-message">¿Estás seguro de que deseas limpiar el carrito?</p>
+                <p class="payment-confirm-message" style="font-size: 0.9rem; color: #888; margin-top: 10px;">Se eliminarán todos los productos agregados</p>
+                <div class="payment-confirm-buttons">
+                    <button class="payment-confirm-cancel" onclick="closeClearCartConfirm()">Cancelar</button>
+                    <button class="payment-confirm-ok" id="clear-cart-confirm-ok" onclick="confirmClearCart()" style="background: linear-gradient(135deg, #f5576c 0%, #c82333 100%);">Limpiar</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MEJORA: Modal de alertas de stock -->
+        <div id="stock-alert-modal" class="payment-confirm-modal">
+            <div class="payment-confirm-content" style="max-width: 600px;">
+                <div class="payment-confirm-icon" style="font-size: 3rem;">⚠️</div>
+                <h3 class="payment-confirm-title" style="color: #ff9800;">⚠️ Stock Insuficiente</h3>
+                <p class="payment-confirm-message" style="margin-bottom: 20px;">
+                    Algunos productos requieren ingredientes que no están disponibles en cantidad suficiente.
+                </p>
+                <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px; text-align: left;">
+                    <ul id="stock-alert-issues" style="list-style: none; padding: 0; margin: 0;">
+                        <!-- Se llenará dinámicamente -->
+                    </ul>
+                </div>
+                <div class="payment-confirm-buttons">
+                    <button class="payment-confirm-cancel" onclick="closeStockAlertModal(); pendingPaymentType = null;">Cancelar</button>
+                    <button class="payment-confirm-ok" onclick="continuePaymentDespiteStock();" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">Continuar de Todos Modos</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel Central: Productos -->
+    <div class="products-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="margin: 0;">🛍️ Productos Disponibles</h2>
+            <div id="motivational-badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                💪 ¡Vamos a vender!
+            </div>
+        </div>
+        <div class="products-scrollable">
+            {% if categorized_products %}
+                {% for category_name, products_in_category in categorized_products.items() %}
+                    <div class="category-section">
+                        <h3 class="category-title">{{ category_name }}</h3>
+                        <div class="products-grid">
+                            {% for product in products_in_category %}
+                                {% set item_id = product.get('item_id') or product.get('item_kit_id') or product.get('id') %}
+                                {% set name = product.get('name') or product.get('kit_name', 'Producto') %}
+                                {% set price_raw = product.get('unit_price') or product.get('price') or product.get('kit_price') or 0 %}
+                                {% set price = price_raw|float if price_raw else 0 %}
+                                
+                                {% if item_id and price %}
+                                <div class="product-card" 
+                                     data-id="{{ item_id }}" 
+                                     data-name="{{ name }}" 
+                                     data-price="{{ price|int }}">
+                                    <div class="product-name">{{ name }}</div>
+                                    <div class="product-price">${{ "{:,.0f}".format(price) }}</div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+            <div style="text-align: center; padding: 20px; color: #aaa;">
+                <p>No hay kits disponibles</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+</div>
+
+<div class="caja-footer">
+    <div class="caja-footer-info">
+        <div>Caja: <span>{{ register_name }}</span></div>
+        <div>Cajero: <span>{{ employee_name }}</span> - Llevas <span>{{ employee_sales_count }}</span> ventas</div>
+        {% if app_version %}
+        <div style="color: #888; font-size: 0.7rem; margin-left: 10px;">{{ app_version }}</div>
+        {% endif %}
+    </div>
+           <div class="caja-footer-actions">
+               <button type="button" class="btn-refresh" onclick="if(typeof window.refreshProducts === 'function') { window.refreshProducts(); } else { console.error('refreshProducts no disponible'); }" title="Actualizar productos">🔄 Actualizar</button>
+               <button type="button" class="btn-lock-screen" onclick="if(typeof window.lockScreen === 'function') { window.lockScreen(); } else { console.error('lockScreen no disponible'); }" title="Bloquear pantalla">🔒 Bloquear</button>
+               <button type="button" class="btn-sos-drawer" onclick="if(typeof window.requestSOSDrawer === 'function') { window.requestSOSDrawer(); } else { console.error('requestSOSDrawer no disponible'); }" title="Solicitar Apertura de Cajón (Requiere autorización)">💰 Solicitar Apertura</button>
+               <a href="{{ url_for('caja.test_print') }}" class="btn-test-print" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Imprimir Ticket de Prueba">🖨️ Prueba Impresión</a>
+               <button type="button" class="btn-close-shift" onclick="if(typeof window.openCloseRegisterModal === 'function') { window.openCloseRegisterModal(); } else { console.error('openCloseRegisterModal no disponible'); }" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">💰 Cerrar Caja</button>
+           </div>
+</div>
+
+<!-- Modal de cierre de caja -->
+<div class="close-register-modal" id="close-register-modal">
+    <div class="close-register-modal-content">
+        <div class="close-register-modal-header">
+            <h2>💰 Cierre de Caja</h2>
+            <button type="button" class="close-register-modal-close" onclick="closeCloseRegisterModal()" title="Cerrar">×</button>
+        </div>
+        <div class="close-register-modal-body" id="close-register-modal-body">
+            <iframe id="close-register-iframe" src="about:blank" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay de bloqueo de pantalla -->
+<div class="screen-lock-overlay" id="screen-lock-overlay">
+    <div class="screen-lock-content">
+        <h2>🔒 Pantalla Bloqueada</h2>
+        <p>Ingresa tu PIN para desbloquear</p>
+        
+        <div class="pin-input-container">
+            <div class="pin-display-lock empty" id="pin-display-lock">Ingresa tu PIN</div>
+            <div class="error-message" id="pin-error-message"></div>
+            
+            <div class="numeric-keyboard-lock">
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('1')">1</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('2')">2</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('3')">3</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('4')">4</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('5')">5</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('6')">6</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('7')">7</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('8')">8</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('9')">9</button>
+                <button type="button" class="keyboard-btn-lock" onclick="clearPinLock()">C</button>
+                <button type="button" class="keyboard-btn-lock" onclick="appendPinDigit('0')">0</button>
+                <button type="button" class="keyboard-btn-lock" onclick="deletePinDigit()">⌫</button>
+            </div>
+            
+            <div class="keyboard-actions-lock">
+                <button type="button" class="btn-clear-pin" onclick="clearPinLock()">Limpiar</button>
+                <button type="button" class="btn-unlock" id="btn-unlock-lock" onclick="verifyPinAndUnlock()" disabled>Desbloquear</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenedor de notificaciones toast - Oculto para ahorrar recursos -->
+<div class="toast-container" id="toast-container" style="display: none !important;"></div>
+
+<script>
+// Sistema de notificaciones toast (no modales) - Deshabilitado para ahorrar recursos
+// Variables y funciones ya definidas al inicio del script - NO DUPLICAR
+
+function showConfirm(message, onConfirm, onCancel = null) {
+    // Usar confirm nativo del navegador para ahorrar recursos
+    if (confirm(message)) {
+        onConfirm();
+    } else {
+        if (onCancel) onCancel();
+    }
+}
+
+// Mostrar modal de confirmación de pago
+// Funciones showPaymentConfirm y closePaymentConfirm ya están definidas al inicio - NO DUPLICAR
+// Solo mantener el event listener para cerrar con ESC
+
+// Cerrar modal al hacer clic fuera o presionar ESC
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('payment-confirm-modal');
+    if (modal) {
+        // Cerrar al hacer clic en el fondo
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal || e.target.classList.contains('payment-confirm-modal')) {
+                closePaymentConfirm();
+            }
+        });
+        
+        // Cerrar con ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closePaymentConfirm();
+            }
+        });
+    }
+});
+
+// Todas las funciones de pago y limpiar carro ya están definidas al inicio - NO DUPLICAR
+
+// Event listener centralizado para product-card (delegación de eventos)
+// Funciona con productos renderizados inicialmente y dinámicamente
+function setupProductCardListeners() {
+    // Usar delegación de eventos en el contenedor para capturar clicks en todos los product-card
+    const productsContainer = document.querySelector('.products-scrollable') || document.body;
+    
+    // Remover listener anterior si existe para evitar duplicados
+    if (productsContainer._productCardListener) {
+        productsContainer.removeEventListener('click', productsContainer._productCardListener);
+    }
+    
+    // Crear nuevo listener
+    productsContainer._productCardListener = function(e) {
+        // Buscar el product-card más cercano al elemento clickeado
+        const productCard = e.target.closest('.product-card');
+        
+        if (!productCard) {
+            return; // No es un click en product-card
+        }
+        
+        // Obtener datos de los data-attributes
+        const itemId = productCard.getAttribute('data-id');
+        const name = productCard.getAttribute('data-name');
+        const priceStr = productCard.getAttribute('data-price');
+        
+        // Validar que todos los datos estén presentes
+        if (!itemId || !name || !priceStr) {
+            console.error('❌ Product-card sin data-attributes completos:', { itemId, name, priceStr });
+            return;
+        }
+        
+        // DEBUG: Log el precio crudo antes de procesarlo
+        console.log('🔍 DEBUG precio:', { priceStr, priceStrType: typeof priceStr, priceStrLength: priceStr.length });
+        
+        // Convertir price a número
+        const price = toNumberCLP(priceStr);
+        
+        // DEBUG: Log el precio convertido
+        console.log('🔍 DEBUG precio convertido:', { price, priceType: typeof price, isNaN: isNaN(price) });
+        
+        if (isNaN(price) || price <= 0) {
+            console.error('❌ Precio inválido:', { priceStr, price, original: priceStr });
+            alert('Error: Precio inválido para ' + name + ': ' + priceStr);
+            return;
+        }
+        
+        // Validar que addToCart esté disponible
+        if (typeof window.addToCart !== 'function') {
+            console.error('❌ addToCart no está definida');
+            return;
+        }
+        
+        // Llamar a addToCart con los datos
+        try {
+            window.addToCart(itemId, name, price);
+        } catch (error) {
+            console.error('❌ Error al llamar addToCart:', error);
+        }
+    };
+    
+    // Agregar el listener
+    productsContainer.addEventListener('click', productsContainer._productCardListener);
+    console.log('✅ Event listener centralizado para product-card configurado');
+}
+
+// Inicializar carrito local al cargar la página (solo este event listener se mantiene)
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🔄 DOMContentLoaded: Inicializando carrito...');
+    
+    // Configurar event listener centralizado para product-card
+    setupProductCardListeners();
+    
+    // Inicializar método de pago por defecto según configuración de la caja
+    const getnetBtn = document.querySelector('.payment-btn.getnet');
+    if (getnetBtn && !getnetBtn.disabled) {
+        // Si GETNET está visible y habilitado, inicializar paymentType como crédito
+        window.paymentState.type = 'credit';
+        window.paymentState.provider = 'GETNET';
+        console.log('✅ Método de pago inicializado: credit (GETNET)');
+    } else {
+        // Si no hay GETNET, usar efectivo por defecto
+        window.paymentState.type = 'cash';
+        window.paymentState.provider = 'NONE';
+        console.log('✅ Método de pago inicializado: cash (NONE)');
+    }
+    
+    // Esperar a que syncCartFromServer esté disponible
+    // El primer script define syncCartFromServer, pero puede no estar listo inmediatamente
+    let attempts = 0;
+    const maxAttempts = 10;
+    const checkInterval = 100;
+    
+    const trySync = async () => {
+        if (typeof window.syncCartFromServer === 'function') {
+            console.log('✅ syncCartFromServer encontrado, sincronizando...');
+            await window.syncCartFromServer();
+        } else {
+            attempts++;
+            if (attempts < maxAttempts) {
+                console.log('⏳ syncCartFromServer no disponible, reintentando (' + attempts + '/' + maxAttempts + ')...');
+                setTimeout(trySync, checkInterval);
+            } else {
+                console.error('❌ syncCartFromServer no disponible después de', maxAttempts, 'intentos');
+            }
+        }
+    };
+    
+    trySync();
+});
+
+
+// Variable para almacenar el PIN ingresado
+let lockPin = '';
+
+// Verificar si la pantalla debe estar bloqueada al cargar la página
+function checkScreenLock() {
+    // Para desarrollo: NO bloquear automáticamente al cargar la página
+    // Solo bloquear si el usuario lo hizo explícitamente en esta sesión
+    // Descomentar la siguiente línea si quieres que NO se bloquee automáticamente:
+    sessionStorage.removeItem('screenLocked');
+    
+    const isLocked = sessionStorage.getItem('screenLocked') === 'true';
+    console.log('checkScreenLock - isLocked:', isLocked);
+    
+    const overlay = document.getElementById('screen-lock-overlay');
+    if (overlay) {
+        if (isLocked) {
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            lockPin = '';
+            if (typeof clearPinLock === 'function') {
+                clearPinLock();
+            }
+            console.log('⚠️ Pantalla bloqueada detectada');
+        } else {
+            // Asegurar que el overlay esté oculto si no está bloqueado
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+            console.log('✅ Pantalla desbloqueada');
+        }
+    }
+}
+
+// Función para bloquear la pantalla
+function lockScreen() {
+    console.log('lockScreen llamado');
+    const overlay = document.getElementById('screen-lock-overlay');
+    if (overlay) {
+        // Guardar estado de bloqueo en sessionStorage
+        sessionStorage.setItem('screenLocked', 'true');
+        
+        lockPin = '';
+        clearPinLock();
+        overlay.classList.add('active');
+        // Prevenir interacción con el contenido de fondo
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Función para agregar dígito al PIN
+function appendPinDigit(digit) {
+    if (lockPin.length < 10) { // Limitar a 10 dígitos
+        lockPin += digit;
+        updatePinDisplay();
+    }
+}
+
+// Función para eliminar último dígito del PIN
+function deletePinDigit() {
+    if (lockPin.length > 0) {
+        lockPin = lockPin.slice(0, -1);
+        updatePinDisplay();
+    }
+}
+
+// Función para limpiar el PIN
+function clearPinLock() {
+    lockPin = '';
+    updatePinDisplay();
+    const errorMsg = document.getElementById('pin-error-message');
+    if (errorMsg) {
+        errorMsg.textContent = '';
+    }
+}
+
+// Función para actualizar la visualización del PIN
+function updatePinDisplay() {
+    const pinDisplay = document.getElementById('pin-display-lock');
+    const unlockBtn = document.getElementById('btn-unlock-lock');
+    
+    if (pinDisplay) {
+        if (lockPin.length === 0) {
+            pinDisplay.textContent = 'Ingresa tu PIN';
+            pinDisplay.classList.add('empty');
+        } else {
+            pinDisplay.textContent = '•'.repeat(lockPin.length);
+            pinDisplay.classList.remove('empty');
+        }
+    }
+    
+    if (unlockBtn) {
+        unlockBtn.disabled = lockPin.length === 0;
+    }
+}
+
+// Función para verificar PIN y desbloquear
+async function verifyPinAndUnlock() {
+    if (lockPin.length === 0) {
+        return;
+    }
+    
+    const errorMsg = document.getElementById('pin-error-message');
+    const unlockBtn = document.getElementById('btn-unlock-lock');
+    
+    // Deshabilitar botón mientras se verifica
+    if (unlockBtn) {
+        unlockBtn.disabled = true;
+        unlockBtn.textContent = 'Verificando...';
+    }
+    
+    try {
+        const response = await fetch('/caja/api/verify-pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pin: lockPin
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // PIN correcto, desbloquear
+            unlockScreen();
+            if (typeof window.showToast === 'function') {
+                window.showToast('✅ Pantalla desbloqueada', 'success');
+            } else {
+                console.log('✅ Pantalla desbloqueada');
+            }
+        } else {
+            // PIN incorrecto
+            if (errorMsg) {
+                errorMsg.textContent = data.error || 'PIN incorrecto. Intenta nuevamente.';
+            }
+            lockPin = '';
+            updatePinDisplay();
+            
+            // Re-habilitar botón
+            if (unlockBtn) {
+                unlockBtn.disabled = false;
+                unlockBtn.textContent = 'Desbloquear';
+            }
+        }
+    } catch (error) {
+        console.error('Error al verificar PIN:', error);
+        if (errorMsg) {
+            errorMsg.textContent = 'Error al verificar PIN. Intenta nuevamente.';
+        }
+        lockPin = '';
+        updatePinDisplay();
+        
+        // Re-habilitar botón
+        if (unlockBtn) {
+            unlockBtn.disabled = false;
+            unlockBtn.textContent = 'Desbloquear';
+        }
+    }
+}
+
+// Función para desbloquear la pantalla
+function unlockScreen() {
+    const overlay = document.getElementById('screen-lock-overlay');
+    if (overlay) {
+        // Remover estado de bloqueo de sessionStorage
+        sessionStorage.removeItem('screenLocked');
+        
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        lockPin = '';
+        clearPinLock();
+    }
+}
+
+// Función para actualizar/cargar nuevos productos
+async function refreshProducts() {
+    console.log('refreshProducts llamado');
+    if (typeof window.refreshProducts === 'undefined') {
+        window.refreshProducts = refreshProducts;
+    }
+    if (typeof window.showToast === 'function') {
+        window.showToast('Consultando productos disponibles...', 'info');
+    } else {
+        console.log('Consultando productos disponibles...');
+    }
+    
+    try {
+        const response = await fetch('/caja/api/products', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.categorized_products) {
+            // Actualizar la sección de productos
+            updateProductsDisplay(data.categorized_products);
+            showToast('✅ Productos actualizados correctamente', 'success');
+        } else {
+            showToast('Error: ' + (data.error || 'No se pudieron cargar los productos'), 'error');
+        }
+    } catch (error) {
+        console.error('Error al actualizar productos:', error);
+        showToast('Error al actualizar productos: ' + error.message, 'error');
+    }
+}
+
+// Función para actualizar el display de productos
+function updateProductsDisplay(categorizedProducts) {
+    const productsSection = document.querySelector('.products-scrollable');
+    if (!productsSection) return;
+    
+    // Construir HTML de productos
+    let html = '';
+    
+    for (const [categoryName, productsInCategory] of Object.entries(categorizedProducts)) {
+        html += `<div class="category-section">
+            <h3 class="category-title">${categoryName}</h3>
+            <div class="products-grid">`;
+        
+        for (const product of productsInCategory) {
+            const itemId = product.item_id || product.item_kit_id || product.id;
+            const name = product.name || product.kit_name || 'Producto';
+            const priceRaw = product.price || product.unit_price || product.kit_price || 0;
+            const price = Math.round(toNumberCLP(priceRaw)); // Asegurar que sea entero
+            const priceFormatted = price.toLocaleString('es-CL', {maximumFractionDigits: 0});
+            
+            if (itemId && price) {
+                // Escapar el nombre para HTML (evitar problemas con comillas y caracteres especiales)
+                const escapedName = String(name).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                html += `
+                <div class="product-card" 
+                     data-id="${itemId}" 
+                     data-name="${escapedName}" 
+                     data-price="${price}">
+                    <div class="product-name">${name}</div>
+                    <div class="product-price">$${priceFormatted}</div>
+                </div>`;
+            }
+        }
+        
+        html += `</div></div>`;
+    }
+    
+    if (html === '') {
+        html = '<div style="text-align: center; padding: 20px; color: #aaa;"><p>No hay kits disponibles</p></div>';
+    }
+    
+    productsSection.innerHTML = html;
+    
+    // Re-configurar event listeners después de actualizar productos dinámicamente
+    setupProductCardListeners();
+}
+
+// Verificar bloqueo al cargar la página
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkScreenLock);
+} else {
+    // DOM ya está cargado
+    checkScreenLock();
+}
+
+// Asegurar que todas las funciones del footer estén disponibles globalmente
+// Esto debe hacerse DESPUÉS de que las funciones estén definidas
+setTimeout(() => {
+    if (typeof refreshProducts !== 'undefined') window.refreshProducts = refreshProducts;
+    if (typeof lockScreen !== 'undefined') window.lockScreen = lockScreen;
+    if (typeof requestSOSDrawer !== 'undefined') window.requestSOSDrawer = requestSOSDrawer;
+    if (typeof openCloseRegisterModal !== 'undefined') window.openCloseRegisterModal = openCloseRegisterModal;
+    
+    // Debug: Verificar que las funciones estén disponibles
+    console.log('✅ Funciones del footer disponibles:', {
+        refreshProducts: typeof window.refreshProducts,
+        lockScreen: typeof window.lockScreen,
+        requestSOSDrawer: typeof window.requestSOSDrawer,
+        openCloseRegisterModal: typeof window.openCloseRegisterModal
+    });
+}, 100);
+
+// Función para solicitar apertura del cajón
+async function requestSOSDrawer() {
+    console.log('requestSOSDrawer llamado');
+    if (typeof window.requestSOSDrawer === 'undefined') {
+        window.requestSOSDrawer = requestSOSDrawer;
+    }
+    showConfirm('¿Solicitar apertura del cajón? Esto requiere autorización del superadmin.', async () => {
+        try {
+            const response = await fetch('/caja/api/request-sos-drawer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (data.requires_authorization) {
+                    showToast('Solicitud enviada. Esperando autorización del superadmin...', 'info');
+                    // Mostrar opción de autorización presencial
+                    showPresentialAuthOption(data.request_id);
+                } else {
+                    showToast('✅ Cajón abierto', 'success');
+                }
+            } else {
+                showToast('Error: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error al solicitar apertura:', error);
+            showToast('Error de conexión', 'error');
+        }
+    });
+}
+
+// Función para mostrar opción de autorización presencial
+function showPresentialAuthOption(requestId) {
+    showConfirm('¿El superadmin está presente? Puede autorizar con su PIN.', async () => {
+        // Mostrar teclado para PIN del superadmin
+        showSuperAdminPinDialog(requestId);
+    }, () => {
+        showToast('Solicitud pendiente de autorización remota', 'info');
+    });
+}
+
+// Función para mostrar diálogo de PIN del superadmin
+function showSuperAdminPinDialog(requestId) {
+    // Crear overlay para PIN
+    const overlay = document.createElement('div');
+    overlay.id = 'sos-pin-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 20000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="text-align: center; padding: 30px; background: #1a1a1a; border-radius: 12px; max-width: 400px;">
+            <h2 style="color: #f5576c; margin-bottom: 20px;">🔐 Autorización Superadmin</h2>
+            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 15px;">Apertura de Cajón</p>
+            <p style="color: #ccc; margin-bottom: 20px;">Ingresa el PIN del superadmin</p>
+            <div class="pin-display-lock empty" id="sos-pin-display">Ingresa PIN</div>
+            <div class="numeric-keyboard-lock" id="sos-keyboard"></div>
+            <div id="sos-pin-error" style="color: #f5576c; margin-top: 15px; min-height: 20px;"></div>
+            <div style="margin-top: 20px;">
+                <button onclick="verifySuperAdminPin('${requestId}')" id="sos-verify-btn" disabled style="padding: 12px 24px; background: #4facfe; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">Verificar</button>
+                <button onclick="closeSOSPinDialog()" style="padding: 12px 24px; background: #4a4a4a; color: white; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Crear teclado numérico
+    const keyboard = document.getElementById('sos-keyboard');
+    const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'];
+    numbers.forEach(num => {
+        const btn = document.createElement('button');
+        btn.className = 'keyboard-btn-lock';
+        btn.textContent = num;
+        if (num === 'C' || num === '⌫') {
+            btn.classList.add('action');
+        }
+        btn.onclick = () => {
+            if (num === 'C') {
+                window.sosPin = '';
+            } else if (num === '⌫') {
+                window.sosPin = (window.sosPin || '').slice(0, -1);
+            } else {
+                window.sosPin = (window.sosPin || '') + num;
+            }
+            updateSOSPinDisplay();
+        };
+        keyboard.appendChild(btn);
+    });
+    
+    window.sosPin = '';
+    updateSOSPinDisplay();
+}
+
+function updateSOSPinDisplay() {
+    const display = document.getElementById('sos-pin-display');
+    const verifyBtn = document.getElementById('sos-verify-btn');
+    
+    if (display) {
+        if (!window.sosPin || window.sosPin.length === 0) {
+            display.textContent = 'Ingresa PIN';
+            display.classList.add('empty');
+        } else {
+            display.textContent = '•'.repeat(window.sosPin.length);
+            display.classList.remove('empty');
+        }
+    }
+    
+    if (verifyBtn) {
+        verifyBtn.disabled = !window.sosPin || window.sosPin.length === 0;
+    }
+}
+
+async function verifySuperAdminPin(requestId) {
+    if (!window.sosPin || window.sosPin.length === 0) {
+        return;
+    }
+    
+    const errorMsg = document.getElementById('sos-pin-error');
+    const verifyBtn = document.getElementById('sos-verify-btn');
+    
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = 'Verificando...';
+    
+    try {
+        const response = await fetch('/caja/api/authorize-sos-drawer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                request_id: requestId,
+                pin: window.sosPin
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('✅ Autorizado. Cajón abierto', 'success');
+            closeSOSPinDialog();
+        } else {
+            if (errorMsg) {
+                errorMsg.textContent = data.error || 'PIN incorrecto';
+            }
+            window.sosPin = '';
+            updateSOSPinDisplay();
+        }
+    } catch (error) {
+        console.error('Error al verificar PIN:', error);
+        if (errorMsg) {
+            errorMsg.textContent = 'Error de conexión';
+        }
+    } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = 'Verificar';
+    }
+}
+
+function closeSOSPinDialog() {
+    const overlay = document.getElementById('sos-pin-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+    window.sosPin = '';
+}
+
+// Funciones para el modal de cierre de caja
+function openCloseRegisterModal() {
+    console.log('openCloseRegisterModal llamado');
+    if (typeof window.openCloseRegisterModal === 'undefined') {
+        window.openCloseRegisterModal = openCloseRegisterModal;
+    }
+    const modal = document.getElementById('close-register-modal');
+    const iframe = document.getElementById('close-register-iframe');
+    
+    if (!modal || !iframe) return;
+    
+    // Cargar la URL del cierre de caja en el iframe
+    iframe.src = '{{ url_for("caja.close_register_view") }}';
+    
+    // Mostrar modal
+    modal.classList.add('active');
+    
+    // Escuchar mensajes del iframe para cerrar el modal cuando se complete el cierre
+    window.addEventListener('message', handleCloseRegisterMessage);
+}
+// Asegurar disponibilidad global
+window.openCloseRegisterModal = openCloseRegisterModal;
+
+function closeCloseRegisterModal() {
+    const modal = document.getElementById('close-register-modal');
+    const iframe = document.getElementById('close-register-iframe');
+    
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    
+    if (iframe) {
+        iframe.src = 'about:blank';
+    }
+    
+    // Remover listener de mensajes
+    window.removeEventListener('message', handleCloseRegisterMessage);
+}
+
+function handleCloseRegisterMessage(event) {
+    // Verificar que el mensaje viene del iframe de cierre de caja
+    // IMPORTANTE: Verificar el origen para seguridad
+    if (event.data && event.data.type === 'close_register_complete') {
+        console.log('✅ Mensaje de cierre recibido, cerrando modal y redirigiendo...');
+        
+        // El iframe ya muestra el mensaje de éxito durante 3 segundos
+        // Esperar a que el iframe complete su countdown antes de cerrar y redirigir
+        // Esto permite que el usuario vea el mensaje de éxito completo
+        const redirectUrl = event.data.redirect || '{{ url_for("home.index") }}';
+        
+        // Cerrar el modal después de que el iframe haya mostrado el mensaje (3 segundos)
+        setTimeout(() => {
+            closeCloseRegisterModal();
+            // Redirigir al home después de cerrar el modal
+            // La sesión de caja ya fue limpiada en el backend
+            window.location.href = redirectUrl;
+        }, 3000); // Esperar 3 segundos para que el usuario vea el mensaje en el iframe
+    }
+}
+
+// Cerrar modal al hacer clic fuera
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('close-register-modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeCloseRegisterModal();
+            }
+        });
+    }
+    
+    // Cerrar con ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('close-register-modal');
+            if (modal && modal.classList.contains('active')) {
+                closeCloseRegisterModal();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+

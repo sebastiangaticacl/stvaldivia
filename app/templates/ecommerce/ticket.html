@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket {{ entrada.ticket_code }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 2rem auto; padding: 2rem;">
+    <div class="card" style="padding: 2rem; border: 2px solid #333;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="margin-bottom: 0.5rem;">{{ entrada.evento_nombre }}</h1>
+            <div style="background: #000; color: #fff; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="font-size: 1.8rem; font-weight: bold; letter-spacing: 3px; margin: 0;">
+                    {{ entrada.ticket_code }}
+                </p>
+            </div>
+            {% if qr_code %}
+            <div style="margin: 1.5rem 0; padding: 1rem; background: #fff; border: 2px solid #333; border-radius: 8px; display: inline-block;">
+                <img src="{{ qr_code }}" alt="QR Code Ticket" style="max-width: 250px; height: auto; display: block;">
+                <p style="font-size: 0.9rem; color: #666; margin-top: 0.5rem; margin-bottom: 0;">Escanea para validar</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div style="border-top: 2px dashed #333; border-bottom: 2px dashed #333; padding: 1.5rem 0; margin: 1.5rem 0;">
+            <p><strong>Fecha:</strong> {{ entrada.evento_fecha.strftime('%d/%m/%Y %H:%M') if entrada.evento_fecha else 'N/A' }}</p>
+            {% if entrada.evento_lugar %}
+            <p><strong>Lugar:</strong> {{ entrada.evento_lugar }}</p>
+            {% endif %}
+            <p><strong>Cantidad:</strong> {{ entrada.cantidad }} entrada(s)</p>
+        </div>
+        
+        <div style="margin-top: 1.5rem;">
+            <p><strong>Comprador:</strong> {{ entrada.comprador_nombre }}</p>
+            {% if entrada.comprador_rut %}
+            <p><strong>RUT:</strong> {{ entrada.comprador_rut }}</p>
+            {% endif %}
+            <p><strong>Total:</strong> ${{ "{:,.0f}".format(entrada.precio_total) }}</p>
+            <p><strong>Estado:</strong> 
+                <span style="color: {% if entrada.estado_pago == 'pagado' %}#4caf50{% else %}#f44336{% endif %}; font-weight: bold;">
+                    {{ entrada.estado_pago.upper() }}
+                </span>
+            </p>
+        </div>
+        
+        {% if entrada.getnet_auth_code %}
+        <div style="margin-top: 1rem; padding: 1rem; background: #f5f5f5; border-radius: 4px;">
+            <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                <strong>Auth Code:</strong> {{ entrada.getnet_auth_code }}
+            </p>
+        </div>
+        {% endif %}
+        
+        <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ddd;">
+            <p style="font-size: 0.8rem; color: #666;">
+                Presenta este ticket en la entrada del evento
+            </p>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 1rem;">
+        <button onclick="window.print()" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+            🖨️ Imprimir Ticket
+        </button>
+    </div>
+</div>
+
+<style>
+@media print {
+    .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    button {
+        display: none;
+    }
+}
+</style>
+{% endblock %}
+

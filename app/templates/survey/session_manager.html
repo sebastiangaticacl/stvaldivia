@@ -1,0 +1,561 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Sesiones - Encuestas{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+<style>
+    .session-manager {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .card h2 {
+        color: #00ff00;
+        margin-bottom: 20px;
+        font-size: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        color: #ccc;
+        margin-bottom: 8px;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        font-family: Arial, sans-serif;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .bartender-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .bartender-item {
+        background: #2a2a3e;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        color: #ccc;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .bartender-item:hover {
+        border-color: #667eea;
+        background: #3a3a4e;
+    }
+
+    .bartender-item.selected {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+    }
+
+    .btn {
+        padding: 15px 30px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-right: 10px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 68, 68, 0.5);
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .current-session {
+        background: linear-gradient(135deg, #2d5a2d 0%, #1a3a1a 100%);
+        border-color: rgba(76, 175, 80, 0.5);
+    }
+
+    .session-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .info-item {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .info-item label {
+        color: #aaa;
+        font-size: 0.9rem;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .info-item .value {
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: bold;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+
+    .status-open {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .status-closed {
+        background: #ff4444;
+        color: white;
+    }
+
+    .alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .alert-info {
+        background: rgba(102, 126, 234, 0.2);
+        border: 2px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+    }
+
+    .alert-success {
+        background: rgba(76, 175, 80, 0.2);
+        border: 2px solid rgba(76, 175, 80, 0.5);
+        color: #4CAF50;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="session-manager">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('routes.admin_dashboard') }}" class="btn btn-primary" style="margin-right: 10px;">
+            🏠 Dashboard Principal
+        </a>
+        <a href="{{ url_for('survey.survey_admin') }}" class="btn btn-primary">
+            📊 Dashboard de Encuestas
+        </a>
+    </div>
+    <h1 style="color: #00ff00; text-align: center; margin-bottom: 30px; font-size: 2.5rem;">
+        🎉 Gestión de Sesiones de Encuestas
+    </h1>
+
+    <!-- Estado actual -->
+    <div class="card" id="status-card">
+        <h2>Estado Actual</h2>
+        <div id="status-content">
+            <p style="color: #ccc;">Cargando estado...</p>
+        </div>
+    </div>
+
+    <!-- Iniciar nueva sesión -->
+    <div class="card" id="start-session-card">
+        <h2>Iniciar Nueva Sesión</h2>
+        <div id="alert-container"></div>
+        
+        <form id="start-session-form">
+            <div class="form-group">
+                <label for="fiesta_nombre">Nombre de la Fiesta *</label>
+                <input type="text" id="fiesta_nombre" name="fiesta_nombre" required 
+                       placeholder="Ej: Noche de Salsa">
+            </div>
+
+            <div class="form-group">
+                <label for="djs">DJs (separados por coma)</label>
+                <input type="text" id="djs" name="djs" 
+                       placeholder="Ej: DJ Carlos, DJ María">
+            </div>
+
+            <div class="form-group">
+                <label>Bartenders (selecciona múltiples) *</label>
+                <div class="bartender-list" id="bartender-list">
+                    <p style="color: #aaa;">Cargando bartenders...</p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="start-btn">Iniciar Sesión</button>
+        </form>
+    </div>
+
+    <!-- Cerrar sesión actual -->
+    <div class="card current-session" id="close-session-card" style="display: none;">
+        <h2>Cerrar Sesión Actual</h2>
+        <div id="current-session-info" class="session-info"></div>
+        <button type="button" class="btn btn-danger" id="close-btn" onclick="closeSession()">
+            Cerrar Sesión y Generar Estadísticas
+        </button>
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+        <h2>Historial de Sesiones</h2>
+        <div id="history-container">
+            <p style="color: #ccc;">Cargando historial...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedBartenders = [];
+    let currentSession = null;
+    let bartendersList = [];
+
+    // SocketIO para actualizaciones en tiempo real
+    const socket = io('/encuesta');
+    
+    socket.on('session_closed', function(data) {
+        loadStatus();
+        loadHistory();
+    });
+
+    // Cargar datos iniciales
+    loadStatus();
+    loadBartenders();
+    loadHistory();
+
+    async function loadStatus() {
+        try {
+            const response = await fetch('/encuesta/api/status');
+            const data = await response.json();
+            
+            const statusContent = document.getElementById('status-content');
+            const closeCard = document.getElementById('close-session-card');
+            const startCard = document.getElementById('start-session-card');
+            
+            if (data.active) {
+                statusContent.innerHTML = `
+                    <div style="color: #4CAF50; font-size: 1.3rem; font-weight: bold;">
+                        ✅ Encuestas Activas
+                        <span class="status-badge status-open">ACTIVAS</span>
+                    </div>
+                    <p style="color: #ccc; margin-top: 10px;">
+                        Horario: 19:00 - 04:30 | Hora actual: ${new Date(data.current_time).toLocaleTimeString()}
+                    </p>
+                `;
+            } else {
+                statusContent.innerHTML = `
+                    <div style="color: #ff4444; font-size: 1.3rem; font-weight: bold;">
+                        🔒 Encuestas Cerradas
+                        <span class="status-badge status-closed">CERRADAS</span>
+                    </div>
+                    <p style="color: #ccc; margin-top: 10px;">
+                        Las encuestas solo están disponibles de 19:00 a 04:30
+                    </p>
+                `;
+                startCard.style.display = 'none';
+                closeCard.style.display = 'none';
+            }
+
+            if (data.session_info) {
+                currentSession = data.session_info;
+                closeCard.style.display = 'block';
+                startCard.style.display = 'none';
+                
+                document.getElementById('current-session-info').innerHTML = `
+                    <div class="info-item">
+                        <label>Fiesta</label>
+                        <div class="value">${currentSession.fiesta_nombre || 'Sin nombre'}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>DJs</label>
+                        <div class="value">${currentSession.djs || 'No especificados'}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Bartenders</label>
+                        <div class="value">${currentSession.bartenders || 'No especificados'}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Hora de Inicio</label>
+                        <div class="value">${currentSession.hora_inicio || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Total Respuestas</label>
+                        <div class="value">${currentSession.total_respuestas || 0}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Promedio</label>
+                        <div class="value">${parseFloat(currentSession.promedio_rating || 0).toFixed(2)} ⭐</div>
+                    </div>
+                `;
+            } else {
+                closeCard.style.display = 'none';
+                if (data.active) {
+                    startCard.style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.error('Error cargando estado:', error);
+        }
+    }
+
+    async function loadBartenders() {
+        try {
+            // Obtener bartenders desde la API
+            const response = await fetch('/encuesta/api/bartenders');
+            if (response.ok) {
+                bartendersList = await response.json();
+            } else {
+                // Fallback: usar lista vacía
+                bartendersList = [];
+            }
+            
+            const bartenderListEl = document.getElementById('bartender-list');
+            if (bartendersList.length === 0) {
+                bartenderListEl.innerHTML = '<p style="color: #aaa;">No hay bartenders disponibles</p>';
+            } else {
+                bartenderListEl.innerHTML = bartendersList.map(b => {
+                    const name = b.name || `${b.first_name || ''} ${b.last_name || ''}`.trim();
+                    const escapedName = name.replace(/'/g, "\\'");
+                    return `<div class="bartender-item" data-id="${b.id}" onclick="toggleBartender(this, '${escapedName}')">
+                        ${name}
+                    </div>`;
+                }).join('');
+            }
+        } catch (error) {
+            console.error('Error cargando bartenders:', error);
+            document.getElementById('bartender-list').innerHTML = '<p style="color: #ff4444;">Error cargando bartenders</p>';
+        }
+    }
+
+    function toggleBartender(element, name) {
+        if (element.classList.contains('selected')) {
+            element.classList.remove('selected');
+            selectedBartenders = selectedBartenders.filter(b => b !== name);
+        } else {
+            element.classList.add('selected');
+            selectedBartenders.push(name);
+        }
+    }
+
+    document.getElementById('start-session-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (selectedBartenders.length === 0) {
+            showAlert('Por favor, selecciona al menos un bartender.', 'info');
+            return;
+        }
+
+        const formData = {
+            fiesta_nombre: document.getElementById('fiesta_nombre').value.trim(),
+            djs: document.getElementById('djs').value.trim(),
+            bartenders: selectedBartenders
+        };
+
+        if (!formData.fiesta_nombre) {
+            showAlert('El nombre de la fiesta es requerido.', 'info');
+            return;
+        }
+
+        try {
+            const btn = document.getElementById('start-btn');
+            btn.disabled = true;
+            btn.textContent = 'Iniciando...';
+
+            const response = await fetch('/encuesta/api/start_session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert('Sesión iniciada correctamente!', 'success');
+                document.getElementById('start-session-form').reset();
+                selectedBartenders = [];
+                document.querySelectorAll('.bartender-item').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                loadStatus();
+            } else {
+                showAlert(data.error || 'Error al iniciar sesión', 'info');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Iniciar Sesión';
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error de conexión. Intenta nuevamente.', 'info');
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('start-btn').textContent = 'Iniciar Sesión';
+        }
+    });
+
+    async function closeSession() {
+        if (!confirm('¿Estás seguro de cerrar la sesión? Se generarán las estadísticas finales.')) {
+            return;
+        }
+
+        try {
+            const btn = document.getElementById('close-btn');
+            btn.disabled = true;
+            btn.textContent = 'Cerrando...';
+
+            const response = await fetch('/encuesta/api/close_session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(`Sesión cerrada. Total: ${data.stats.total_respuestas} respuestas, Promedio: ${data.stats.promedio_rating.toFixed(2)}`, 'success');
+                loadStatus();
+                loadHistory();
+            } else {
+                showAlert(data.error || 'Error al cerrar sesión', 'info');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Cerrar Sesión y Generar Estadísticas';
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error de conexión. Intenta nuevamente.', 'info');
+            document.getElementById('close-btn').disabled = false;
+            document.getElementById('close-btn').textContent = 'Cerrar Sesión y Generar Estadísticas';
+        }
+    }
+
+    async function loadHistory() {
+        try {
+            const response = await fetch('/encuesta/api/history');
+            const data = await response.json();
+            
+            const container = document.getElementById('history-container');
+            
+            if (data.sessions.length === 0) {
+                container.innerHTML = '<p style="color: #aaa;">No hay sesiones anteriores</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table style="width: 100%; border-collapse: collapse; color: #ccc;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid rgba(102, 126, 234, 0.3);">
+                            <th style="padding: 15px; text-align: left; color: #00ff00;">Fecha</th>
+                            <th style="padding: 15px; text-align: left; color: #00ff00;">Fiesta</th>
+                            <th style="padding: 15px; text-align: left; color: #00ff00;">DJs</th>
+                            <th style="padding: 15px; text-align: center; color: #00ff00;">Respuestas</th>
+                            <th style="padding: 15px; text-align: center; color: #00ff00;">Promedio</th>
+                            <th style="padding: 15px; text-align: left; color: #00ff00;">Estado</th>
+                            <th style="padding: 15px; text-align: left; color: #00ff00;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.sessions.map(session => `
+                            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                                <td style="padding: 15px;">${session.fecha_sesion}</td>
+                                <td style="padding: 15px;">${session.fiesta_nombre || 'Sin nombre'}</td>
+                                <td style="padding: 15px;">${session.djs || '-'}</td>
+                                <td style="padding: 15px; text-align: center;">${session.total_respuestas || 0}</td>
+                                <td style="padding: 15px; text-align: center;">${parseFloat(session.promedio_rating || 0).toFixed(2)} ⭐</td>
+                                <td style="padding: 15px;">
+                                    <span class="status-badge ${session.estado === 'abierta' ? 'status-open' : 'status-closed'}">
+                                        ${session.estado === 'abierta' ? 'ABIERTA' : 'CERRADA'}
+                                    </span>
+                                </td>
+                                <td style="padding: 15px;">
+                                    <a href="/encuesta/history/${session.fecha_sesion}" style="color: #667eea; text-decoration: none;">
+                                        Ver Detalles
+                                    </a>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } catch (error) {
+            console.error('Error cargando historial:', error);
+            document.getElementById('history-container').innerHTML = '<p style="color: #ff4444;">Error cargando historial</p>';
+        }
+    }
+
+    function showAlert(message, type) {
+        const container = document.getElementById('alert-container');
+        container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        setTimeout(() => {
+            container.innerHTML = '';
+        }, 5000);
+    }
+
+    // Actualizar estado cada 30 segundos
+    setInterval(() => {
+        loadStatus();
+    }, 30000);
+</script>
+{% endblock %}
+

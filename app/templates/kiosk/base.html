@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="{% block meta_description %}Sistema de autoservicio y pedidos para clientes. Navega el menú, realiza pedidos y paga desde el tótem interactivo BIMBA.{% endblock %}">
+    <title>{% block title %}Club Bimba - Tótem{% endblock %}</title>
+    <!-- CORRECCIÓN SEO: Canonical URL -->
+    <link rel="canonical" href="{{ request.url }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kiosk.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="kiosk-body">
+    <div class="kiosk-container">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/kiosk.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+
+
+
+
+
+

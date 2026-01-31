@@ -1,0 +1,739 @@
+{% extends "base.html" %}
+{% block title %}Liquidación de Pagos - Resumen de Nómina BIMBA{% endblock %}
+{% block meta_description %}Liquidación y resumen de pagos a empleados. Detalle de sueldos, turnos trabajados y cálculos de remuneraciones en el sistema BIMBA.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .liquidacion-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--spacing-sm, 0.75rem);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 768px) {
+        .liquidacion-container {
+            padding: var(--spacing-md, 1rem);
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .liquidacion-container {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .liquidacion-header {
+        text-align: center;
+        margin-bottom: var(--spacing-md, 1rem);
+        padding: var(--spacing-md, 1rem);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+    }
+    
+    @media (min-width: 768px) {
+        .liquidacion-header {
+            margin-bottom: var(--spacing-lg, 1.5rem);
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .liquidacion-header h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm, 0.75rem);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+    
+    @media (min-width: 480px) {
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md, 1rem);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        text-align: center;
+    }
+    
+    @media (min-width: 768px) {
+        .stat-card {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .stat-card h3 {
+        color: #aaa;
+        font-size: clamp(0.75rem, 2vw, 0.9rem);
+        margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-card .value {
+        color: #667eea;
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        font-weight: bold;
+        margin: var(--spacing-xs, 0.5rem) 0;
+    }
+    
+    .stat-card.money .value {
+        color: #4caf50;
+    }
+    
+    .filters-section {
+        background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+    
+    @media (min-width: 768px) {
+        .filters-section {
+            padding: var(--spacing-lg, 1.5rem);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .filters-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm, 0.75rem);
+        margin-bottom: var(--spacing-sm, 0.75rem);
+    }
+    
+    @media (min-width: 480px) {
+        .filters-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .filters-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md, 1rem);
+            margin-bottom: var(--spacing-md, 1rem);
+        }
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-group label {
+        color: #e8e8e8;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        padding: var(--spacing-sm, 0.75rem);
+        min-height: 44px;
+        background: rgba(26, 26, 46, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #e8e8e8;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        width: 100%;
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: 2px solid #667eea;
+        border-color: #667eea;
+    }
+    
+    .btn-filter,
+    .btn-clear {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        min-height: 44px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+    }
+    
+    @media (min-width: 768px) {
+        .btn-filter,
+        .btn-clear {
+            width: auto;
+            padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
+        }
+    }
+    
+    .btn-filter {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-clear {
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+    }
+    
+    .btn-clear:hover {
+        background: rgba(102, 126, 234, 0.3);
+    }
+    
+    .table-container {
+        background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        overflow-x: visible;
+        overflow-y: visible;
+    }
+    
+    @media (min-width: 768px) {
+        .table-container {
+            padding: var(--spacing-lg, 1.5rem);
+            overflow-x: auto;
+            max-height: calc(100vh - 400px);
+            overflow-y: auto;
+        }
+    }
+    
+    .pagos-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 600px;
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+    }
+    
+    @media (min-width: 768px) {
+        .pagos-table {
+            min-width: 1000px;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .pagos-table {
+            min-width: 1200px;
+        }
+    }
+    
+    .pagos-table thead {
+        background: rgba(102, 126, 234, 0.2);
+    }
+    
+    .pagos-table th {
+        padding: 10px 12px;
+        text-align: left;
+        color: #e8e8e8;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.5);
+        position: sticky;
+        top: 0;
+        background: rgba(26, 26, 46, 0.95);
+        z-index: 10;
+    }
+    
+    .pagos-table td {
+        padding: 8px 12px;
+        color: #aaa;
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+        font-size: 0.85rem;
+    }
+    
+    .pagos-table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .pagos-table tbody tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .pagos-table tbody tr:nth-child(even) {
+        background: rgba(0, 0, 0, 0.1);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-pagado {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+    
+    .status-pendiente {
+        background: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+        border: 1px solid rgba(255, 152, 0, 0.3);
+    }
+    
+    .money-positive {
+        color: #4caf50;
+        font-weight: 600;
+    }
+    
+    .money-negative {
+        color: #f44336;
+        font-weight: 600;
+    }
+    
+    .money-neutral {
+        color: #667eea;
+        font-weight: 600;
+    }
+    
+    .btn-action {
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+        min-height: 44px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: var(--font-size-sm, clamp(0.875rem, 2vw, 1rem));
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+        box-sizing: border-box;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    @media (min-width: 768px) {
+        .btn-action {
+            width: auto;
+        }
+    }
+    
+    .btn-pagar {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+    }
+    
+    .btn-pagar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    }
+    
+    .btn-desmarcar {
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.5);
+    }
+    
+    .btn-desmarcar:hover {
+        background: rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-back {
+        display: inline-block;
+        padding: 12px 24px;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        color: #667eea;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        margin-bottom: 20px;
+    }
+    
+    .btn-back:hover {
+        background: rgba(102, 126, 234, 0.4);
+        color: #fff;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="liquidacion-container">
+    <a href="{{ url_for('routes.admin_panel_control') }}" class="btn-back">← Volver al Panel de Control</a>
+    
+    <div class="liquidacion-header">
+        <h1>💰 Liquidación de Pagos</h1>
+        <p>Gestión de todos los pagos asignados a trabajadores desde la apertura de turnos</p>
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('routes.exportar_resumen_quincenal') }}" 
+               style="display: inline-block; padding: 12px 24px; background: rgba(255, 255, 255, 0.2); border: 2px solid white; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: all 0.3s ease;">
+                📊 Exportar Resumen Quincenal (CSV para Banco)
+            </a>
+        </div>
+    </div>
+    
+    <!-- Resumen Quincenal -->
+    {% if resumen_quincenal and resumen_quincenal|length > 0 %}
+    <div class="table-container" style="margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: #e8e8e8; margin: 0;">📋 Resumen Quincenal (Últimos 15 días)</h2>
+            <span style="color: #aaa; font-size: 0.9rem;">
+                Período: {{ fecha_periodo_desde }} al {{ fecha_periodo_hasta }}
+            </span>
+        </div>
+        <table class="pagos-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Trabajador</th>
+                    <th>RUT</th>
+                    <th>Banco</th>
+                    <th>Tipo Cuenta</th>
+                    <th>Número Cuenta</th>
+                    <th>Email</th>
+                    <th>Turnos</th>
+                    <th>Total a Pagar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for resumen in resumen_quincenal %}
+                <tr>
+                    <td>{{ resumen.employee_id }}</td>
+                    <td>
+                        <a href="{{ url_for('equipo.ficha_personal', employee_id=resumen.employee_id) }}" 
+                           style="color: #667eea; text-decoration: none; font-weight: 600;">
+                            {{ resumen.employee_name }}
+                        </a>
+                    </td>
+                    <td>{{ resumen.rut or 'N/A' }}</td>
+                    <td>{{ resumen.banco or 'N/A' }}</td>
+                    <td>{{ resumen.tipo_cuenta or 'N/A' }}</td>
+                    <td>{{ resumen.numero_cuenta or 'N/A' }}</td>
+                    <td>{{ resumen.email or 'N/A' }}</td>
+                    <td style="text-align: center;">{{ resumen.total_turnos }}</td>
+                    <td class="money-neutral" style="font-weight: bold; text-align: right;">
+                        ${{ "{:,.0f}".format(resumen.total_sueldo) }}
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr style="background: rgba(102, 126, 234, 0.2); font-weight: bold;">
+                    <td colspan="7" style="text-align: right; color: #e8e8e8;">TOTAL GENERAL:</td>
+                    <td style="text-align: center; color: #e8e8e8;">{{ resumen_quincenal|sum(attribute='total_turnos') }}</td>
+                    <td class="money-neutral" style="font-weight: bold; text-align: right; color: #e8e8e8;">
+                        ${{ "{:,.0f}".format(resumen_quincenal|sum(attribute='total_sueldo')) }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="margin-top: 15px; padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+            <p style="color: #aaa; margin: 0; font-size: 0.9rem;">
+                💡 <strong>Nota:</strong> Este resumen muestra solo los pagos pendientes de los últimos 15 días. 
+                Usa el botón "Exportar Resumen Quincenal" para descargar un archivo CSV listo para cargar en el banco.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Estadísticas -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Turnos</h3>
+            <div class="value">{{ total_turnos }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Turnos Pagados</h3>
+            <div class="value" style="color: #4caf50;">{{ turnos_pagados }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Turnos Pendientes</h3>
+            <div class="value" style="color: #ff9800;">{{ turnos_pendientes }}</div>
+        </div>
+        <div class="stat-card money">
+            <h3>Sueldo Total</h3>
+            <div class="value">${{ "{:,.0f}".format(sueldo_total) }}</div>
+        </div>
+        <div class="stat-card money">
+            <h3>Sueldo Pagado</h3>
+            <div class="value">${{ "{:,.0f}".format(sueldo_pagado) }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Sueldo Pendiente</h3>
+            <div class="value" style="color: #ff9800;">${{ "{:,.0f}".format(sueldo_pendiente) }}</div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="filters-section">
+        <h2 style="color: #e8e8e8; margin-top: 0; margin-bottom: 20px;">🔍 Filtros</h2>
+        <form method="GET" action="{{ url_for('routes.admin_liquidacion_pagos') }}" id="filters-form">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label>Trabajador:</label>
+                    <select name="empleado">
+                        <option value="">Todos los trabajadores</option>
+                        {% for emp in empleados %}
+                        <option value="{{ emp.id }}" {% if filtro_empleado == emp.id|string %}selected{% endif %}>
+                            {{ emp.name or 'Sin nombre' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Fecha Desde:</label>
+                    <input type="date" name="fecha_desde" value="{{ filtro_fecha_desde }}">
+                </div>
+                <div class="filter-group">
+                    <label>Fecha Hasta:</label>
+                    <input type="date" name="fecha_hasta" value="{{ filtro_fecha_hasta }}">
+                </div>
+                <div class="filter-group">
+                    <label>Estado:</label>
+                    <select name="estado">
+                        <option value="pendiente" {% if filtro_estado == 'pendiente' or filtro_estado == '' %}selected{% endif %}>Pendientes</option>
+                        <option value="pagado" {% if filtro_estado == 'pagado' %}selected{% endif %}>Pagados</option>
+                        <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="submit" class="btn-filter">🔍 Aplicar Filtros</button>
+                <button type="button" onclick="clearFilters()" class="btn-clear">🔄 Limpiar Filtros</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Tabla de Pagos -->
+    <div class="table-container">
+        <h2 style="color: #e8e8e8; margin-top: 0; margin-bottom: 20px;">📋 Lista de Pagos</h2>
+        {% if shifts_data %}
+        <table class="pagos-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Trabajador</th>
+                    <th>Cargo</th>
+                    <th>Sueldo Base</th>
+                    <th>Bonos</th>
+                    <th>Descuentos</th>
+                    <th>Sueldo Total</th>
+                    <th>Estado</th>
+                    <th>Pagado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shift in shifts_data %}
+                <tr id="shift-row-{{ shift.id }}" data-shift-id="{{ shift.id }}">
+                    <td>{{ shift.fecha_turno }}</td>
+                    <td>
+                        <a href="{{ url_for('equipo.ficha_personal', employee_id=shift.employee_id) }}" 
+                           style="color: #667eea; text-decoration: none; font-weight: 600;">
+                            {{ shift.employee_name }}
+                        </a>
+                    </td>
+                    <td>{{ shift.cargo }}</td>
+                    <td class="money-neutral">${{ "{:,.0f}".format(shift.sueldo_por_turno) }}</td>
+                    <td class="money-positive">${{ "{:,.0f}".format(shift.bonos) }}</td>
+                    <td class="money-negative">${{ "{:,.0f}".format(shift.descuentos) }}</td>
+                    <td class="money-neutral" style="font-weight: bold;">${{ "{:,.0f}".format(shift.sueldo_turno) }}</td>
+                    <td>
+                        <span class="status-badge {% if shift.estado == 'activo' %}status-activo{% elif shift.estado == 'cerrado' %}status-cerrado{% else %}status-pendiente{% endif %}">
+                            {{ shift.estado|title }}
+                        </span>
+                    </td>
+                    <td id="pagado-status-{{ shift.id }}">
+                        {% if shift.pagado %}
+                        <span class="status-badge status-pagado">✅ Pagado</span>
+                        {% if shift.fecha_pago %}
+                        <small style="display: block; color: #aaa; font-size: 0.75rem; margin-top: 4px;">
+                            {{ shift.fecha_pago }}
+                        </small>
+                        {% endif %}
+                        {% else %}
+                        <span class="status-badge status-pendiente">⏳ Pendiente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not shift.pagado %}
+                        <button 
+                            type="button" 
+                            class="btn-action btn-pagar" 
+                            onclick="marcarTurnoComoPagado({{ shift.id }}, '{{ shift.fecha_turno }}', {{ shift.sueldo_turno }})"
+                            title="Marcar como pagado">
+                            💰 Pagar
+                        </button>
+                        {% else %}
+                        <button 
+                            type="button" 
+                            class="btn-action btn-desmarcar" 
+                            onclick="desmarcarTurnoComoPagado({{ shift.id }})"
+                            title="Desmarcar como pagado">
+                            ↩️ Desmarcar
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: #aaa;">
+            <p style="font-size: 1.1rem;">No hay pagos registrados con los filtros seleccionados</p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Intenta ajustar los filtros de búsqueda</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Función para marcar un turno como pagado
+async function marcarTurnoComoPagado(shiftId, fechaTurno, sueldoTurno) {
+    if (!confirm(`¿Marcar como pagado el turno del ${fechaTurno} por $${sueldoTurno.toLocaleString('es-CL')}?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/equipo/api/shifts/${shiftId}/marcar-pagado`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar la fila sin recargar la página
+            const row = document.getElementById(`shift-row-${shiftId}`);
+            const statusCell = document.getElementById(`pagado-status-${shiftId}`);
+            
+            if (statusCell) {
+                statusCell.innerHTML = `
+                    <span class="status-badge status-pagado">✅ Pagado</span>
+                    <small style="display: block; color: #aaa; font-size: 0.75rem; margin-top: 4px;">
+                        ${new Date().toISOString().split('T')[0]}
+                    </small>
+                `;
+            }
+            
+            // Cambiar el botón
+            const actionCell = row.querySelector('td:last-child');
+            if (actionCell) {
+                actionCell.innerHTML = `
+                    <button 
+                        type="button" 
+                        class="btn-action btn-desmarcar" 
+                        onclick="desmarcarTurnoComoPagado(${shiftId})"
+                        title="Desmarcar como pagado">
+                        ↩️ Desmarcar
+                    </button>
+                `;
+            }
+            
+            // Mostrar mensaje de éxito
+            alert('✅ Turno marcado como pagado correctamente');
+            
+            // Recargar la página para actualizar estadísticas
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            alert(`❌ Error: ${data.message || 'No se pudo marcar como pagado'}`);
+        }
+    } catch (error) {
+        console.error('Error al marcar turno como pagado:', error);
+        alert('❌ Error al marcar como pagado. Por favor, intenta nuevamente.');
+    }
+}
+
+// Función para desmarcar un turno como pagado
+async function desmarcarTurnoComoPagado(shiftId) {
+    if (!confirm('¿Desmarcar este turno como pagado?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/equipo/api/shifts/${shiftId}/desmarcar-pagado`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar la fila sin recargar la página
+            const row = document.getElementById(`shift-row-${shiftId}`);
+            const statusCell = document.getElementById(`pagado-status-${shiftId}`);
+            
+            if (statusCell) {
+                statusCell.innerHTML = `
+                    <span class="status-badge status-pendiente">⏳ Pendiente</span>
+                `;
+            }
+            
+            // Cambiar el botón
+            const actionCell = row.querySelector('td:last-child');
+            if (actionCell) {
+                const fechaTurno = row.querySelector('td:first-child').textContent.trim();
+                const sueldoTurno = parseFloat(row.querySelector('td:nth-child(7)').textContent.replace(/[^0-9]/g, '')) || 0;
+                actionCell.innerHTML = `
+                    <button 
+                        type="button" 
+                        class="btn-action btn-pagar" 
+                        onclick="marcarTurnoComoPagado(${shiftId}, '${fechaTurno}', ${sueldoTurno})"
+                        title="Marcar como pagado">
+                        💰 Pagar
+                    </button>
+                `;
+            }
+            
+            // Mostrar mensaje de éxito
+            alert('✅ Turno desmarcado correctamente');
+            
+            // Recargar la página para actualizar estadísticas
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            alert(`❌ Error: ${data.message || 'No se pudo desmarcar'}`);
+        }
+    } catch (error) {
+        console.error('Error al desmarcar turno:', error);
+        alert('❌ Error al desmarcar. Por favor, intenta nuevamente.');
+    }
+}
+
+// Función para limpiar filtros
+function clearFilters() {
+    window.location.href = "{{ url_for('routes.admin_liquidacion_pagos') }}";
+}
+</script>
+{% endblock %}
+

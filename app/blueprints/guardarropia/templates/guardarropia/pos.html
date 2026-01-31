@@ -1,0 +1,934 @@
+{% extends "base.html" %}
+{% block title %}POS Guardarropía{% endblock %}
+
+{% block content %}
+<style>
+    .pos-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        position: relative;
+        overflow-x: hidden;
+    }
+    
+    body {
+        overflow-x: hidden;
+    }
+    
+    /* Ocultar mensajes flash de bienvenida */
+    .flash-container {
+        display: none !important;
+    }
+    
+    .pos-container h1 {
+        margin-bottom: 30px;
+        color: #e8e8e8;
+        font-size: 28px;
+        font-weight: bold;
+        display: block;
+    }
+    
+    .pos-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .pos-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .pos-form {
+        background: #222;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .pos-summary {
+        background: #222;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        position: sticky;
+        top: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #e8e8e8;
+        font-weight: bold;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #444;
+        border-radius: 6px;
+        background: #18181a;
+        color: #e8e8e8;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+    
+    .price-display {
+        font-size: 32px;
+        font-weight: bold;
+        color: #4caf50;
+        text-align: center;
+        padding: 20px;
+        background: #18181a;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .payment-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+    }
+    
+    .payment-btn {
+        padding: 15px;
+        border: 2px solid #444;
+        border-radius: 8px;
+        background: #2a2a2a;
+        color: #e8e8e8;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .payment-btn:hover {
+        background: #333;
+        border-color: #667eea;
+    }
+    
+    .payment-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: white;
+    }
+    
+    .btn-submit {
+        width: 100%;
+        padding: 20px;
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        margin-top: 20px;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+    }
+    
+    .btn-submit:disabled {
+        background: #555;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .quick-price-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 15px 0;
+    }
+    
+    .quick-price-btn {
+        padding: 12px;
+        border: 1px solid #444;
+        border-radius: 6px;
+        background: #2a2a2a;
+        color: #e8e8e8;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: bold;
+    }
+    
+    .quick-price-btn:hover {
+        background: #333;
+        border-color: #667eea;
+    }
+    
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #333;
+    }
+    
+    .summary-label {
+        color: #888;
+    }
+    
+    .summary-value {
+        color: #e8e8e8;
+        font-weight: bold;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: #888;
+        margin-top: 5px;
+    }
+    
+    /* Header Sticky Menu - Usa estilos del sistema general */
+    .guardarropia-header-wrapper {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        background: linear-gradient(135deg, var(--bg-surface) 0%, #16213e 100%);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: var(--shadow-md);
+        border-top: none;
+    }
+    
+    .guardarropia-header {
+        width: 100%;
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: var(--space-3) var(--space-5);
+        box-sizing: border-box;
+    }
+    
+    .guardarropia-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-2);
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .guardarropia-nav-left,
+    .guardarropia-nav-right {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+    }
+    
+    .guardarropia-nav-right {
+        margin-left: auto;
+    }
+    
+    .guardarropia-logo {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        transition: background-color var(--transition-fast);
+    }
+    
+    .guardarropia-logo:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .guardarropia-logo img {
+        height: 40px;
+        width: auto;
+        object-fit: contain;
+    }
+    
+    .guardarropia-nav-btn {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        text-decoration: none;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        font-size: var(--text-sm);
+        font-weight: 500;
+        transition: all var(--transition-fast);
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        display: inline-block;
+    }
+    
+    .guardarropia-nav-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-1px);
+    }
+    
+    .guardarropia-nav-btn.active {
+        background: rgba(76, 175, 80, 0.2);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    
+    .guardarropia-nav-btn.danger {
+        background: rgba(244, 67, 54, 0.2);
+        color: var(--danger);
+    }
+    
+    .guardarropia-nav-btn.danger:hover {
+        background: rgba(244, 67, 54, 0.3);
+    }
+    
+    @media (max-width: 768px) {
+        .guardarropia-header {
+            padding: var(--space-2) var(--space-3);
+        }
+        
+        .guardarropia-nav-btn {
+            padding: var(--space-1) var(--space-2);
+            font-size: var(--text-xs);
+        }
+        
+        .guardarropia-logo img {
+            height: 32px;
+        }
+    }
+</style>
+
+<!-- Header Sticky Menu -->
+<div class="guardarropia-header-wrapper">
+    <div class="guardarropia-header">
+        <nav class="guardarropia-nav">
+            <div class="guardarropia-nav-left">
+                <a href="{{ url_for('guardarropia.index') }}" class="guardarropia-logo">
+                    <img src="{{ url_for('static', filename='img/bimba-logo.png') }}" alt="BIMBA" class="logo-img"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span class="logo-text" style="display: none;">BIMBA</span>
+                </a>
+            </div>
+            <div class="guardarropia-nav-right">
+                <a href="{{ url_for('guardarropia.index') }}" class="guardarropia-nav-btn">
+                    🏠 Inicio
+                </a>
+                <a href="{{ url_for('guardarropia.pos') }}" class="guardarropia-nav-btn active">
+                    ➕ Ingresar Prenda
+                </a>
+                <a href="{{ url_for('guardarropia.informe_espacios') }}" class="guardarropia-nav-btn">
+                    🗺️ Ver Mapa
+                </a>
+                <a href="#scanner-section" class="guardarropia-nav-btn" onclick="event.preventDefault(); document.getElementById('scanner-section').scrollIntoView({behavior: 'smooth'});">
+                    📱 Escanear
+                </a>
+                <a href="{{ url_for('guardarropia.close_register_view') }}" class="guardarropia-nav-btn">
+                    💰 Cierre de Caja
+                </a>
+                <a href="javascript:void(0);" onclick="bloquearPantalla(); return false;" class="guardarropia-nav-btn" style="text-decoration: none;">
+                    🔒 Bloquear
+                </a>
+                <a href="{{ url_for('guardarropia.login') }}" class="guardarropia-nav-btn danger">
+                    🚪 Salir
+                </a>
+            </div>
+        </nav>
+    </div>
+</div>
+
+<div class="pos-container">
+    {% if is_admin and shift_status and not shift_status.get('is_open', False) %}
+    <div style="background: rgba(255, 152, 0, 0.15); border-left: 3px solid #ff9800; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+        <p style="color: #ff9800; margin: 0;">
+            <strong>⚠️ Modo Administrador/Cajero:</strong> No hay un turno abierto actualmente. Puedes ver la interfaz pero no podrás procesar depósitos hasta que se abra un turno.
+        </p>
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('guardarropia.confirmar_pago') }}" id="pos-form" {% if is_admin and shift_status and not shift_status.get('is_open', False) %}onsubmit="alert('Debes abrir un turno antes de procesar depósitos.'); return false;"{% endif %} onsubmit="return handleFormSubmit(event);">
+        <div class="pos-grid">
+            <!-- Formulario principal -->
+            <div class="pos-form">
+                <h2 style="color: #e8e8e8; margin-bottom: 20px;">Información del Cliente</h2>
+                
+                <div class="form-group">
+                    <label for="customer_name">
+                        Nombre del Cliente <span style="color: #f44336;">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="customer_name" 
+                        name="customer_name" 
+                        required
+                        maxlength="200"
+                        placeholder="Nombre completo del cliente"
+                        autofocus
+                        style="font-size: 18px;"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="customer_phone">
+                        Teléfono del Cliente <span style="color: #f44336;">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="customer_phone" 
+                        name="customer_phone" 
+                        required
+                        maxlength="50"
+                        placeholder="Teléfono de contacto"
+                        style="font-size: 18px;"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Descripción de la Prenda</label>
+                    <textarea 
+                        id="description" 
+                        name="description" 
+                        maxlength="500"
+                        placeholder="Ej: Chaqueta negra, Abrigo azul..."
+                        rows="3"
+                    ></textarea>
+                </div>
+                
+                <h2 style="color: #e8e8e8; margin: 30px 0 20px 0;">Espacios</h2>
+                
+                <h2 style="color: #e8e8e8; margin: 30px 0 20px 0;">Precio y Pago</h2>
+                
+                <div class="form-group">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label for="clusters">
+                                Espacios <span style="color: #f44336;">*</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="clusters" 
+                                name="clusters" 
+                                value="1"
+                                min="1"
+                                max="10"
+                                required
+                                style="font-size: 20px; font-weight: bold; text-align: center; padding: 12px; background: #2a2a2a; color: #e8e8e8; border: 1px solid #444; border-radius: 6px; width: 100%; box-sizing: border-box;"
+                                onchange="updatePrice()"
+                            >
+                            <div class="help-text">Cantidad (1-10)</div>
+                        </div>
+                        
+                        <div>
+                            <label for="price_unitario">
+                                Precio Unitario
+                            </label>
+                            <input 
+                                type="number" 
+                                id="price_unitario" 
+                                name="price_unitario" 
+                                value="500"
+                                readonly
+                                style="background: #2a2a2a; color: #888; font-size: 20px; text-align: center; padding: 12px; border: 1px solid #444; border-radius: 6px; width: 100%; box-sizing: border-box;"
+                            >
+                            <div class="help-text">$500 c/u</div>
+                        </div>
+                        
+                        <div>
+                            <label for="price">
+                                Precio Total
+                            </label>
+                            <input 
+                                type="number" 
+                                id="price" 
+                                name="price" 
+                                value="500"
+                                readonly
+                                style="background: #2a2a2a; color: #4caf50; font-size: 20px; font-weight: bold; text-align: center; padding: 12px; border: 1px solid #444; border-radius: 6px; width: 100%; box-sizing: border-box;"
+                            >
+                            <div class="help-text" id="price-help">Total: $500</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tipo de Pago</label>
+                    <div class="payment-buttons">
+                        <button type="button" class="payment-btn" onclick="selectPayment('cash')">
+                            💵 Efectivo
+                        </button>
+                        <button type="button" class="payment-btn" onclick="selectPayment('debit')">
+                            💳 Débito
+                        </button>
+                        <button type="button" class="payment-btn" onclick="selectPayment('credit')">
+                            💳 Crédito
+                        </button>
+                        </button>
+                    </div>
+                    <input type="hidden" id="payment_type" name="payment_type" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notas Adicionales</label>
+                    <textarea 
+                        id="notes" 
+                        name="notes" 
+                        placeholder="Notas adicionales..."
+                        rows="2"
+                    ></textarea>
+                </div>
+            </div>
+            
+            <!-- Resumen -->
+            <div class="pos-summary">
+                <h2 style="color: #e8e8e8; margin-bottom: 20px;">Resumen</h2>
+                
+                    <div class="summary-item">
+                        <span class="summary-label">Espacios:</span>
+                        <span class="summary-value" id="summary-clusters">1</span>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <span class="summary-label">Precio Unitario:</span>
+                        <span class="summary-value">$500</span>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <span class="summary-label">Precio Total:</span>
+                        <span class="summary-value" id="summary-price">$500</span>
+                    </div>
+                
+                <div class="summary-item">
+                    <span class="summary-label">Tipo de Pago:</span>
+                    <span class="summary-value" id="summary-payment">-</span>
+                </div>
+                
+                <div class="price-display" id="total-display">
+                    Total: $500
+                </div>
+                
+                <button type="submit" class="btn-submit" id="submit-btn">
+                    💾 Depositar, Registrar Venta e Imprimir Ticket
+                </button>
+                
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <a href="{{ url_for('guardarropia.index') }}" 
+                           style="flex: 1; text-align: center; padding: 12px; background: #444; color: #e8e8e8; text-decoration: none; border-radius: 8px;">
+                            ← Volver
+                        </a>
+                        <a href="{{ url_for('guardarropia.close_register_view') }}" 
+                           style="flex: 1; text-align: center; padding: 12px; background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                            💰 Cerrar Caja
+                        </a>
+                    </div>
+            </div>
+        </div>
+    </form>
+    
+    <!-- Informe de Espacios/Clusters -->
+    {% if stats %}
+    <div style="background: #222; padding: 20px; border-radius: 12px; margin-top: 30px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+        <h2 style="color: #e8e8e8; margin-bottom: 15px; font-size: 20px;">📊 Informe de Espacios/Clusters</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+            <div style="background: #2a2a2a; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #f44336;">
+                <div style="color: #888; font-size: 14px; margin-bottom: 5px;">📦 Ocupados</div>
+                <div style="color: #e8e8e8; font-size: 32px; font-weight: bold;">{{ stats.spaces_occupied or 0 }}</div>
+                <div style="color: #888; font-size: 12px; margin-top: 5px;">{{ "%.1f"|format(((stats.spaces_occupied or 0) / 90) * 100) }}%</div>
+            </div>
+            
+            <div style="background: #2a2a2a; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #4caf50;">
+                <div style="color: #888; font-size: 14px; margin-bottom: 5px;">✅ Disponibles</div>
+                <div style="color: #e8e8e8; font-size: 32px; font-weight: bold;">{{ stats.spaces_available or 90 }}</div>
+                <div style="color: #888; font-size: 12px; margin-top: 5px;">{{ "%.1f"|format(((stats.spaces_available or 90) / 90) * 100) }}%</div>
+            </div>
+            
+            <div style="background: #2a2a2a; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #2196f3;">
+                <div style="color: #888; font-size: 14px; margin-bottom: 5px;">📋 Total</div>
+                <div style="color: #e8e8e8; font-size: 32px; font-weight: bold;">90</div>
+                <div style="color: #888; font-size: 12px; margin-top: 5px;">Capacidad máxima</div>
+            </div>
+        </div>
+        
+        <!-- Barra de progreso -->
+        {% set progress_width = ((stats.spaces_available or 90) / 90) * 100 %}
+        {% set progress_percent = progress_width|round(2) %}
+        <div style="background: #2a2a2a; height: 30px; border-radius: 15px; overflow: hidden; margin-top: 10px; position: relative;">
+            <div style="height: 100%; background: linear-gradient(90deg, #4caf50 0%, #45a049 100%); width: {{ progress_percent }}%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
+                {{ stats.spaces_available or 90 }}/90 disponibles
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 14px; color: #888;">
+            <div style="text-align: center;">
+                Almacenados actualmente: <strong style="color: #e8e8e8;">{{ stats.currently_stored or 0 }}</strong>
+            </div>
+            <div style="text-align: center;">
+                Total depositados: <strong style="color: #e8e8e8;">{{ stats.total_deposited or 0 }}</strong>
+            </div>
+            <div style="text-align: center;">
+                Total retirados: <strong style="color: #e8e8e8;">{{ stats.total_retrieved or 0 }}</strong>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('guardarropia.informe_espacios') }}" style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
+                🗺️ Ver Mapa
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+let selectedPayment = 'cash'; // Por defecto efectivo
+const PRECIO_UNITARIO = 500; // Precio fijo por cluster
+
+// Seleccionar efectivo por defecto y actualizar precio
+document.addEventListener('DOMContentLoaded', function() {
+    selectPayment('cash');
+    updatePrice();
+    
+    // Agregar listener al campo de clusters
+    const clustersInput = document.getElementById('clusters');
+    if (clustersInput) {
+        clustersInput.addEventListener('input', updatePrice);
+        clustersInput.addEventListener('change', updatePrice);
+    }
+});
+
+function updatePrice() {
+    const clustersInput = document.getElementById('clusters');
+    if (!clustersInput) return;
+    
+    const clusters = parseInt(clustersInput.value) || 1;
+    const priceTotal = PRECIO_UNITARIO * clusters;
+    
+    // Actualizar precio total
+    const priceInput = document.getElementById('price');
+    if (priceInput) {
+        priceInput.value = priceTotal;
+    }
+    
+    // Actualizar texto de ayuda
+    const priceHelp = document.getElementById('price-help');
+    if (priceHelp) {
+        priceHelp.textContent = `Total: $${priceTotal.toLocaleString()} (${clusters} cluster${clusters > 1 ? 's' : ''} × $${PRECIO_UNITARIO})`;
+    }
+    
+    // Actualizar resumen
+    const summaryClusters = document.getElementById('summary-clusters');
+    if (summaryClusters) {
+        summaryClusters.textContent = clusters;
+    }
+    
+    const summaryPrice = document.getElementById('summary-price');
+    if (summaryPrice) {
+        summaryPrice.textContent = `$${priceTotal.toLocaleString()}`;
+    }
+    
+    // Actualizar total display
+    const totalDisplay = document.getElementById('total-display');
+    if (totalDisplay) {
+        totalDisplay.textContent = `Total: $${priceTotal.toLocaleString()}`;
+    }
+}
+
+function selectPayment(type) {
+    selectedPayment = type;
+    document.getElementById('payment_type').value = type;
+    
+    // Actualizar botones
+    document.querySelectorAll('.payment-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Activar el botón correspondiente
+    const buttons = document.querySelectorAll('.payment-btn');
+    buttons.forEach(btn => {
+        const btnText = btn.textContent.trim();
+        if ((type === 'cash' && btnText.includes('Efectivo')) ||
+            (type === 'debit' && btnText.includes('Débito')) ||
+            (type === 'credit' && btnText.includes('Crédito')) ||
+            btn.classList.add('active');
+        }
+    });
+    
+    // Actualizar resumen
+    const paymentNames = {
+        'cash': 'Efectivo',
+        'debit': 'Débito',
+        'credit': 'Crédito',
+    };
+    document.getElementById('summary-payment').textContent = paymentNames[type] || '-';
+    
+    updateSubmitButton();
+}
+
+function updateSubmitButton() {
+    const customerName = document.getElementById('customer_name').value.trim();
+    const customerPhone = document.getElementById('customer_phone').value.trim();
+    
+    const submitBtn = document.getElementById('submit-btn');
+    
+    if (customerName && customerPhone) {
+        submitBtn.disabled = false;
+    } else {
+        submitBtn.disabled = true;
+    }
+}
+
+async function handleFormSubmit(event) {
+    const paymentType = document.getElementById('payment_type').value;
+    
+        event.preventDefault();
+        
+        const customerName = document.getElementById('customer_name').value.trim();
+        const customerPhone = document.getElementById('customer_phone').value.trim();
+        const clusters = parseInt(document.getElementById('clusters').value) || 1;
+        const description = document.getElementById('description').value.trim() || null;
+        const notes = document.getElementById('notes').value.trim() || null;
+        
+        if (!customerName || !customerPhone) {
+            alert('Por favor completa todos los campos requeridos');
+            return false;
+        }
+        
+        const precioUnitario = 500.0;
+        const total = precioUnitario * clusters;
+        
+        // Mostrar loading
+        const submitBtn = document.getElementById('submit-btn');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Procesando...';
+        
+        try {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    customer_name: customerName,
+                    customer_phone: customerPhone,
+                    clusters: clusters,
+                    description: description,
+                    notes: notes,
+                    amount: total
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.checkout_url) {
+                // Guardar datos en sesión para cuando regrese
+                    customer_name: customerName,
+                    customer_phone: customerPhone,
+                    clusters: clusters,
+                    description: description,
+                    notes: notes,
+                    amount: total,
+                }));
+                
+                window.location.href = data.checkout_url;
+            } else {
+                alert('Error al crear el pago: ' + (data.error || 'Error desconocido'));
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al procesar el pago. Por favor intenta nuevamente.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+        
+        return false;
+    }
+    
+    // Para otros métodos de pago, continuar con el flujo normal
+    return true;
+}
+
+// Validar al escribir
+document.getElementById('customer_name').addEventListener('input', updateSubmitButton);
+document.getElementById('customer_phone').addEventListener('input', updateSubmitButton);
+
+// Funciones para el escáner de ticket integrado
+document.addEventListener('DOMContentLoaded', function() {
+    // Convertir a mayúsculas automáticamente
+    const scannerInput = document.getElementById('scanner-ticket-code');
+    if (scannerInput) {
+        scannerInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+});
+
+// Función para bloquear pantalla
+function bloquearPantalla() {
+    if (confirm('¿Deseas bloquear la pantalla? Deberás iniciar sesión nuevamente.')) {
+        // Limpiar sesión y redirigir al login
+        window.location.href = '{{ url_for("guardarropia.login") }}';
+    }
+}
+
+// Función para buscar ticket
+function buscarTicket() {
+    const ticketCode = document.getElementById('scanner-ticket-code').value.trim().toUpperCase();
+    const btnBuscar = document.getElementById('btn-buscar');
+    const errorDiv = document.getElementById('scanner-error');
+    const errorText = document.getElementById('scanner-error-text');
+    
+    if (!ticketCode) {
+        errorDiv.style.display = 'block';
+        errorText.textContent = 'Por favor, ingresa un código de ticket';
+        return;
+    }
+    
+    // Mostrar loading
+    btnBuscar.disabled = true;
+    btnBuscar.textContent = '🔍 Buscando...';
+    errorDiv.style.display = 'none';
+    
+    // Buscar ticket
+    fetch('{{ url_for("guardarropia.api_buscar_ticket") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ticket_code: ticketCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        btnBuscar.disabled = false;
+        btnBuscar.textContent = '🔍 Buscar Ticket';
+        
+        if (data.success) {
+            // Mostrar información del ticket
+            mostrarInformacionTicket(data.item);
+        } else {
+            // Mostrar error
+            errorDiv.style.display = 'block';
+            errorText.textContent = data.error || 'Error al buscar el ticket';
+        }
+    })
+    .catch(error => {
+        btnBuscar.disabled = false;
+        btnBuscar.textContent = '🔍 Buscar Ticket';
+        errorDiv.style.display = 'block';
+        errorText.textContent = 'Error al buscar el ticket: ' + error.message;
+        console.error('Error:', error);
+    });
+}
+
+// Función para mostrar información del ticket
+function mostrarInformacionTicket(item) {
+    const step1 = document.getElementById('scanner-step-1');
+    const step2 = document.getElementById('scanner-step-2');
+    const ticketInfo = document.getElementById('ticket-info');
+    const formTicketCode = document.getElementById('scanner-form-ticket-code');
+    
+    // Ocultar paso 1, mostrar paso 2
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+    
+    // Llenar código en el formulario
+    formTicketCode.value = item.ticket_code;
+    
+    // Formatear fecha
+    const depositedAt = item.deposited_at ? new Date(item.deposited_at).toLocaleString('es-CL') : 'N/A';
+    
+    // Llenar información
+    ticketInfo.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div>
+                <div style="color: #888; font-size: 12px; margin-bottom: 5px;">Código del Ticket</div>
+                <div style="color: #e8e8e8; font-size: 18px; font-weight: bold;">${item.ticket_code || 'N/A'}</div>
+            </div>
+            <div>
+                <div style="color: #888; font-size: 12px; margin-bottom: 5px;">Estado</div>
+                <div style="color: #4caf50; font-size: 18px; font-weight: bold;">✅ Depositado</div>
+            </div>
+        </div>
+        
+        <div style="border-top: 1px solid #444; padding-top: 15px; margin-top: 15px;">
+            <div style="margin-bottom: 15px;">
+                <div style="color: #888; font-size: 12px; margin-bottom: 5px;">Nombre del Cliente</div>
+                <div style="color: #e8e8e8; font-size: 16px;">${item.customer_name || 'Sin nombre'}</div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <div style="color: #888; font-size: 12px; margin-bottom: 5px;">Teléfono</div>
+                <div style="color: #e8e8e8; font-size: 16px;">${item.customer_phone || '-'}</div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <div style="color: #888; font-size: 12px; margin-bottom: 5px;">Descripción</div>
+                <div style="color: #e8e8e8; font-size: 16px;">${item.description || '-'}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div>
+                    <div style="color: #888; font-size: 12px; margin-bottom: 5px;">Precio</div>
+                    <div style="color: #4caf50; font-size: 18px; font-weight: bold;">$${item.price ? parseFloat(item.price).toFixed(0) : '0'}</div>
+                </div>
+                <div>
+                    <div style="color: #888; font-size: 12px; margin-bottom: 5px;">Fecha de Depósito</div>
+                    <div style="color: #e8e8e8; font-size: 14px;">${depositedAt}</div>
+                </div>
+            </div>
+            
+            ${item.cluster_numbers ? `
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #444;">
+                <div style="color: #888; font-size: 12px; margin-bottom: 5px;">Espacios</div>
+                <div style="color: #e8e8e8; font-size: 16px; font-weight: bold;">${item.cluster_numbers}</div>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Función para volver al paso de búsqueda
+function volverABuscar() {
+    const step1 = document.getElementById('scanner-step-1');
+    const step2 = document.getElementById('scanner-step-2');
+    const errorDiv = document.getElementById('scanner-error');
+    
+    step1.style.display = 'block';
+    step2.style.display = 'none';
+    errorDiv.style.display = 'none';
+    
+    // Limpiar y enfocar input
+    const input = document.getElementById('scanner-ticket-code');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+}
+
+// Función para bloquear pantalla
+function bloquearPantalla() {
+    if (confirm('¿Deseas bloquear la pantalla? Deberás iniciar sesión nuevamente.')) {
+        // Limpiar sesión y redirigir al login
+        window.location.href = '{{ url_for("guardarropia.login") }}';
+    }
+}
+</script>
+
+{% endblock %}
+

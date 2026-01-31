@@ -1,0 +1,212 @@
+Quiero que construyas el "AGENTE GETNET" local para los tótems de autoatención de Bimba, que ahora correrán TODOS en Linux.
+
+## CONTEXTO
+
+- Cada tótem será un PC con Linux (Ubuntu/Debian).
+- En ese PC hay:
+  - una pantalla táctil con un navegador en modo kiosko (abre https://stvaldivia.cl/cajaX),
+  - una POS Getnet conectada por USB,
+  - una impresora térmica configurada en CUPS.
+
+- La negociación de pago con Getnet es **TOTALMENTE LOCAL**:
+  - El servidor central NO habla con Getnet.
+  - Solo el tótem, por USB.
+
+- El backend central (Bimbaverso) ya tiene:
+  - /api/caja/venta-ok       → crea venta + descuenta inventario + genera ticket_code
+  - /api/caja/venta-fallida-log → registra intento fallido, NO crea venta
+
+- El frontend de la caja (en el navegador) necesita una API local para pedir el pago.
+
+---
+
+## OBJETIVO DEL AGENTE GETNET (LINUX)
+
+Construir un servicio local (por ejemplo en Python + FastAPI) que:
+
+1. Corra en el tótem Linux como servicio (systemd).
+2. Escuche en `http://127.0.0.1:7777`.
+3. Exponga un endpoint principal: `POST /pago`.
+4. Desde /pago:
+   - reciba el monto y detalles básicos de la venta,
+   - hable con la POS Getnet por USB (pyserial),
+   - espere la respuesta de Getnet,
+   - devuelva un JSON simple con ok / error.
+
+No quiero que inventes el protocolo exacto de Getnet; quiero que:
+
+- Dejes funciones STUB bien comentadas, tipo:
+  - send_payment_to_getnet(monto) → construye y envía el frame
+  - parse_getnet_response(data) → convierte respuesta binaria en estructura
+- Indiques con TODO dónde va el código serio cuando tengamos el manual de Getnet.
+
+---
+
+## API HTTP LOCAL (FASTAPI)
+
+### Endpoint 1: POST /pago
+
+Request JSON esperado (desde el navegador de la caja):
+
+{
+  "amount": 15000,
+  "currency": "CLP",
+  "metadata": {
+    "caja_codigo": "caja1",
+    "cajero": "TOTEM_AUTO_1"
+  }
+}
+
+Lógica:
+
+1. Validar que amount > 0.
+2. Llamar una función `procesar_pago_getnet(amount)` que:
+   - abre el puerto serie donde está el POS (ej: /dev/ttyUSB0),
+   - arma y envía el frame correcto a Getnet (TODO: protocolo),
+   - espera la respuesta,
+   - la parsea y devuelve algo como:
+
+   {
+     "ok": true/false,
+     "responseCode": "0" o "XX",
+     "responseMessage": "Aprobado" o descripción de error,
+     "authorizationCode": "123456" o null,
+     "raw": "<hex de la respuesta>"
+   }
+
+3. Según ok:
+
+   - Si ok == true:
+     - devolver 200 + JSON:
+
+       {
+         "ok": true,
+         "responseCode": "...",
+         "responseMessage": "...",
+         "authorizationCode": "...",
+         "raw": "..."
+       }
+
+     (El navegador, con esta respuesta, luego llama al backend central /api/caja/venta-ok.)
+
+   - Si ok == false:
+     - devolver 200 también, con:
+
+       {
+         "ok": false,
+         "responseCode": "...",
+         "responseMessage": "...",
+         "error": "Texto amigable opcional",
+         "raw": "..."
+       }
+
+     (El navegador enviará esto a /api/caja/venta-fallida-log, pero dejará el carrito intacto.)
+
+### Endpoint 2: GET /estado
+
+- Devuelve algo simple para debugging, ejemplo:
+
+{
+  "status": "ok",
+  "device": "/dev/ttyUSB0",
+  "last_payment_ok": "2025-12-18T02:34:00",
+  "last_error": null
+}
+
+---
+
+## INTEGRACIÓN CON SERIAL (pyserial)
+
+Usa pyserial para hablar con el POS:
+
+- Detectar puerto (configurable por env):
+
+  ENV:
+    GETNET_SERIAL_PORT=/dev/ttyUSB0
+    GETNET_BAUDRATE=9600
+
+- Función stub:
+
+def procesar_pago_getnet(amount: int) -> dict:
+    """
+    Recibe el monto en pesos (ej 15000) y maneja TODO el ciclo con el POS Getnet.
+    Aquí debes:
+      1) construir el frame correcto (TODO: protocolo Getnet),
+      2) abrir el puerto serie,
+      3) enviar el frame,
+      4) leer la respuesta,
+      5) parsear y mapear a un dict estándar.
+
+    NO inventes el protocolo.
+    Deja comentarios tipo:
+      # TODO: según manual POS Getnet, frame de venta crédito/débito
+    """
+    # EJEMPLO DE ESTRUCTURA (SIMULADA, para pruebas sin POS):
+    aprobado = True  # en modo demo, forzar o random
+    if aprobado:
+        return {
+            "ok": True,
+            "responseCode": "0",
+            "responseMessage": "Aprobado (SIMULADO)",
+            "authorizationCode": "SIM-" + str(int(time.time())),
+            "raw": None
+        }
+    else:
+        return {
+            "ok": False,
+            "responseCode": "05",
+            "responseMessage": "No autorizado (SIMULADO)",
+            "authorizationCode": None,
+            "raw": None
+        }
+
+Quiero que:
+- Implementes bien la estructura del agente con FastAPI,
+- dejes un "modo demo" activable por env (GETNET_DEMO=true) que no use el puerto real,
+- dejes TODO listo para que, cuando tengamos el manual de Getnet, solo tenga que completar la parte de construcción/parsing del frame.
+
+---
+
+## SISTEMA EN PRODUCCIÓN (LINUX)
+
+Incluye además:
+
+1. Un `requirements.txt` para este agente (FastAPI, uvicorn, pyserial, python-dotenv, etc.).
+2. Un pequeño script `run_agent.sh` que lance el servidor FastAPI con uvicorn en 127.0.0.1:7777.
+3. Un archivo de ejemplo de unidad systemd:
+
+   /etc/systemd/system/bimba-getnet-agent.service
+
+   Que:
+   - arranque el agente al iniciar el tótem,
+   - reinicie si se cae.
+
+No lo configures realmente, solo genera el archivo y deja las instrucciones claras.
+
+---
+
+## TESTS
+
+Agrega pruebas básicas:
+
+- Test de /estado
+- Test de /pago en modo DEMO:
+  - ok: true
+  - ok: false
+
+Quiero el código limpio, comentado, y organizado en:
+
+- app/main.py
+- app/getnet.py
+- app/config.py
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+{% block title %}Logs del Agente BIMBA{% endblock %}
+{% block meta_description %}Logs y pruebas del agente de IA BIMBA para redes sociales. Visualiza conversaciones y prueba respuestas del agente.{% endblock %}
+
+{% block head_extra %}
+<style>
+    .bot-logs-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .section-title {
+        color: #667eea;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+    
+    .filters-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        align-items: end;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-group label {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .filter-group select,
+    .filter-group input {
+        padding: 10px;
+        background: #2a2a3e;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.95rem;
+    }
+    
+    .filter-group select:focus,
+    .filter-group input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .btn-filter {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .logs-table-container {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 30px;
+        overflow-x: auto;
+    }
+    
+    .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1000px;
+    }
+    
+    .logs-table th {
+        background: rgba(102, 126, 234, 0.2);
+        color: #fff;
+        padding: 15px;
+        text-align: left;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .logs-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: #e8e8e8;
+        font-size: 0.9rem;
+    }
+    
+    .logs-table tbody tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .badge-direction {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge-user {
+        background: rgba(33, 150, 243, 0.3);
+        color: #2196f3;
+    }
+    
+    .badge-bot {
+        background: rgba(76, 175, 80, 0.3);
+        color: #4caf50;
+    }
+    
+    .badge-status {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge-success {
+        background: rgba(76, 175, 80, 0.3);
+        color: #4caf50;
+    }
+    
+    .badge-error {
+        background: rgba(244, 67, 54, 0.3);
+        color: #f44336;
+    }
+    
+    .badge-received {
+        background: rgba(255, 152, 0, 0.3);
+        color: #ff9800;
+    }
+    
+    .badge-timeout {
+        background: rgba(158, 158, 158, 0.3);
+        color: #9e9e9e;
+    }
+    
+    .test-console {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .test-console h3 {
+        color: #667eea;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+    }
+    
+    .test-form {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .test-form input[type="text"] {
+        flex: 1;
+        min-width: 250px;
+        padding: 14px 18px;
+        background: #1e293b !important;
+        border: 2px solid rgba(102, 126, 234, 0.4) !important;
+        border-radius: 10px;
+        color: #ffffff !important;
+        font-size: 1rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+        z-index: 1;
+        position: relative;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    
+    .test-form input[type="text"]:focus {
+        outline: none !important;
+        border-color: #667eea !important;
+        background: #0f172a !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 0 20px rgba(102, 126, 234, 0.2) !important;
+        transform: translateY(-1px);
+    }
+    
+    .test-form input[type="text"]:hover {
+        border-color: rgba(102, 126, 234, 0.6);
+    }
+    
+    .test-form input[type="text"]::placeholder {
+        color: #94a3b8 !important;
+        opacity: 0.8;
+    }
+    
+    .test-form select {
+        padding: 14px 18px;
+        background: #1e293b !important;
+        border: 2px solid rgba(102, 126, 234, 0.4) !important;
+        border-radius: 10px;
+        color: #ffffff !important;
+        font-size: 0.95rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        cursor: pointer;
+        min-width: 140px;
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 40px;
+    }
+    
+    .test-form select:focus {
+        outline: none !important;
+        border-color: #667eea !important;
+        background: #0f172a !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15) !important;
+    }
+    
+    .test-form select:hover {
+        border-color: rgba(102, 126, 234, 0.6);
+    }
+    
+    .btn-test {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-test:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-test:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .test-response {
+        margin-top: 20px;
+        padding: 15px;
+        background: rgba(102, 126, 234, 0.1);
+        border-left: 4px solid #667eea;
+        border-radius: 8px;
+        display: none;
+    }
+    
+    .test-response.show {
+        display: block;
+    }
+    
+    .test-response h4 {
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+    
+    .test-response p {
+        color: #e8e8e8;
+        line-height: 1.6;
+    }
+    
+    .message-preview {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .conversation-id-short {
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: #94a3b8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bot-logs-container">
+    <h1 class="section-title">🤖 Logs del Agente de IA BIMBA</h1>
+    
+    <!-- Consola de Prueba -->
+    <div class="test-console">
+        <h3>🧪 Consola de Prueba{% if is_superadmin %} <span style="color: #ec4899; font-size: 0.8rem;">(Superadmin)</span>{% endif %}</h3>
+        <p style="color: #94a3b8; margin-bottom: 20px; font-size: 0.9rem;">
+            Prueba el agente BIMBA enviando un mensaje. El mensaje y la respuesta se registrarán en los logs.
+            {% if is_superadmin %}
+            <br><span style="color: #ec4899;">🔧 Modo Superadmin: Verás información detallada del sistema, intenciones detectadas y fuente de respuesta.</span>
+            {% endif %}
+        </p>
+        <form id="test-form" class="test-form" method="POST" action="{{ url_for('admin.bot_test') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input 
+                type="text" 
+                name="mensaje_usuario" 
+                id="test-mensaje" 
+                placeholder="Escribe un mensaje para probar el agente BIMBA..." 
+                required
+                autocomplete="off"
+                spellcheck="true"
+            >
+            <select name="canal" id="test-canal">
+                <option value="interno">Interno</option>
+                <option value="web">Web</option>
+                <option value="instagram">Instagram</option>
+                <option value="whatsapp">WhatsApp</option>
+            </select>
+            <button type="submit" class="btn-test" id="test-btn">Probar Respuesta</button>
+        </form>
+        {% if is_superadmin %}
+        <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 8px; padding: 15px; margin-top: 15px;">
+            <h4 style="color: #ec4899; margin-bottom: 10px; font-size: 0.9rem;">🔧 Información del Sistema (Superadmin)</h4>
+            <div id="superadmin-info" style="color: #cbd5e1; font-size: 0.85rem; font-family: monospace;">
+                <div>Estado: <span id="system-status">Cargando...</span></div>
+                <div>OpenAI disponible: <span id="openai-status">Verificando...</span></div>
+                <div>Reglas disponibles: ✅</div>
+                <div>Conocimiento del sistema: ✅</div>
+            </div>
+        </div>
+        {% endif %}
+        <div id="test-response" class="test-response">
+            <h4>Respuesta del Agente BIMBA:</h4>
+            <p id="test-response-text"></p>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #94a3b8;">
+                <span>Conversation ID: <span id="test-conversation-id" class="conversation-id-short"></span></span>
+                <span style="margin-left: 20px;">Model: <span id="test-model"></span></span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="filters-section">
+        <h3 style="color: #e8e8e8; margin-bottom: 15px; font-size: 1.1rem;">🔍 Filtros</h3>
+        <form method="GET" action="{{ url_for('admin.bot_logs') }}" class="filters-grid">
+            <div class="filter-group">
+                <label for="canal">Canal</label>
+                <select name="canal" id="canal">
+                    <option value="todos" {% if filtro_canal == 'todos' or not filtro_canal %}selected{% endif %}>Todos</option>
+                    {% for c in canales %}
+                    <option value="{{ c }}" {% if filtro_canal == c %}selected{% endif %}>{{ c|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="direccion">Dirección</label>
+                <select name="direccion" id="direccion">
+                    <option value="todas" {% if filtro_direction == 'todas' or not filtro_direction %}selected{% endif %}>Todas</option>
+                    <option value="user" {% if filtro_direction == 'user' %}selected{% endif %}>Usuario</option>
+                    <option value="bot" {% if filtro_direction == 'bot' %}selected{% endif %}>Agente BIMBA</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="estado">Estado</label>
+                <select name="estado" id="estado">
+                    <option value="todos" {% if filtro_status == 'todos' or not filtro_status %}selected{% endif %}>Todos</option>
+                    <option value="received" {% if filtro_status == 'received' %}selected{% endif %}>Recibido</option>
+                    <option value="success" {% if filtro_status == 'success' %}selected{% endif %}>Éxito</option>
+                    <option value="error" {% if filtro_status == 'error' %}selected{% endif %}>Error</option>
+                    <option value="timeout" {% if filtro_status == 'timeout' %}selected{% endif %}>Timeout</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="limite">Límite</label>
+                <input type="number" name="limite" id="limite" value="{{ limit }}" min="10" max="500" step="10">
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn-filter">Filtrar</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Tabla de Logs -->
+    <div class="logs-table-container">
+        <h3 style="color: #e8e8e8; margin-bottom: 20px; font-size: 1.2rem;">📋 Logs Recientes</h3>
+        {% if logs %}
+        <table class="logs-table">
+            <thead>
+                <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Canal</th>
+                    <th>Dirección</th>
+                    <th>Estado</th>
+                    <th>Mensaje</th>
+                    <th>Modelo</th>
+                    <th>Conversation ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M:%S') if log.timestamp else 'N/A' }}</td>
+                    <td>{{ log.canal|title }}</td>
+                    <td>
+                        <span class="badge-direction {% if log.direction == 'user' %}badge-user{% else %}badge-bot{% endif %}">
+                            {% if log.direction == 'user' %}👤 Usuario{% else %}🤖 BIMBA{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge-status 
+                            {% if log.status == 'success' %}badge-success
+                            {% elif log.status == 'error' %}badge-error
+                            {% elif log.status == 'received' %}badge-received
+                            {% elif log.status == 'timeout' %}badge-timeout
+                            {% else %}badge-received{% endif %}">
+                            {{ log.status|title }}
+                        </span>
+                    </td>
+                    <td class="message-preview" title="{{ log.message }}">
+                        {{ log.get_message_preview(100) }}
+                        {% if is_superadmin and log.meta %}
+                            {% set meta = log.get_meta() %}
+                            {% if meta.get('intent') or meta.get('source') %}
+                                <br><small style="color: #ec4899; font-size: 0.75rem; display: block; margin-top: 5px;">
+                                    🔧 Intent: {{ meta.get('intent', 'N/A') }} | Source: {{ meta.get('source', 'N/A') }}
+                                </small>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>{{ log.model or '-' }}</td>
+                    <td class="conversation-id-short">{{ log.get_conversation_id_short() }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+            <div style="font-size: 4rem; margin-bottom: 15px;">📋</div>
+            <h3 style="color: #e8e8e8; margin-bottom: 10px;">No hay logs disponibles</h3>
+            <p>Los logs aparecerán aquí cuando se registren conversaciones con el agente BIMBA en redes sociales.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const testForm = document.getElementById('test-form');
+    const testBtn = document.getElementById('test-btn');
+    const testResponse = document.getElementById('test-response');
+    const testResponseText = document.getElementById('test-response-text');
+    const testConversationId = document.getElementById('test-conversation-id');
+    const testModel = document.getElementById('test-model');
+    
+    if (testForm) {
+        testForm.addEventListener('submit', function(e) {
+            const mensaje = document.getElementById('test-mensaje').value.trim();
+            
+            if (!mensaje) {
+                e.preventDefault();
+                alert('Por favor, escribe un mensaje');
+                return false;
+            }
+            
+            // Deshabilitar botón y mostrar loading
+            testBtn.disabled = true;
+            testBtn.textContent = 'Procesando...';
+            
+            // El formulario se enviará normalmente (POST) y el servidor redirigirá
+            // No necesitamos preventDefault porque queremos que se envíe
+        });
+    }
+    
+    {% if is_superadmin %}
+    // Información del sistema para superadmin
+    function checkSystemStatus() {
+        // Verificar estado de OpenAI
+        fetch('/api/v1/bot/responder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({mensaje: 'test', canal: 'interno'})
+        })
+        .then(response => response.json())
+        .then(data => {
+            const openaiStatus = document.getElementById('openai-status');
+            const systemStatus = document.getElementById('system-status');
+            
+            if (data.source === 'rule_based' || data.source === 'rule_based_fallback') {
+                openaiStatus.textContent = 'No usado (respuesta por reglas)';
+                openaiStatus.style.color = '#94a3b8';
+            } else if (data.source === 'fallback' || data.source === 'fallback_contextual' || data.source === 'superadmin_fallback') {
+                openaiStatus.textContent = '⚠️ No disponible';
+                openaiStatus.style.color = '#ff9800';
+            } else if (data.modelo) {
+                openaiStatus.textContent = '✅ Disponible (' + data.modelo + ')';
+                openaiStatus.style.color = '#4caf50';
+            } else {
+                openaiStatus.textContent = '⚠️ Verificar';
+                openaiStatus.style.color = '#ff9800';
+            }
+            
+            systemStatus.textContent = '✅ Operativo';
+            systemStatus.style.color = '#4caf50';
+        })
+        .catch(error => {
+            document.getElementById('openai-status').textContent = '❌ Error al verificar';
+            document.getElementById('openai-status').style.color = '#f44336';
+            document.getElementById('system-status').textContent = '⚠️ Error';
+            document.getElementById('system-status').style.color = '#f44336';
+        });
+    }
+    
+    // Verificar estado al cargar
+    checkSystemStatus();
+    {% endif %}
+});
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Historial de Fraudes - Admin{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>Historial de Autorizaciones de Fraude</h2>
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('routes.admin_dashboard') }}" class="btn btn-primary">🏠 Dashboard Principal</a>
+        <a href="{{ url_for('routes.admin_logs') }}" class="btn btn-primary">📋 Logs de Entregas</a>
+        <a href="{{ url_for('routes.fraud_config') }}" class="btn btn-primary">Configuración</a>
+        <a href="{{ url_for('auth.logout_admin') }}" class="btn btn-danger">Cerrar Sesión</a>
+    </div>
+</div>
+
+<table style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr style="background-color: #222; border-bottom: 2px solid #444;">
+            <th style="padding: 12px; text-align: left;">Ticket ID</th>
+            <th style="padding: 12px; text-align: left;">Tipo de Fraude</th>
+            <th style="padding: 12px; text-align: left;">Bartender</th>
+            <th style="padding: 12px; text-align: left;">Barra</th>
+            <th style="padding: 12px; text-align: left;">Producto</th>
+            <th style="padding: 12px; text-align: center;">Cantidad</th>
+            <th style="padding: 12px; text-align: center;">Estado</th>
+            <th style="padding: 12px; text-align: left;">Fecha</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for attempt in fraud_attempts %}
+        {% if attempt|length >= 7 %}
+        <tr style="border-bottom: 1px solid #333; {% if attempt[7] == '1' %}background-color: rgba(0, 100, 0, 0.2);{% else %}background-color: rgba(100, 0, 0, 0.2);{% endif %}">
+            <td style="padding: 12px;">{{ attempt[0] }}</td>
+            <td style="padding: 12px;">
+                {% if attempt[6] == 'old_ticket' %}
+                    <span style="color: #ffaa00;">Ticket Antiguo</span>
+                {% elif attempt[6] == 'multiple_attempts' %}
+                    <span style="color: #ff0000;">Múltiples Intentos</span>
+                {% else %}
+                    {{ attempt[6] }}
+                {% endif %}
+            </td>
+            <td style="padding: 12px;">{{ attempt[2] }}</td>
+            <td style="padding: 12px;">{{ attempt[3] }}</td>
+            <td style="padding: 12px;">{{ attempt[4] }}</td>
+            <td style="padding: 12px; text-align: center;">{{ attempt[5] }}</td>
+            <td style="padding: 12px; text-align: center;">
+                {% if attempt[7] == '1' %}
+                    <span style="color: #00ff00; font-weight: bold;">✓ Autorizado</span>
+                {% else %}
+                    <span style="color: #ff0000; font-weight: bold;">✗ No Autorizado</span>
+                {% endif %}
+            </td>
+            <td style="padding: 12px;">{{ attempt[1] }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if fraud_attempts|length == 0 %}
+<div style="text-align: center; padding: 40px; color: #aaa;">
+    <p>No hay historial de fraudes registrado.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+
+
+

@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% block title %}{% if evento %}Editar{% else %}Crear{% endif %} Evento - Programación BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .form-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .form-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .form-section-title {
+        color: #667eea;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-group label {
+        color: #cbd5e1;
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 12px;
+        background: #2a2a3e;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        font-family: inherit;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+    
+    .precios-tiers {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+    }
+    
+    .tier-item {
+        background: #2a2a3e;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .tier-item h4 {
+        color: #667eea;
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #2a2a3e;
+        color: #cbd5e1;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary:hover {
+        background: #3a3a4e;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1 style="color: #fff; margin-bottom: 30px; font-size: 2rem;">
+        {% if evento %}✏️ Editar Evento{% else %}➕ Crear Nuevo Evento{% endif %}
+    </h1>
+    
+    <form method="POST" action="{% if evento %}{{ url_for('routes.admin_programacion_editar', evento_id=evento.id) }}{% else %}{{ url_for('routes.admin_programacion_crear') }}{% endif %}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <!-- Información Básica -->
+        <div class="form-section">
+            <h2 class="form-section-title">📋 Información Básica</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fecha">Fecha del Evento <span style="color: #f44336;">*</span></label>
+                    <input type="date" id="fecha" name="fecha" 
+                           value="{% if evento %}{{ evento.fecha.isoformat() }}{% elif fecha_predefinida %}{{ fecha_predefinida }}{% endif %}" 
+                           required>
+                </div>
+                <div class="form-group">
+                    <label for="nombre_evento">Nombre del Evento <span style="color: #f44336;">*</span></label>
+                    <input type="text" id="nombre_evento" name="nombre_evento" 
+                           value="{{ evento.nombre_evento if evento else '' }}" 
+                           placeholder="Ej: Techno Night, Fiesta VIP" required>
+                </div>
+                <div class="form-group">
+                    <label for="tipo_noche">Tipo de Noche</label>
+                    <input type="text" id="tipo_noche" name="tipo_noche" 
+                           value="{{ evento.tipo_noche if evento else '' }}" 
+                           placeholder="Ej: Techno, House, Reggaeton">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información Pública -->
+        <div class="form-section">
+            <h2 class="form-section-title">🌐 Información Pública (Comunicación)</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="dj_principal">DJ Principal</label>
+                    <input type="text" id="dj_principal" name="dj_principal" 
+                           value="{{ evento.dj_principal if evento else '' }}" 
+                           placeholder="Nombre del DJ principal">
+                </div>
+                <div class="form-group">
+                    <label for="otros_djs">Otros DJs</label>
+                    <input type="text" id="otros_djs" name="otros_djs" 
+                           value="{{ evento.otros_djs if evento else '' }}" 
+                           placeholder="Separados por comas">
+                </div>
+                <div class="form-group">
+                    <label for="estilos_musica">Estilos de Música</label>
+                    <input type="text" id="estilos_musica" name="estilos_musica" 
+                           value="{{ evento.estilos_musica if evento else '' }}" 
+                           placeholder="Ej: Techno, House, Minimal">
+                </div>
+                <div class="form-group">
+                    <label for="horario_apertura_publico">Horario Apertura</label>
+                    <input type="time" id="horario_apertura_publico" name="horario_apertura_publico" 
+                           value="{% if evento and evento.horario_apertura_publico %}{{ evento.horario_apertura_publico.strftime('%H:%M') }}{% endif %}">
+                </div>
+                <div class="form-group">
+                    <label for="horario_cierre_publico">Horario Cierre</label>
+                    <input type="time" id="horario_cierre_publico" name="horario_cierre_publico" 
+                           value="{% if evento and evento.horario_cierre_publico %}{{ evento.horario_cierre_publico.strftime('%H:%M') }}{% endif %}">
+                </div>
+                <div class="form-group">
+                    <label for="estado_publico">Estado Público</label>
+                    <select id="estado_publico" name="estado_publico">
+                        <option value="borrador" {% if evento and evento.estado_publico == 'borrador' %}selected{% endif %}>📝 Borrador</option>
+                        <option value="publicado" {% if evento and evento.estado_publico == 'publicado' %}selected{% endif %}>✅ Publicado</option>
+                        <option value="cancelado" {% if evento and evento.estado_publico == 'cancelado' %}selected{% endif %}>❌ Cancelado</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label>Precios (Tiers)</label>
+                    <div class="precios-tiers">
+                        <div class="tier-item">
+                            <h4>Tier 1</h4>
+                            <input type="text" name="tier_nombre_1" placeholder="Nombre (ej: Early Bird)" 
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[0].tier if evento.get_tiers_precios()|length > 0 else '' }}{% endif %}">
+                            <input type="number" name="precio_tier_1" placeholder="Precio" step="0.01" min="0"
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[0].precio if evento.get_tiers_precios()|length > 0 else '' }}{% endif %}" 
+                                   style="margin-top: 8px;">
+                            <input type="time" name="tier_hasta_1" placeholder="Válido hasta"
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[0].hasta if evento.get_tiers_precios()|length > 0 else '' }}{% endif %}" 
+                                   style="margin-top: 8px;">
+                        </div>
+                        <div class="tier-item">
+                            <h4>Tier 2</h4>
+                            <input type="text" name="tier_nombre_2" placeholder="Nombre (ej: General)" 
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[1].tier if evento.get_tiers_precios()|length > 1 else '' }}{% endif %}">
+                            <input type="number" name="precio_tier_2" placeholder="Precio" step="0.01" min="0"
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[1].precio if evento.get_tiers_precios()|length > 1 else '' }}{% endif %}" 
+                                   style="margin-top: 8px;">
+                            <input type="time" name="tier_hasta_2" placeholder="Válido hasta"
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[1].hasta if evento.get_tiers_precios()|length > 1 else '' }}{% endif %}" 
+                                   style="margin-top: 8px;">
+                        </div>
+                        <div class="tier-item">
+                            <h4>Tier 3</h4>
+                            <input type="text" name="tier_nombre_3" placeholder="Nombre (ej: VIP)" 
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[2].tier if evento.get_tiers_precios()|length > 2 else '' }}{% endif %}">
+                            <input type="number" name="precio_tier_3" placeholder="Precio" step="0.01" min="0"
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[2].precio if evento.get_tiers_precios()|length > 2 else '' }}{% endif %}" 
+                                   style="margin-top: 8px;">
+                            <input type="time" name="tier_hasta_3" placeholder="Válido hasta"
+                                   value="{% if evento %}{{ evento.get_tiers_precios()[2].hasta if evento.get_tiers_precios()|length > 2 else '' }}{% endif %}" 
+                                   style="margin-top: 8px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label for="info_lista">Información de Lista</label>
+                    <textarea id="info_lista" name="info_lista" 
+                              placeholder="Información sobre lista de invitados, cómo acceder, etc.">{{ evento.info_lista if evento else '' }}</textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label for="descripcion_corta">Descripción Corta</label>
+                    <textarea id="descripcion_corta" name="descripcion_corta" 
+                              placeholder="Descripción breve del evento para mostrar al público">{{ evento.descripcion_corta if evento else '' }}</textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label for="copy_ig_corto">Copy para Instagram</label>
+                    <textarea id="copy_ig_corto" name="copy_ig_corto" 
+                              placeholder="Texto optimizado para publicar en Instagram">{{ evento.copy_ig_corto if evento else '' }}</textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label for="copy_whatsapp_corto">Copy para WhatsApp</label>
+                    <textarea id="copy_whatsapp_corto" name="copy_whatsapp_corto" 
+                              placeholder="Texto optimizado para enviar por WhatsApp">{{ evento.copy_whatsapp_corto if evento else '' }}</textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label for="hashtags_sugeridos">Hashtags Sugeridos</label>
+                    <input type="text" id="hashtags_sugeridos" name="hashtags_sugeridos" 
+                           value="{{ evento.hashtags_sugeridos if evento else '' }}" 
+                           placeholder="Ej: #TechnoNight #BIMBA #Techno">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información Interna -->
+        <div class="form-section">
+            <h2 class="form-section-title">🔒 Información Interna (Producción)</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="estado_produccion">Estado de Producción</label>
+                    <select id="estado_produccion" name="estado_produccion">
+                        <option value="idea" {% if evento and evento.estado_produccion == 'idea' %}selected{% endif %}>💡 Idea</option>
+                        <option value="en_gestion" {% if evento and evento.estado_produccion == 'en_gestion' %}selected{% endif %}>🔄 En Gestión</option>
+                        <option value="confirmado" {% if evento and evento.estado_produccion == 'confirmado' %}selected{% endif %}>✅ Confirmado</option>
+                        <option value="cancelado" {% if evento and evento.estado_produccion == 'cancelado' %}selected{% endif %}>❌ Cancelado</option>
+                        <option value="realizado" {% if evento and evento.estado_produccion == 'realizado' %}selected{% endif %}>✔️ Realizado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-group">
+                        <input type="checkbox" name="dj_confirmado" {% if evento and evento.dj_confirmado %}checked{% endif %}>
+                        <span>DJ Confirmado</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="cache_dj_principal">Cache DJ Principal ($)</label>
+                    <input type="number" id="cache_dj_principal" name="cache_dj_principal" 
+                           value="{{ evento.cache_dj_principal if evento and evento.cache_dj_principal else '' }}" 
+                           step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="cache_otros_djs">Cache Otros DJs ($)</label>
+                    <input type="number" id="cache_otros_djs" name="cache_otros_djs" 
+                           value="{{ evento.cache_otros_djs if evento and evento.cache_otros_djs else '' }}" 
+                           step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="costos_produccion_estimados">Costos Producción Estimados ($)</label>
+                    <input type="number" id="costos_produccion_estimados" name="costos_produccion_estimados" 
+                           value="{{ evento.costos_produccion_estimados if evento and evento.costos_produccion_estimados else '' }}" 
+                           step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="presupuesto_marketing">Presupuesto Marketing ($)</label>
+                    <input type="number" id="presupuesto_marketing" name="presupuesto_marketing" 
+                           value="{{ evento.presupuesto_marketing if evento and evento.presupuesto_marketing else '' }}" 
+                           step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="ingresos_estimados">Ingresos Estimados ($)</label>
+                    <input type="number" id="ingresos_estimados" name="ingresos_estimados" 
+                           value="{{ evento.ingresos_estimados if evento and evento.ingresos_estimados else '' }}" 
+                           step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="aforo_objetivo">Aforo Objetivo</label>
+                    <input type="number" id="aforo_objetivo" name="aforo_objetivo" 
+                           value="{{ evento.aforo_objetivo if evento and evento.aforo_objetivo else '' }}" 
+                           min="0" placeholder="0">
+                </div>
+                <div class="form-group full-width">
+                    <label for="notas_internas">Notas Internas</label>
+                    <textarea id="notas_internas" name="notas_internas" 
+                              placeholder="Notas internas sobre la producción del evento, contactos, detalles importantes, etc.">{{ evento.notas_internas if evento else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('routes.admin_programacion') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if evento %}💾 Guardar Cambios{% else %}➕ Crear Evento{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+

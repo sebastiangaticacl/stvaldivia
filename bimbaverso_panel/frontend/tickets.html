@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tickets Live</title>
+<script>
+async function cargar(){
+  const res = await fetch("http://localhost:5002/api/ticket/lista");
+  const data = await res.json();
+  document.getElementById("tickets").innerHTML = 
+     "<pre>"+JSON.stringify(data,null,2)+"</pre>";
+}
+setInterval(cargar,2000);
+</script>
+</head>
+<body style="background:black;color:white;">
+<h1>Tickets en tiempo real</h1>
+<div id="tickets"></div>
+</body>
+</html>

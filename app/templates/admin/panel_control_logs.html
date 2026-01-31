@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+{% block title %}Logs del Sistema - Panel de Control{% endblock %}
+
+{% block head_extra %}
+<style>
+    .logs-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .logs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .logs-header h1 {
+        color: #e8e8e8;
+        margin: 0;
+        font-size: 1.8rem;
+    }
+
+    .logs-stats {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 12px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .stat-card .icon {
+        font-size: 1.5rem;
+    }
+
+    .stat-card .value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .stat-card .label {
+        color: #aaa;
+        font-size: 0.9rem;
+    }
+
+    .filters-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+
+    .filters-section h3 {
+        color: #e8e8e8;
+        margin: 0 0 20px 0;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .filter-group label {
+        color: #aaa;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        padding: 10px;
+        background: #0f172a;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #e8e8e8;
+        font-size: 0.95rem;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    .btn-filter {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-export {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+
+    .btn-export:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn-clear {
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: #aaa;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-clear:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #e8e8e8;
+    }
+
+    .logs-table-container {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .logs-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .logs-table th {
+        padding: 15px;
+        text-align: left;
+        color: white;
+        font-weight: bold;
+        font-size: 0.95rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logs-table tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: background-color 0.2s;
+    }
+
+    .logs-table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.1);
+    }
+
+    .logs-table td {
+        padding: 12px 15px;
+        color: #e8e8e8;
+        font-size: 0.9rem;
+    }
+
+    .sale-id {
+        color: #667eea;
+        font-weight: bold;
+        font-family: monospace;
+    }
+
+    .item-name {
+        color: #4caf50;
+        font-weight: 500;
+    }
+
+    .qty-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: rgba(255, 152, 0, 0.2);
+        border: 1px solid rgba(255, 152, 0, 0.4);
+        border-radius: 12px;
+        color: #ff9800;
+        font-weight: bold;
+        font-size: 0.85rem;
+    }
+
+    .bartender-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        border-radius: 12px;
+        color: #667eea;
+        font-size: 0.85rem;
+    }
+
+    .barra-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: rgba(156, 39, 176, 0.2);
+        border: 1px solid rgba(156, 39, 176, 0.4);
+        border-radius: 12px;
+        color: #9c27b0;
+        font-size: 0.85rem;
+    }
+
+    .timestamp {
+        color: #aaa;
+        font-size: 0.85rem;
+        font-family: monospace;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 10px 15px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #e8e8e8;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .pagination a:hover {
+        background: rgba(102, 126, 234, 0.2);
+        border-color: #667eea;
+    }
+
+    .pagination .current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        font-weight: bold;
+    }
+
+    .pagination .disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+    .empty-state .icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        color: #aaa;
+        margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .logs-container {
+            padding: 10px;
+        }
+
+        .logs-table {
+            font-size: 0.8rem;
+        }
+
+        .logs-table th,
+        .logs-table td {
+            padding: 8px;
+        }
+
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="logs-container">
+    <!-- Header -->
+    <div class="logs-header">
+        <h1>📋 Logs del Sistema</h1>
+        <div class="logs-stats">
+            <div class="stat-card">
+                <span class="icon">📊</span>
+                <div>
+                    <div class="value">{{ total_logs }}</div>
+                    <div class="label">Total Logs</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="icon">📄</span>
+                <div>
+                    <div class="value">{{ total_pages }}</div>
+                    <div class="label">Páginas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-section">
+        <h3>🔍 Filtros de Búsqueda</h3>
+        <form method="GET" action="{{ url_for('routes.admin_panel_control_logs') }}" id="filters-form">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="search">Búsqueda General</label>
+                    <input type="text" id="search" name="search" value="{{ search }}" 
+                           placeholder="Buscar en venta, producto, bartender, barra...">
+                </div>
+                <div class="filter-group">
+                    <label for="sale_id">ID de Venta</label>
+                    <input type="text" id="sale_id" name="sale_id" value="{{ sale_id_filter }}" 
+                           placeholder="Ej: BMB-000001">
+                </div>
+                <div class="filter-group">
+                    <label for="bartender">Bartender</label>
+                    <select id="bartender" name="bartender">
+                        <option value="">Todos los bartenders</option>
+                        {% for bartender in all_bartenders %}
+                        <option value="{{ bartender }}" {% if bartender_filter == bartender %}selected{% endif %}>
+                            {{ bartender }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="barra">Barra</label>
+                    <select id="barra" name="barra">
+                        <option value="">Todas las barras</option>
+                        {% for barra in all_barras %}
+                        <option value="{{ barra }}" {% if barra_filter == barra %}selected{% endif %}>
+                            {{ barra }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="per_page">Resultados por página</label>
+                    <select id="per_page" name="per_page">
+                        <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        <option value="200" {% if per_page == 200 %}selected{% endif %}>200</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter">🔍 Aplicar Filtros</button>
+                <a href="{{ url_for('routes.admin_panel_control_logs') }}" class="btn-clear">🗑️ Limpiar</a>
+                <a href="/api/system/export/logs" class="btn-export" target="_blank" 
+                   title="Exporta todos los logs (sin filtros)">
+                    📥 Exportar CSV
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Logs -->
+    <div class="logs-table-container">
+        {% if logs %}
+        <table class="logs-table">
+            <thead>
+                <tr>
+                    <th>ID Venta</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Bartender</th>
+                    <th>Barra</th>
+                    <th>Fecha/Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td><span class="sale-id">{{ log[0] }}</span></td>
+                    <td><span class="item-name">{{ log[1] }}</span></td>
+                    <td><span class="qty-badge">{{ log[2] }}</span></td>
+                    <td><span class="bartender-badge">{{ log[3] }}</span></td>
+                    <td><span class="barra-badge">{{ log[4] }}</span></td>
+                    <td><span class="timestamp">{{ log[5] }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon">📭</div>
+            <h3>No se encontraron logs</h3>
+            <p>No hay registros que coincidan con los filtros seleccionados.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Paginación -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if has_prev %}
+        <a href="{{ url_for('routes.admin_panel_control_logs', page=page-1, search=search, bartender=bartender_filter, barra=barra_filter, sale_id=sale_id_filter, per_page=per_page) }}">
+            « Anterior
+        </a>
+        {% else %}
+        <span class="disabled">« Anterior</span>
+        {% endif %}
+
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <span class="current">{{ p }}</span>
+            {% elif p <= 3 or p > total_pages - 3 or (p >= page - 1 and p <= page + 1) %}
+            <a href="{{ url_for('routes.admin_panel_control_logs', page=p, search=search, bartender=bartender_filter, barra=barra_filter, sale_id=sale_id_filter, per_page=per_page) }}">
+                {{ p }}
+            </a>
+            {% elif p == 4 or p == total_pages - 3 %}
+            <span>...</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if has_next %}
+        <a href="{{ url_for('routes.admin_panel_control_logs', page=page+1, search=search, bartender=bartender_filter, barra=barra_filter, sale_id=sale_id_filter, per_page=per_page) }}">
+            Siguiente »
+        </a>
+        {% else %}
+        <span class="disabled">Siguiente »</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

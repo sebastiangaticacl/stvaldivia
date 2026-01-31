@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Recetas - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .recipes-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-section h1 {
+        color: #00ff00;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+    }
+
+    .recipe-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .recipe-card h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+    }
+
+    .ingredients-list {
+        list-style: none;
+        padding: 0;
+        margin: 15px 0;
+    }
+
+    .ingredients-list li {
+        padding: 10px;
+        background: #2a2a3e;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        color: #ccc;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+        background: #667eea;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="recipes-container">
+    <div class="header-section">
+        <h1>📝 Gestión de Recetas</h1>
+        <p>Recetas de productos finales - Vincula productos con ingredientes</p>
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('routes.view_inventory') }}" class="btn" style="background: #444; color: #e8e8e8;">
+                ← Volver a Inventario
+            </a>
+        </div>
+    </div>
+
+    {% if recipes %}
+        {% for recipe in recipes %}
+        <div class="recipe-card">
+            <h3>
+                🍹 {{ recipe.product.name if recipe.product else 'Producto #' + recipe.product_id|string }}
+                <a href="{{ url_for('ingredients.manage_recipe', product_id=recipe.product_id) }}" class="btn-sm">
+                    ✏️ Editar Receta
+                </a>
+            </h3>
+            {% if recipe.ingredients %}
+                <ul class="ingredients-list">
+                    {% for ri in recipe.ingredients %}
+                    <li>
+                        <strong>{{ ri.ingredient.name if ri.ingredient else '?' }}</strong>: 
+                        {{ ri.quantity_per_portion }} {{ ri.ingredient.base_unit if ri.ingredient else 'ml' }} por porción
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p style="color: #888;">Sin ingredientes definidos</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="recipe-card">
+            <p style="color: #888; text-align: center;">No hay recetas creadas aún</p>
+        </div>
+    {% endif %}
+
+    {% if products_without_recipe %}
+        <div class="recipe-card" style="border-color: rgba(255, 170, 0, 0.5);">
+            <h3 style="color: #ffaa00;">⚠️ Productos sin receta</h3>
+            <p style="color: #aaa; margin-bottom: 15px;">Estos productos están marcados como "Con Receta" pero no tienen receta definida:</p>
+            <ul class="ingredients-list">
+                {% for product in products_without_recipe %}
+                <li>
+                    <strong>{{ product.name }}</strong>
+                    <a href="{{ url_for('ingredients.manage_recipe', product_id=product.id) }}" class="btn-sm" style="float: right;">
+                        ➕ Crear Receta
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+
+

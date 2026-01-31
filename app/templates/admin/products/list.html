@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Productos - BIMBA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .products-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--spacing-sm, 0.75rem);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 768px) {
+        .products-container {
+            padding: var(--spacing-md, 1rem);
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .products-container {
+            padding: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-md, 1rem);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    
+    @media (min-width: 768px) {
+        .header-section {
+            padding: var(--spacing-lg, 1.5rem);
+            margin-bottom: var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .header-section h1 {
+        color: #00ff00;
+        margin-bottom: var(--spacing-md, 1rem);
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+    }
+
+    .filters-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .filter-group label {
+        color: #ccc;
+        font-weight: bold;
+    }
+
+    .filter-group select,
+    .filter-group input {
+        padding: var(--spacing-sm, 0.75rem);
+        min-height: 44px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 768px) {
+        .filter-group select,
+        .filter-group input {
+            width: auto;
+            min-width: 150px;
+        }
+    }
+
+    .btn {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        min-height: 44px;
+        border: none;
+        border-radius: 8px;
+        font-size: var(--font-size-base, clamp(1rem, 2.5vw, 1.125rem));
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 768px) {
+        .btn {
+            width: auto;
+            padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
+        }
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .products-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .products-table th {
+        background: #2a2a3e;
+        color: #667eea;
+        padding: 15px;
+        text-align: left;
+        font-weight: bold;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .products-table td {
+        padding: 15px;
+        border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+        color: #ccc;
+    }
+
+    .products-table tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .products-table .number {
+        text-align: right;
+        font-weight: bold;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    .badge-active {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+        border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+
+    .badge-inactive {
+        background: rgba(255, 0, 0, 0.2);
+        color: #ff4444;
+        border: 1px solid rgba(255, 0, 0, 0.3);
+    }
+
+    .badge-kit {
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .actions-cell {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    .btn-edit {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-delete {
+        background: #ff4444;
+        color: white;
+    }
+
+    .actions-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+    
+    @media (min-width: 768px) {
+        .actions-buttons {
+            flex-direction: row;
+        }
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: var(--spacing-xs, 0.5rem);
+        margin-top: var(--spacing-md, 1rem);
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 8px 15px;
+        background: #2a2a3e;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        color: #ccc;
+        text-decoration: none;
+    }
+
+    .pagination .current {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="products-container">
+    <div class="header-section">
+        <h1>📦 Gestión de Productos</h1>
+        
+        <div class="filters-bar">
+            <form method="GET" action="{{ url_for('products.list_products') }}" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                <div class="filter-group">
+                    <label for="categoria">Categoría:</label>
+                    <select name="categoria" id="categoria" onchange="this.form.submit()">
+                        <option value="">Todas</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat }}" {% if cat == categoria_actual %}selected{% endif %}>
+                            {{ cat }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="search">Buscar:</label>
+                    <input type="text" name="search" id="search" value="{{ search }}" placeholder="Nombre del producto">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+                <a href="{{ url_for('products.list_products') }}" class="btn" style="background: #444; color: #e8e8e8;">🔄 Limpiar</a>
+            </form>
+        </div>
+        
+        <div style="margin-top: var(--spacing-md, 1rem); display: flex; flex-direction: column; gap: var(--spacing-sm, 0.75rem);">
+            <a href="{{ url_for('products.create_product') }}" class="btn btn-primary">
+                ➕ Crear Nuevo Producto
+            </a>
+            <a href="{{ url_for('routes.admin_dashboard') }}" class="btn" style="background: #444; color: #e8e8e8;">
+                ← Volver al Dashboard
+            </a>
+        </div>
+        
+        @media (min-width: 768px) {
+            <div style="flex-direction: row;">
+        }
+    </div>
+
+    <div class="table-responsive-wrapper">
+        <table class="table-responsive products-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th class="number">Precio</th>
+                    <th class="number">Costo</th>
+                    <th>Estado</th>
+                    <th>Tipo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if products %}
+                    {% for product in products %}
+                    <tr>
+                        <td data-label="ID">{{ product.id }}</td>
+                        <td data-label="Nombre"><strong>{{ product.name }}</strong></td>
+                        <td data-label="Categoría">{{ product.category or '-' }}</td>
+                        <td class="number" data-label="Precio">${{ product.price | currency }}</td>
+                        <td class="number" data-label="Costo">${{ product.cost_price | currency }}</td>
+                        <td data-label="Estado">
+                            {% if product.is_active %}
+                            <span class="badge badge-active">Activo</span>
+                            {% else %}
+                            <span class="badge badge-inactive">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Tipo">
+                            {% if product.is_kit %}
+                            <span class="badge badge-kit">Con Receta</span>
+                            {% else %}
+                            <span>-</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell" data-label="Acciones">
+                            <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn btn-sm btn-edit">
+                                ✏️ Editar
+                            </a>
+                            {% if product.is_active %}
+                            <button onclick="deleteProduct({{ product.id }}, '{{ product.name }}')" class="btn btn-sm btn-delete">
+                                🗑️ Eliminar
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="table-empty">
+                            No se encontraron productos
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('products.list_products', page=pagination.prev_num, categoria=categoria_actual, search=search) }}">« Anterior</a>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                {% if page_num == pagination.page %}
+                <span class="current">{{ page_num }}</span>
+                {% else %}
+                <a href="{{ url_for('products.list_products', page=page_num, categoria=categoria_actual, search=search) }}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                <span>...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('products.list_products', page=pagination.next_num, categoria=categoria_actual, search=search) }}">Siguiente »</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function deleteProduct(productId, productName) {
+    if (!confirm(`¿Estás seguro de que deseas desactivar el producto "${productName}"?`)) {
+        return;
+    }
+
+    fetch(`/admin/products/${productId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('✅ ' + data.message);
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showError('❌ ' + (data.error || 'Error al eliminar producto'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('❌ Error de conexión');
+    });
+}
+</script>
+{% endblock %}
+
+
+
+
+

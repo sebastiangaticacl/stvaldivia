@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}Confirmar Pago - Guardarropía{% endblock %}
+
+{% block content %}
+<style>
+    .confirm-container {
+        max-width: 800px;
+        margin: 50px auto;
+        background: #222;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .confirm-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .confirm-header h1 {
+        color: #e8e8e8;
+        margin-bottom: 10px;
+    }
+    
+    .confirm-header p {
+        color: #888;
+        font-size: 16px;
+    }
+    
+    .info-card {
+        background: #2a2a2a;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #333;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .info-value {
+        color: #e8e8e8;
+        font-weight: bold;
+        font-size: 16px;
+        text-align: right;
+    }
+    
+    .price-highlight {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .price-highlight .price-label {
+        font-size: 18px;
+        opacity: 0.9;
+        margin-bottom: 10px;
+    }
+    
+    .price-highlight .price-amount {
+        font-size: 48px;
+        font-weight: bold;
+    }
+    
+    .payment-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    
+    .payment-badge.cash {
+        background: #4caf50;
+        color: white;
+    }
+    
+    .payment-badge.debit {
+        background: #2196f3;
+        color: white;
+    }
+    
+    .payment-badge.credit {
+        background: #ff9800;
+        color: white;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        flex: 1;
+        min-width: 200px;
+        padding: 18px 30px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 18px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #444;
+        color: #e8e8e8;
+    }
+    
+    .btn-secondary:hover {
+        background: #555;
+    }
+    
+    .warning-box {
+        background: rgba(255, 152, 0, 0.15);
+        border-left: 3px solid #ff9800;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    
+    .warning-box p {
+        color: #ff9800;
+        margin: 0;
+        font-size: 14px;
+    }
+</style>
+
+<div class="confirm-container">
+    <div class="confirm-header">
+        <h1>💳 Confirmar Pago</h1>
+        <p>Revisa la información antes de procesar el pago e imprimir el ticket</p>
+    </div>
+    
+    <div class="warning-box">
+        <p><strong>⚠️ Importante:</strong> Una vez confirmado, se procesará el pago y se imprimirá el ticket automáticamente.</p>
+    </div>
+    
+    <div class="info-card">
+        <h2 style="color: #e8e8e8; margin-bottom: 20px; font-size: 20px;">Información del Cliente</h2>
+        
+        <div class="info-row">
+            <span class="info-label">Nombre:</span>
+            <span class="info-value">{{ customer_name }}</span>
+        </div>
+        
+        <div class="info-row">
+            <span class="info-label">Teléfono:</span>
+            <span class="info-value">{{ customer_phone }}</span>
+        </div>
+        
+        {% if description %}
+        <div class="info-row">
+            <span class="info-label">Descripción:</span>
+            <span class="info-value" style="text-align: right; max-width: 60%;">{{ description }}</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="info-card">
+        <h2 style="color: #e8e8e8; margin-bottom: 20px; font-size: 20px;">Detalles del Pago</h2>
+        
+        <div class="info-row">
+            <span class="info-label">Clusters/Espacios:</span>
+            <span class="info-value">{{ clusters }} cluster{{ 's' if clusters > 1 else '' }}</span>
+        </div>
+        
+        <div class="info-row">
+            <span class="info-label">Precio Unitario:</span>
+            <span class="info-value">${{ "%.0f"|format(precio_unitario) }}</span>
+        </div>
+        
+        <div class="info-row">
+            <span class="info-label">Método de Pago:</span>
+            <span class="info-value">
+                <span class="payment-badge {{ payment_type }}">
+                    {% if payment_type == 'cash' %}
+                        💵 Efectivo
+                    {% elif payment_type == 'debit' %}
+                        💳 Débito
+                    {% elif payment_type == 'credit' %}
+                        💳 Crédito
+                    {% else %}
+                        {{ payment_type }}
+                    {% endif %}
+                </span>
+            </span>
+        </div>
+    </div>
+    
+    <div class="price-highlight">
+        <div class="price-label">Total a Pagar</div>
+        <div class="price-amount">${{ "%.0f"|format(price) }}</div>
+        <div style="font-size: 16px; opacity: 0.9; margin-top: 10px;">
+            {{ clusters }} × ${{ "%.0f"|format(precio_unitario) }}
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('guardarropia.depositar') }}" id="confirm-form">
+        <input type="hidden" name="customer_name" value="{{ customer_name }}">
+        <input type="hidden" name="customer_phone" value="{{ customer_phone }}">
+        <input type="hidden" name="payment_type" value="{{ payment_type }}">
+        <input type="hidden" name="clusters" value="{{ clusters }}">
+        {% if description %}
+        <input type="hidden" name="description" value="{{ description }}">
+        {% endif %}
+        {% if notes %}
+        <input type="hidden" name="notes" value="{{ notes }}">
+        {% endif %}
+        
+        <div class="action-buttons">
+            <button type="submit" class="btn btn-primary" id="confirm-btn">
+                ✅ Confirmar Pago e Imprimir Ticket
+            </button>
+            <a href="{{ url_for('guardarropia.pos') }}" class="btn btn-secondary">
+                ← Volver y Modificar
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('confirm-form');
+    const confirmBtn = document.getElementById('confirm-btn');
+    
+    form.addEventListener('submit', function(e) {
+        // Deshabilitar botón para evitar doble envío
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '⏳ Procesando...';
+    });
+});
+</script>
+{% endblock %}
+

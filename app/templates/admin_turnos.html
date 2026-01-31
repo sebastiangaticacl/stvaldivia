@@ -1,0 +1,1471 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Turnos y Jornadas - Administración BIMBA{% endblock %}
+{% block meta_description %}Gestiona turnos, jornadas y aperturas del local en el sistema BIMBA. Crea turnos, asigna responsables y controla el estado de las operaciones.{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Estilos específicos adicionales para turnos */
+    .workflow-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .workflow-step {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .workflow-step:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+    
+    .step-number {
+        position: absolute;
+        top: -15px;
+        left: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .step-content {
+        margin-top: 15px;
+    }
+    
+    .planilla-table-wrapper {
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+    
+    .planilla-table {
+        width: 100%;
+        min-width: 600px;
+        border-collapse: collapse;
+    }
+    
+    .planilla-table th {
+        background: rgba(102, 126, 234, 0.2);
+        color: #fff;
+        padding: 15px;
+        text-align: left;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .planilla-table td {
+        padding: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: #e8e8e8;
+    }
+    
+    .planilla-table tbody tr:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .planilla-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .cargo-cell {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        padding: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Workflow Steps Overview -->
+    <div class="workflow-steps">
+        <div class="workflow-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <h3 style="color: #fff; margin: 0 0 10px 0; font-size: 1.2rem;">Login Administrador</h3>
+                <span class="badge badge-success">✅ Completado</span>
+                <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 0.9rem;">
+                    Sesión: <strong>{{ session.get('admin_username', 'Admin') }}</strong>
+                </p>
+            </div>
+        </div>
+        
+        <div class="workflow-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <h3 style="color: #fff; margin: 0 0 10px 0; font-size: 1.2rem;">Crear Turno</h3>
+                <span class="badge {% if jornada_actual and jornada_actual.estado_apertura != 'cerrado' %}badge-success{% else %}badge-warning{% endif %}">
+                    {% if jornada_actual and jornada_actual.estado_apertura != 'cerrado' %}✅ Completado{% else %}⏳ Pendiente{% endif %}
+                </span>
+                {% if jornada_actual and jornada_actual.estado_apertura != 'cerrado' %}
+                <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 0.9rem;">
+                    <strong>{{ jornada_actual.nombre_fiesta or 'Sin nombre' }}</strong><br>
+                    {{ jornada_actual.fecha_jornada or fecha_hoy }} - {{ jornada_actual.tipo_turno or 'Noche' }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="workflow-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <h3 style="color: #fff; margin: 0 0 10px 0; font-size: 1.2rem;">Planilla Trabajadores</h3>
+                <span class="badge {% if jornada_actual and jornada_actual.estado_apertura != 'cerrado' and planilla_trabajadores|length > 0 %}badge-success{% else %}badge-warning{% endif %}">
+                    {% if jornada_actual and jornada_actual.estado_apertura != 'cerrado' and planilla_trabajadores|length > 0 %}✅ {{ planilla_trabajadores|length }} trabajador(es){% else %}⏳ Pendiente{% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <div class="workflow-step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+                <h3 style="color: #fff; margin: 0 0 10px 0; font-size: 1.2rem;">Abrir Local</h3>
+                <span class="badge {% if jornada_actual and jornada_actual.estado_apertura == 'abierto' %}badge-success{% else %}badge-warning{% endif %}">
+                    {% if jornada_actual and jornada_actual.estado_apertura == 'abierto' %}✅ Abierto{% else %}⏳ Pendiente{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sección: Crear/Editar Turno -->
+    <div class="section">
+        <h2 class="section-title">📅 Información del Turno</h2>
+        
+        {% if jornada_actual %}
+        {% if jornada_actual.estado_apertura == 'abierto' %}
+        <div class="alert alert-warning" style="margin-bottom: 20px;">
+            <strong>⚠️ Turno Abierto:</strong> Puedes modificar la información. Los cambios se reflejarán en el cierre del turno.
+        </div>
+        <div style="margin-bottom: 20px; text-align: right;">
+            <form method="POST" action="{{ url_for('routes.cerrar_jornada') }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="jornada_id" value="{{ jornada_actual.id }}">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de cerrar este turno? Esta acción no se puede deshacer.');" style="padding: 12px 24px; font-size: 1rem;">
+                    🔒 Cerrar Turno
+                </button>
+            </form>
+        </div>
+        {% endif %}
+        
+        <form method="POST" action="{{ url_for('routes.actualizar_jornada') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="jornada_id" value="{{ jornada_actual.id }}">
+            
+            <div class="filters-bar" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="filter-group">
+                    <label>Fecha de Apertura del Turno <span style="color: #ff9800;">*</span></label>
+                    <input type="date" name="fecha_jornada" id="fecha_jornada_edit" value="{{ jornada_actual.fecha_jornada }}" required class="filter-group input">
+                    <small style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px; display: block;">
+                        Día en que se abre el turno
+                    </small>
+                </div>
+                {% if jornada_actual.fecha_cierre_programada %}
+                <div class="filter-group">
+                    <label>Fecha de Cierre del Turno</label>
+                    <input type="date" name="fecha_cierre_programada" value="{{ jornada_actual.fecha_cierre_programada }}" readonly class="filter-group input" style="background: #2a2a3e; cursor: not-allowed;">
+                    <small style="color: #4caf50; font-size: 0.85rem; margin-top: 5px; display: block;">
+                        ✅ Registrada automáticamente al cerrar el turno
+                    </small>
+                </div>
+                {% endif %}
+                <div class="filter-group">
+                    <label>Tipo de Turno <span style="color: #ff9800;">*</span></label>
+                    <select name="tipo_turno" required class="filter-group select">
+                        <option value="Noche" {% if jornada_actual.tipo_turno=='Noche' %}selected{% endif %}>🌙 Noche</option>
+                        <option value="Día" {% if jornada_actual.tipo_turno=='Día' %}selected{% endif %}>☀️ Día</option>
+                        <option value="Especial" {% if jornada_actual.tipo_turno=='Especial' %}selected{% endif %}>⭐ Especial</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Nombre de Fiesta <span style="color: #ff9800;">*</span></label>
+                    <input type="text" name="nombre_fiesta" value="{{ jornada_actual.nombre_fiesta or '' }}" placeholder="Ej: Fiesta Viernes" required class="filter-group input">
+                </div>
+                <div class="filter-group">
+                    <label>Hora de Apertura <span style="color: #ff9800;">*</span></label>
+                    <input type="time" name="horario_apertura_programado" id="horario_apertura_edit" value="{{ jornada_actual.horario_apertura_programado or '22:00' }}" required class="filter-group input">
+                    <small style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px; display: block;">
+                        Hora en que se abre el turno
+                    </small>
+                </div>
+                {% if jornada_actual.horario_cierre_programado %}
+                <div class="filter-group">
+                    <label>Hora de Cierre</label>
+                    <input type="time" name="horario_cierre_programado" value="{{ jornada_actual.horario_cierre_programado }}" readonly class="filter-group input" style="background: #2a2a3e; cursor: not-allowed;">
+                    <small style="color: #4caf50; font-size: 0.85rem; margin-top: 5px; display: block;">
+                        ✅ Registrada automáticamente al cerrar el turno
+                    </small>
+                </div>
+                {% else %}
+                <input type="hidden" name="horario_cierre_programado" value="">
+                {% endif %}
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">💾 Actualizar Turno</button>
+            </div>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('routes.crear_jornada') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="filters-bar" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="filter-group">
+                    <label>Fecha de Apertura del Turno <span style="color: #ff9800;">*</span></label>
+                    <input type="date" name="fecha_jornada" value="{{ fecha_hoy }}" required class="filter-group input">
+                    <small style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px; display: block;">
+                        Día en que se abre el turno
+                    </small>
+                </div>
+                <div class="filter-group">
+                    <label>Tipo de Turno <span style="color: #ff9800;">*</span></label>
+                    <select name="tipo_turno" required class="filter-group select">
+                        <option value="Noche">🌙 Noche</option>
+                        <option value="Día">☀️ Día</option>
+                        <option value="Especial">⭐ Especial</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Nombre de Fiesta <span style="color: #ff9800;">*</span></label>
+                    <input type="text" name="nombre_fiesta" placeholder="Ej: Fiesta Viernes" required class="filter-group input">
+                </div>
+                <div class="filter-group">
+                    <label>Hora de Apertura <span style="color: #ff9800;">*</span></label>
+                    <input type="time" name="horario_apertura_programado" id="horario_apertura" value="22:00" required class="filter-group input">
+                    <small style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px; display: block;">
+                        Hora en que se abre el turno. La hora de cierre se registrará automáticamente al cerrar la noche.
+                    </small>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">➕ Crear Turno</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+    
+    <!-- Sección: Planilla de Trabajadores -->
+    {% if jornada_actual %}
+    <div class="section">
+        <h2 class="section-title">👥 Planilla de Trabajadores</h2>
+        
+        {% if jornada_actual.estado_apertura == 'abierto' %}
+        <div class="alert alert-warning" style="margin-bottom: 20px;">
+            <strong>⚠️ Turno Abierto:</strong> Puedes agregar trabajadores olvidados o modificar asignaciones.
+        </div>
+        {% elif jornada_actual.estado_apertura == 'cerrado' %}
+        <div class="alert alert-warning" style="margin-bottom: 20px;">
+            <strong>🔒 Turno Cerrado:</strong> La planilla está bloqueada. Solo puedes visualizar la información histórica.
+        </div>
+        {% endif %}
+        
+        <p style="color: #94a3b8; margin-bottom: 20px;">
+            <strong>{{ planilla_trabajadores|length }} trabajador(es) asignado(s)</strong>
+            {% if planilla_trabajadores|length == 0 and jornada_actual.estado_apertura != 'cerrado' %}
+            <span style="color: #ff9800; display: block; margin-top: 10px;">⚠️ No hay trabajadores en la planilla. Agrega trabajadores usando el formulario de abajo.</span>
+            {% endif %}
+        </p>
+        
+        {% if jornada_actual.estado_apertura != 'cerrado' %}
+        <form method="POST" action="{{ url_for('routes.asignar_planilla_responsables') }}" id="form-planilla">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="jornada_id" value="{{ jornada_actual.id }}" id="hidden-jornada-id">
+            
+            <div id="planilla-modificada-indicator" style="display: none; padding: 10px; background: rgba(255, 152, 0, 0.2); border-left: 4px solid #ff9800; border-radius: 4px; color: #ff9800; margin-bottom: 15px; font-size: 0.9rem;">
+                ⚠️ Tienes cambios sin guardar en la planilla
+            </div>
+            
+            <!-- Formulario para agregar trabajador -->
+            <div style="background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 1.1rem;">➕ Agregar Trabajador a la Planilla</h4>
+                <div class="filters-bar" style="grid-template-columns: 1fr 1fr auto; align-items: end;">
+                    <div class="filter-group">
+                        <label for="select-cargo-planilla">Cargo:</label>
+                        <select id="select-cargo-planilla" class="filter-group select">
+                            <option value="">-- Seleccionar cargo --</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="select-empleado-planilla">Trabajador:</label>
+                        <select id="select-empleado-planilla" class="filter-group select">
+                            <option value="">-- Seleccionar trabajador --</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="agregarTrabajadorDesdeFormulario()" class="btn btn-primary">➕ Agregar</button>
+                </div>
+            </div>
+            
+            <!-- Tabla de Planilla -->
+            <div class="planilla-table-wrapper">
+                <table class="planilla-table" id="planilla-table">
+                    <thead>
+                        <tr>
+                            <th>SERVICIO</th>
+                            <th>TRABAJADOR</th>
+                            <th style="text-align: right;">SUELDO</th>
+                            <th style="text-align: right;">BONO</th>
+                            <th style="text-align: right;">TOTAL</th>
+                            <th style="width: 100px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="planilla-tbody">
+                        <!-- La planilla se carga dinámicamente desde BD via JavaScript -->
+                        {% if planilla_trabajadores|length > 0 %}
+                        {% for trabajador in planilla_trabajadores %}
+                        <tr data-planilla-id="{{ trabajador.id }}">
+                            <td class="cargo-cell">{{ trabajador.rol }}</td>
+                            <td>{{ trabajador.nombre_empleado }}</td>
+                            <td style="text-align: right; color: {% if trabajador.override %}#ff9800{% else %}#4caf50{% endif %};">
+                                ${{ "{:,.0f}".format(trabajador.sueldo_snapshot or 0) if trabajador.sueldo_snapshot else "N/A" }}
+                                {% if trabajador.override %}<span title="Modificado manualmente" style="font-size: 0.8em;">✏️</span>{% endif %}
+                            </td>
+                            <td style="text-align: right; color: {% if trabajador.override %}#ff9800{% else %}#4caf50{% endif %};">
+                                ${{ "{:,.0f}".format(trabajador.bono_snapshot or 0) if trabajador.bono_snapshot else "0" }}
+                            </td>
+                            <td style="text-align: right; font-weight: bold; color: {% if trabajador.override %}#ff9800{% else %}#667eea{% endif %};">
+                                ${{ "{:,.0f}".format(trabajador.pago_total or 0) if trabajador.pago_total else "N/A" }}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if session.get('admin_logged_in') %}
+                                <button type="button" class="btn btn-sm" 
+                                        onclick="abrirModalOverride({{ trabajador.id }}, '{{ trabajador.nombre_empleado|replace("'", "\\'") }}', {{ trabajador.sueldo_snapshot or 0 }}, {{ trabajador.bono_snapshot or 0 }})"
+                                        style="background: #555; color: #fff; margin-right: 5px;"
+                                        title="Editar pago (solo admin)">
+                                    ✏️
+                                </button>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarFilaPlanilla(this)">🗑️</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
+                                📋 No hay trabajadores en la planilla. Agrega trabajadores usando el formulario de arriba.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Nota: La planilla se guarda automáticamente al agregar/eliminar trabajadores -->
+        </form>
+        {% else %}
+        <!-- Vista de solo lectura para turnos cerrados -->
+        <div class="planilla-table-wrapper">
+            <table class="planilla-table" id="planilla-table-readonly">
+                <thead>
+                    <tr>
+                        <th>SERVICIO</th>
+                        <th>TRABAJADOR</th>
+                        <th style="text-align: right;">SUELDO</th>
+                        <th style="text-align: right;">BONO</th>
+                        <th style="text-align: right;">TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if planilla_trabajadores|length > 0 %}
+                    {% for trabajador in planilla_trabajadores %}
+                    <tr>
+                        <td class="cargo-cell">{{ trabajador.rol }}</td>
+                        <td>{{ trabajador.nombre_empleado }}</td>
+                        <td style="text-align: right; color: {% if trabajador.override %}#ff9800{% else %}#4caf50{% endif %};">
+                            ${{ "{:,.0f}".format(trabajador.sueldo_snapshot or 0) if trabajador.sueldo_snapshot else "N/A" }}
+                            {% if trabajador.override %}<span title="Modificado manualmente" style="font-size: 0.8em;">✏️</span>{% endif %}
+                        </td>
+                        <td style="text-align: right; color: {% if trabajador.override %}#ff9800{% else %}#4caf50{% endif %};">
+                            ${{ "{:,.0f}".format(trabajador.bono_snapshot or 0) if trabajador.bono_snapshot else "0" }}
+                        </td>
+                        <td style="text-align: right; font-weight: bold; color: {% if trabajador.override %}#ff9800{% else %}#667eea{% endif %};">
+                            ${{ "{:,.0f}".format(trabajador.pago_total or 0) if trabajador.pago_total else "N/A" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
+                            📋 No hay trabajadores registrados en esta planilla.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <h3>Primero debes crear el turno del día</h3>
+            <p>Completa el formulario de arriba para crear un nuevo turno</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sección: Abrir Local -->
+    {% if jornada_actual %}
+    <div class="section">
+        <h2 class="section-title">🚀 Abrir Local</h2>
+        
+        {% if jornada_actual.estado_apertura == 'abierto' %}
+        <div class="alert alert-success" style="margin-bottom: 20px;">
+            <strong>✅ El sistema está habilitado para ventas, escaneo y control en tiempo real.</strong>
+        </div>
+        <p style="color: #94a3b8;">
+            Abierto el {% if jornada_actual.abierto_en %}{{ jornada_actual.abierto_en.strftime('%d/%m/%Y %H:%M') if jornada_actual.abierto_en else 'N/A' }}{% else %}N/A{% endif %} 
+            por <strong style="color: #fff;">{{ jornada_actual.abierto_por or 'N/A' }}</strong>
+        </p>
+        {% else %}
+        <p style="color: #94a3b8; margin-bottom: 20px;">
+            Una vez que abras el local, el sistema habilitará ventas en tiempo real, escaneo de productos, control de entregas y monitoreo de cajas.
+        </p>
+        <form method="POST" action="{{ url_for('routes.abrir_local') }}" id="form-abrir-local">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="jornada_id" value="{{ jornada_actual.id }}">
+            <button type="submit" 
+                    id="btn-abrir-local"
+                    class="btn btn-success" 
+                    {% if planilla_trabajadores|length == 0 %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
+                    onclick="return confirm('¿Estás seguro de abrir el local? Esto habilitará todas las operaciones.');">
+                🚀 Abrir Local
+            </button>
+        </form>
+        {% if planilla_trabajadores|length == 0 %}
+        <div class="alert alert-warning" style="margin-top: 15px;">
+            <strong>⚠️ Debes agregar al menos un trabajador a la planilla antes de abrir el local.</strong>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Sección: Historial de Turnos -->
+    <div class="section">
+        <div class="section-header">
+            <h2 class="section-title">📜 Historial de Turnos</h2>
+            <span class="badge badge-info">
+                {% if mostrar_todos_tipos %}
+                {{ jornadas_con_datos|length if jornadas_con_datos else 0 }} / {{ total_jornadas }} turnos
+                {% elif mostrar_eliminados %}
+                {{ jornadas_con_datos|length if jornadas_con_datos else 0 }} eliminados
+                {% else %}
+                {{ jornadas_con_datos|length if jornadas_con_datos else 0 }} / {{ total_jornadas }} activos
+                {% endif %}
+            </span>
+        </div>
+        
+        <!-- Filtros simplificados -->
+        <form method="GET" action="{{ url_for('routes.admin_turnos') }}" id="filtros-form" style="margin-bottom: 20px;">
+            {% if jornada_actual and jornada_actual.id %}
+            <input type="hidden" name="jornada_id" value="{{ jornada_actual.id }}">
+            {% elif request.args.get('jornada_id') %}
+            <input type="hidden" name="jornada_id" value="{{ request.args.get('jornada_id') }}">
+            {% endif %}
+            
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>Estado</label>
+                    <select name="filtro_estado" id="filtro_estado" class="filter-group select">
+                        <option value="" {% if not filtro_estado %}selected{% endif %}>📋 Todos</option>
+                        <option value="preparando" {% if filtro_estado == 'preparando' %}selected{% endif %}>⏳ Preparando</option>
+                        <option value="abierto" {% if filtro_estado == 'abierto' %}selected{% endif %}>🟢 Abierto</option>
+                        <option value="cerrado" {% if filtro_estado == 'cerrado' %}selected{% endif %}>🔴 Cerrado</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Tipo</label>
+                    <select name="filtro_tipo" id="filtro_tipo" class="filter-group select">
+                        <option value="">Todos</option>
+                        <option value="Noche" {% if filtro_tipo == 'Noche' %}selected{% endif %}>🌙 Noche</option>
+                        <option value="Día" {% if filtro_tipo == 'Día' %}selected{% endif %}>☀️ Día</option>
+                        <option value="Especial" {% if filtro_tipo == 'Especial' %}selected{% endif %}>⭐ Especial</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Desde</label>
+                    <input type="date" name="filtro_fecha_desde" id="filtro_fecha_desde" value="{{ filtro_fecha_desde }}" class="filter-group input">
+                </div>
+                <div class="filter-group">
+                    <label>Hasta</label>
+                    <input type="date" name="filtro_fecha_hasta" id="filtro_fecha_hasta" value="{{ filtro_fecha_hasta }}" class="filter-group input">
+                </div>
+                <div class="filter-group">
+                    <label>Ordenar</label>
+                    <select name="ordenar_por" id="ordenar_por" class="filter-group select">
+                        <option value="fecha_desc" {% if ordenar_por == 'fecha_desc' %}selected{% endif %}>📅 Más reciente</option>
+                        <option value="fecha_asc" {% if ordenar_por == 'fecha_asc' %}selected{% endif %}>📅 Más antiguo</option>
+                    </select>
+                </div>
+                <div class="filter-group" style="align-self: flex-end;">
+                    <button type="submit" class="btn btn-primary">🔍 Filtrar</button>
+                </div>
+            </div>
+        </form>
+        
+        {% if jornadas_con_datos and jornadas_con_datos|length > 0 %}
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Fiesta</th>
+                        <th>Encargado</th>
+                        <th>Horario</th>
+                        <th>Estado</th>
+                        <th style="text-align: right;">Costo</th>
+                        <th style="text-align: right;">Recaudación</th>
+                        <th style="text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in jornadas_con_datos %}
+                    {% set jornada = item.jornada %}
+                    {% if jornada %}
+                    {% set esta_eliminado = jornada.eliminado_en is not none %}
+                    <tr {% if esta_eliminado %}style="opacity: 0.6;"{% endif %}>
+                        <td>
+                            <strong>{{ jornada.fecha_jornada or 'N/A' }}</strong>
+                            {% if esta_eliminado %}
+                            <br><small style="color: #ff9800;">🗑️ Eliminado</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ jornada.nombre_fiesta or 'Turno' }}</strong>
+                            {% if esta_eliminado and jornada.razon_eliminacion %}
+                            <br><small style="color: #94a3b8;">{{ jornada.razon_eliminacion[:50] }}{% if jornada.razon_eliminacion|length > 50 %}...{% endif %}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.encargado }}</td>
+                        <td>
+                            {{ jornada.horario_apertura_programado or 'N/A' }}
+                            {% if jornada.horario_cierre_programado %}
+                            - {{ jornada.horario_cierre_programado }}
+                            {% else %}
+                            <span style="color: #94a3b8; font-size: 0.9rem;">(Turno abierto)</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if esta_eliminado %}badge-warning{% elif jornada.estado_apertura == 'abierto' %}badge-success{% elif jornada.estado_apertura == 'cerrado' %}badge-warning{% else %}badge-info{% endif %}">
+                                {% if esta_eliminado %}🗑️ Eliminado
+                                {% elif jornada.estado_apertura == 'abierto' %}🟢 Abierto
+                                {% elif jornada.estado_apertura == 'cerrado' %}🔴 Cerrado
+                                {% else %}⏳ Preparando{% endif %}
+                            </span>
+                        </td>
+                        <td style="text-align: right; color: #ff6b6b; font-weight: bold;">
+                            ${{ "{:,.0f}".format(item.costo_total) }}
+                        </td>
+                        <td style="text-align: right; color: #51cf66; font-weight: bold;">
+                            ${{ "{:,.0f}".format(item.recaudacion) }}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if esta_eliminado %}
+                            <span style="color: #ff9800; font-size: 0.85rem;">🗑️ Eliminado</span>
+                            {% else %}
+                            <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                                <a href="{{ url_for('routes.admin_turnos', jornada_id=jornada.id) }}" class="btn btn-sm btn-secondary">✏️ Editar</a>
+                                <a href="{{ url_for('routes.ver_detalle_jornada', jornada_id=jornada.id) }}" class="btn btn-sm btn-secondary">🔍 Ver</a>
+                                {% if jornada.estado_apertura == 'abierto' %}
+                                <form method="POST" action="{{ url_for('routes.cerrar_jornada') }}" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="jornada_id" value="{{ jornada.id }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de cerrar este turno?');">🔒 Cerrar</button>
+                                </form>
+                                {% endif %}
+                                {% if jornada.estado_apertura != 'cerrado' %}
+                                <button type="button" class="btn btn-sm btn-danger" onclick="mostrarModalEliminar({{ jornada.id }}, '{{ jornada.nombre_fiesta }}', '{{ jornada.fecha_jornada }}')">🗑️</button>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <h3>No hay historial de turnos disponible</h3>
+            <p>Crea tu primer turno para comenzar</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para eliminar turno -->
+<div id="modal-eliminar-turno" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 30px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h2 style="color: #f44336; margin-top: 0; margin-bottom: 20px; font-size: 1.5rem;">🗑️ Eliminar Turno</h2>
+        <p style="color: #e8e8e8; margin-bottom: 15px; line-height: 1.6;">
+            <strong>Fiesta:</strong> <span id="modal-fiesta-nombre" style="color: #94a3b8;"></span><br>
+            <strong>Fecha:</strong> <span id="modal-fiesta-fecha" style="color: #94a3b8;"></span>
+        </p>
+        <div class="alert alert-warning" style="margin-bottom: 20px;">
+            ⚠️ <strong>Importante:</strong> El turno no se borrará de la lista, solo se marcará como eliminado. Esta acción requiere una explicación.
+        </div>
+        <form id="form-eliminar-turno" method="POST" action="{{ url_for('routes.eliminar_jornada') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="jornada_id" id="modal-jornada-id">
+            <div class="filter-group">
+                <label for="razon-eliminacion" style="color: #e8e8e8;">Explicación (requerida):</label>
+                <textarea name="razon_eliminacion" id="razon-eliminacion" required rows="4" placeholder="Ej: Turno duplicado, error en la fecha, cancelado por..." style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff; font-family: inherit; resize: vertical;" minlength="10"></textarea>
+                <small style="color: #94a3b8; font-size: 0.85rem;">Mínimo 10 caracteres. Esta explicación quedará registrada.</small>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+                <button type="button" onclick="cerrarModalEliminar()" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-danger">🗑️ Eliminar Turno</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Variables globales para la planilla
+    let planillaRowCounter = 0;
+    let planillaModificada = false;
+    let empleadosDisponibles = [
+        {% for emp in empleados_disponibles %}
+        { id: '{{ emp.id }}', name: '{{ emp.name|replace("'", "\\'") }}', cargo: '{{ emp.cargo or "" }}' }{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    ];
+    
+    let planillaAsignaciones = [
+        {% if planilla_trabajadores and jornada_actual and jornada_actual.estado_apertura != 'cerrado' %}
+        {% for trabajador in planilla_trabajadores %}
+        { 
+            rowId: 'row_{{ loop.index }}', 
+            cargo: '{{ trabajador.rol|replace("'", "\\'") }}', 
+            empleadoId: '{{ trabajador.id_empleado|replace("'", "\\'") }}', 
+            empleadoName: '{{ trabajador.nombre_empleado|replace("'", "\\'") }}', 
+            area: '{{ (trabajador.area or trabajador.rol)|replace("'", "\\'") }}' 
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+        {% endif %}
+    ];
+    
+    // Variable para indicar si el turno está cerrado
+    const turnoCerrado = {% if jornada_actual and jornada_actual.estado_apertura == 'cerrado' %}true{% else %}false{% endif %};
+    
+    let allCargos = [];
+    
+    // Funciones del modal
+    function mostrarModalEliminar(jornadaId, nombreFiesta, fechaJornada) {
+        document.getElementById('modal-jornada-id').value = jornadaId;
+        document.getElementById('modal-fiesta-nombre').textContent = nombreFiesta || 'Sin nombre';
+        document.getElementById('modal-fiesta-fecha').textContent = fechaJornada || 'Sin fecha';
+        document.getElementById('razon-eliminacion').value = '';
+        document.getElementById('modal-eliminar-turno').style.display = 'flex';
+    }
+    
+    function cerrarModalEliminar() {
+        document.getElementById('modal-eliminar-turno').style.display = 'none';
+        document.getElementById('form-eliminar-turno').reset();
+    }
+    
+    // Cargar cargos
+    async function loadCargos() {
+        const cargoSelect = document.getElementById('select-cargo-planilla');
+        
+        // Mostrar indicador de carga
+        if (cargoSelect) {
+            cargoSelect.innerHTML = '<option value="">⏳ Cargando cargos...</option>';
+            cargoSelect.disabled = true;
+        }
+        
+        try {
+            console.log('📥 Cargando cargos desde /admin/equipo/api/cargos...');
+            const response = await fetch('/admin/equipo/api/cargos', {
+                method: 'GET',
+                credentials: 'same-origin',  // Incluir cookies de sesión
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            console.log('📡 Respuesta recibida:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.warn('⚠️ No autorizado para cargar cargos. Verifica que estés logueado.');
+                    if (cargoSelect) {
+                        cargoSelect.innerHTML = '<option value="">⚠️ No autorizado - Recarga la página</option>';
+                        cargoSelect.disabled = false;
+                    }
+                    return;
+                }
+                const errorText = await response.text();
+                console.error('❌ Error HTTP:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('📦 Respuesta JSON:', data);
+            
+            if (data.success && data.cargos && Array.isArray(data.cargos)) {
+                allCargos = data.cargos || [];
+                console.log(`✅ ${allCargos.length} cargos cargados:`, allCargos.map(c => c.nombre));
+                updateCargoSelectors(allCargos);
+                if (cargoSelect) {
+                    cargoSelect.disabled = false;
+                }
+            } else {
+                const errorMsg = data.message || 'Error desconocido';
+                console.error('❌ Error al cargar cargos:', errorMsg, data);
+                if (cargoSelect) {
+                    cargoSelect.innerHTML = `<option value="">⚠️ Error: ${errorMsg}</option>`;
+                    cargoSelect.disabled = false;
+                }
+                if (typeof mostrarMensaje === 'function') {
+                    mostrarMensaje(`⚠️ Error al cargar cargos: ${errorMsg}`, 'error');
+                } else {
+                    alert(`⚠️ Error al cargar cargos: ${errorMsg}`);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error de conexión al cargar cargos:', error);
+            if (cargoSelect) {
+                cargoSelect.innerHTML = `<option value="">⚠️ Error: ${error.message}</option>`;
+                cargoSelect.disabled = false;
+            }
+            if (typeof mostrarMensaje === 'function') {
+                mostrarMensaje(`⚠️ Error de conexión al cargar cargos: ${error.message}`, 'error');
+            } else {
+                alert(`⚠️ Error de conexión al cargar cargos: ${error.message}`);
+            }
+        }
+    }
+    
+    function updateCargoSelectors(cargos) {
+        const cargoSelect = document.getElementById('select-cargo-planilla');
+        if (cargoSelect) {
+            cargoSelect.innerHTML = '<option value="">-- Seleccionar cargo --</option>';
+            
+            if (!cargos || cargos.length === 0) {
+                console.warn('⚠️ No hay cargos para mostrar');
+                cargoSelect.innerHTML = '<option value="">⚠️ No hay cargos disponibles</option>';
+                return;
+            }
+            
+            cargos.forEach(cargo => {
+                const option = document.createElement('option');
+                option.value = cargo.nombre;
+                option.textContent = cargo.nombre;
+                cargoSelect.appendChild(option);
+            });
+            
+            console.log(`✅ Selector de cargos actualizado con ${cargos.length} opciones`);
+        } else {
+            console.warn('⚠️ Selector de cargos no encontrado en el DOM');
+        }
+    }
+    
+    // Cargar empleados
+    async function loadEmpleados() {
+        try {
+            const response = await fetch('/admin/equipo/api/employees');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.warn('⚠️ No autorizado para cargar empleados. Verifica que estés logueado.');
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const data = await response.json();
+            if (data.success) {
+                empleadosDisponibles = (data.employees || data.equipo || [])
+                    .filter(emp => emp.active !== false)
+                    .map(emp => ({ id: String(emp.id), name: emp.name || 'Sin nombre', cargo: emp.cargo || '' }));
+                updateEmpleadoSelector();
+            } else {
+                console.error('Error al cargar empleados:', data.message || 'Error desconocido');
+                if (typeof mostrarMensaje === 'function') {
+                    mostrarMensaje(`⚠️ Error al cargar empleados: ${data.message || 'Error desconocido'}`, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error al cargar empleados:', error);
+            if (typeof mostrarMensaje === 'function') {
+                mostrarMensaje(`⚠️ Error de conexión al cargar empleados: ${error.message}`, 'error');
+            }
+        }
+    }
+    
+    function updateEmpleadoSelector() {
+        const empleadoSelect = document.getElementById('select-empleado-planilla');
+        if (empleadoSelect) {
+            empleadoSelect.innerHTML = '<option value="">-- Seleccionar trabajador --</option>';
+            empleadosDisponibles.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp.id;
+                option.textContent = emp.name;
+                empleadoSelect.appendChild(option);
+            });
+        }
+    }
+    
+    // Agregar trabajador desde formulario (PERSISTENCIA INMEDIATA)
+    async function agregarTrabajadorDesdeFormulario(event) {
+        // Prevenir comportamiento por defecto si viene de evento
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        const cargoSelect = document.getElementById('select-cargo-planilla');
+        const empleadoSelect = document.getElementById('select-empleado-planilla');
+        const jornadaIdInput = document.getElementById('hidden-jornada-id');
+        
+        const cargoNombre = cargoSelect ? cargoSelect.value : '';
+        const empleadoId = empleadoSelect ? empleadoSelect.value : '';
+        const jornadaId = jornadaIdInput ? parseInt(jornadaIdInput.value) : null;
+        
+        if (!cargoNombre) {
+            alert('⚠️ Por favor, selecciona un cargo');
+            return;
+        }
+        
+        if (!empleadoId) {
+            alert('⚠️ Por favor, selecciona un trabajador');
+            return;
+        }
+        
+        if (!jornadaId || isNaN(jornadaId)) {
+            alert('⚠️ No se encontró el ID de jornada. Por favor, crea el turno primero.');
+            return;
+        }
+        
+        // Verificar que allCargos esté cargado
+        if (!allCargos || allCargos.length === 0) {
+            alert('⚠️ Los cargos aún no se han cargado. Por favor, espera un momento e intenta de nuevo.');
+            return;
+        }
+        
+        // Buscar cargo_id desde el nombre
+        const cargo = allCargos.find(c => c.nombre === cargoNombre);
+        if (!cargo || !cargo.id) {
+            console.error('Cargos disponibles:', allCargos);
+            console.error('Cargo buscado:', cargoNombre);
+            alert(`⚠️ Error: Cargo "${cargoNombre}" no encontrado. Por favor, recarga la página.`);
+            return;
+        }
+        
+        // Mostrar loading
+        const btnAgregar = event?.target || document.querySelector('button[onclick*="agregarTrabajadorDesdeFormulario"]');
+        const originalText = btnAgregar ? btnAgregar.textContent : '➕ Agregar';
+        if (btnAgregar) {
+            btnAgregar.disabled = true;
+            btnAgregar.textContent = '⏳ Guardando...';
+        }
+        
+        try {
+            console.log('Enviando datos:', {
+                jornada_id: jornadaId,
+                cargo_id: cargo.id,
+                trabajador_id: empleadoId,
+                origen: 'manual'
+            });
+            
+            // Obtener CSRF token
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+            
+            // Llamar a la API para agregar trabajador
+            const response = await fetch('/admin/jornada/planilla/agregar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken  // CSRF token para validación
+                },
+                credentials: 'same-origin',  // Incluir cookies
+                body: JSON.stringify({
+                    jornada_id: jornadaId,
+                    cargo_id: cargo.id,
+                    trabajador_id: empleadoId,
+                    origen: 'manual'
+                })
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error HTTP:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Respuesta del servidor:', data);
+            
+            if (data.success) {
+                // Refrescar tabla desde BD
+                await refrescarPlanillaDesdeBD();
+                
+                // Limpiar selects
+                if (cargoSelect) cargoSelect.value = '';
+                if (empleadoSelect) empleadoSelect.value = '';
+                
+                // Mostrar mensaje de éxito
+                if (typeof mostrarMensaje === 'function') {
+                    mostrarMensaje('✅ Trabajador agregado correctamente', 'success');
+                } else {
+                    alert('✅ Trabajador agregado correctamente');
+                }
+            } else {
+                const errorMsg = data.error || 'Error al agregar trabajador';
+                console.error('Error del servidor:', errorMsg);
+                alert(`❌ Error: ${errorMsg}`);
+            }
+        } catch (error) {
+            console.error('Error al agregar trabajador:', error);
+            alert(`❌ Error al agregar trabajador: ${error.message}`);
+        } finally {
+            if (btnAgregar) {
+                btnAgregar.disabled = false;
+                btnAgregar.textContent = originalText;
+            }
+        }
+    }
+    
+    // Agregar fila a la planilla
+    async function addPlanillaRow(cargo, empleadoId = '', empleadoName = '', markAsModified = true) {
+        const tbody = document.getElementById('planilla-tbody');
+        if (!tbody) return;
+        
+        if (!cargo || cargo.trim() === '') return;
+        
+        planillaRowCounter++;
+        const rowId = `planilla_row_${planillaRowCounter}`;
+        const row = document.createElement('tr');
+        row.id = rowId;
+        row.dataset.cargo = cargo;
+        
+        // Celda de servicio
+        const servicioCell = document.createElement('td');
+        servicioCell.className = 'cargo-cell';
+        servicioCell.textContent = cargo;
+        row.appendChild(servicioCell);
+        
+        // Celda con selector de empleado
+        const selectorCell = document.createElement('td');
+        selectorCell.style.padding = '8px';
+        const select = document.createElement('select');
+        select.name = `planilla[${rowId}][empleado_id]`;
+        select.dataset.rowId = rowId;
+        select.required = true;
+        select.style.cssText = 'width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: #fff;';
+        
+        select.addEventListener('change', function() {
+            if (this.value !== '') {
+                planillaModificada = true;
+                updateModificadaIndicator();
+            }
+        });
+        
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = '-- Seleccionar empleado --';
+        if (!empleadoId) emptyOption.selected = true;
+        select.appendChild(emptyOption);
+        
+        if (empleadosDisponibles && empleadosDisponibles.length > 0) {
+            empleadosDisponibles.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = String(emp.id);
+                option.textContent = (emp.name || 'Sin nombre').trim();
+                if (String(emp.id) === String(empleadoId)) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+        
+        selectorCell.appendChild(select);
+        row.appendChild(selectorCell);
+        
+        // Celda de sueldo (placeholder, se calculará al guardar)
+        const sueldoCell = document.createElement('td');
+        sueldoCell.style.textAlign = 'right';
+        sueldoCell.style.color = '#4caf50';
+        sueldoCell.textContent = 'N/A';
+        sueldoCell.className = 'sueldo-cell';
+        row.appendChild(sueldoCell);
+        
+        // Celda de bono (placeholder, se calculará al guardar)
+        const bonoCell = document.createElement('td');
+        bonoCell.style.textAlign = 'right';
+        bonoCell.style.color = '#4caf50';
+        bonoCell.textContent = '$0';
+        bonoCell.className = 'bono-cell';
+        row.appendChild(bonoCell);
+        
+        // Celda de total (placeholder, se calculará al guardar)
+        const totalCell = document.createElement('td');
+        totalCell.style.textAlign = 'right';
+        totalCell.style.fontWeight = 'bold';
+        totalCell.style.color = '#667eea';
+        totalCell.textContent = 'N/A';
+        totalCell.className = 'total-cell';
+        row.appendChild(totalCell);
+        
+        // Celda de acciones
+        const actionsCell = document.createElement('td');
+        actionsCell.style.textAlign = 'center';
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn btn-sm btn-danger';
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.onclick = function() { eliminarFilaPlanilla(this); };
+        actionsCell.appendChild(deleteBtn);
+        row.appendChild(actionsCell);
+        
+        // Limpiar mensaje vacío si existe
+        const emptyMsg = tbody.querySelector('td[colspan="3"]');
+        if (emptyMsg && emptyMsg.textContent.includes('No hay trabajadores')) {
+            emptyMsg.closest('tr').remove();
+        }
+        
+        tbody.appendChild(row);
+        
+        if (markAsModified && empleadoId) {
+            planillaModificada = true;
+            updateModificadaIndicator();
+        }
+    }
+    
+    // Eliminar trabajador de la planilla (PERSISTENCIA INMEDIATA)
+    async function eliminarFilaPlanilla(button) {
+        const row = button.closest('tr');
+        if (!row) return;
+        
+        const planillaId = row.dataset.planillaId || row.getAttribute('data-planilla-id');
+        
+        if (!planillaId) {
+            // Si no tiene ID, es una fila temporal que aún no se guardó
+            row.remove();
+            actualizarEstadoPlanilla();
+            return;
+        }
+        
+        if (!confirm('¿Estás seguro de eliminar este trabajador de la planilla?')) {
+            return;
+        }
+        
+        // Mostrar loading
+        button.disabled = true;
+        const originalText = button.textContent;
+        button.textContent = '⏳';
+        
+        try {
+            // Llamar a la API para eliminar
+            const response = await fetch(`/admin/jornada/planilla/${planillaId}/eliminar`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            // Verificar si la respuesta es OK antes de parsear JSON
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMsg = `Error HTTP ${response.status}`;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMsg = errorData.error || errorMsg;
+                } catch (e) {
+                    // Si no es JSON, usar el texto de error
+                    if (errorText) {
+                        errorMsg = errorText.substring(0, 200); // Limitar longitud
+                    }
+                }
+                alert(`❌ Error: ${errorMsg}`);
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Refrescar tabla desde BD
+                await refrescarPlanillaDesdeBD();
+                mostrarMensaje('✅ Trabajador eliminado correctamente', 'success');
+            } else {
+                alert(`❌ Error: ${data.error || 'Error al eliminar trabajador'}`);
+            }
+        } catch (error) {
+            console.error('Error al eliminar trabajador:', error);
+            alert(`❌ Error al eliminar trabajador: ${error.message || 'Error de conexión'}`);
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    }
+    
+    // Refrescar planilla desde BD
+    async function refrescarPlanillaDesdeBD() {
+        const jornadaIdInput = document.getElementById('hidden-jornada-id');
+        const jornadaId = jornadaIdInput ? parseInt(jornadaIdInput.value) : null;
+        
+        if (!jornadaId) return;
+        
+        try {
+            const response = await fetch(`/admin/jornada/planilla/${jornadaId}/listar`);
+            
+            if (!response.ok) {
+                console.error(`Error al refrescar planilla: HTTP ${response.status}`);
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                renderizarPlanilla(data.planilla);
+                actualizarEstadoPlanilla();
+            } else {
+                console.error('Error al refrescar planilla:', data.error || 'Error desconocido');
+            }
+        } catch (error) {
+            console.error('Error al refrescar planilla:', error);
+        }
+    }
+    
+    // Renderizar planilla desde datos de BD
+    function renderizarPlanilla(planilla) {
+        const tbody = document.getElementById('planilla-tbody');
+        if (!tbody) return;
+        
+        // Limpiar tabla
+        tbody.innerHTML = '';
+        
+        if (!planilla || planilla.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = '<td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">📋 No hay trabajadores en la planilla. Agrega trabajadores usando el formulario de arriba.</td>';
+            tbody.appendChild(emptyRow);
+            return;
+        }
+        
+        // Renderizar cada trabajador
+        planilla.forEach(trabajador => {
+            const row = document.createElement('tr');
+            row.dataset.planillaId = trabajador.id;
+            
+            // SERVICIO
+            const servicioCell = document.createElement('td');
+            servicioCell.className = 'cargo-cell';
+            servicioCell.textContent = trabajador.rol;
+            row.appendChild(servicioCell);
+            
+            // TRABAJADOR
+            const trabajadorCell = document.createElement('td');
+            trabajadorCell.textContent = trabajador.nombre_empleado;
+            row.appendChild(trabajadorCell);
+            
+            // SUELDO
+            const sueldoCell = document.createElement('td');
+            sueldoCell.style.textAlign = 'right';
+            sueldoCell.style.color = trabajador.override ? '#ff9800' : '#4caf50';
+            sueldoCell.innerHTML = `$${formatNumber(trabajador.sueldo_snapshot || 0)}${trabajador.override ? ' <span title="Modificado manualmente" style="font-size: 0.8em;">✏️</span>' : ''}`;
+            row.appendChild(sueldoCell);
+            
+            // BONO
+            const bonoCell = document.createElement('td');
+            bonoCell.style.textAlign = 'right';
+            bonoCell.style.color = trabajador.override ? '#ff9800' : '#4caf50';
+            bonoCell.textContent = `$${formatNumber(trabajador.bono_snapshot || 0)}`;
+            row.appendChild(bonoCell);
+            
+            // TOTAL
+            const totalCell = document.createElement('td');
+            totalCell.style.textAlign = 'right';
+            totalCell.style.fontWeight = 'bold';
+            totalCell.style.color = trabajador.override ? '#ff9800' : '#667eea';
+            totalCell.textContent = `$${formatNumber(trabajador.pago_total || 0)}`;
+            row.appendChild(totalCell);
+            
+            // ACCIONES
+            const actionsCell = document.createElement('td');
+            actionsCell.style.textAlign = 'center';
+            
+            const isAdmin = {{ 'true' if session.get('admin_logged_in') else 'false' }};
+            
+            if (isAdmin) {
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'btn btn-sm';
+                editBtn.style.cssText = 'background: #555; color: #fff; margin-right: 5px;';
+                editBtn.title = 'Editar pago (solo admin)';
+                editBtn.textContent = '✏️';
+                editBtn.onclick = function() {
+                    abrirModalOverride(
+                        trabajador.id,
+                        trabajador.nombre_empleado.replace(/'/g, "\\'"),
+                        trabajador.sueldo_snapshot || 0,
+                        trabajador.bono_snapshot || 0
+                    );
+                };
+                actionsCell.appendChild(editBtn);
+            }
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-sm btn-danger';
+            deleteBtn.textContent = '🗑️';
+            deleteBtn.onclick = function() { eliminarFilaPlanilla(this); };
+            actionsCell.appendChild(deleteBtn);
+            
+            row.appendChild(actionsCell);
+            tbody.appendChild(row);
+        });
+    }
+    
+    // Formatear número
+    function formatNumber(num) {
+        return Math.round(num).toLocaleString('es-CL');
+    }
+    
+    // Actualizar estado de planilla (habilitar/deshabilitar botón Abrir Local)
+    function actualizarEstadoPlanilla() {
+        const tbody = document.getElementById('planilla-tbody');
+        const btnAbrirLocal = document.querySelector('form[action*="abrir_local"] button[type="submit"]');
+        
+        if (!tbody || !btnAbrirLocal) return;
+        
+        const filas = tbody.querySelectorAll('tr:not([style*="display: none"])');
+        const tieneTrabajadores = filas.length > 0 && !filas[0].querySelector('td[colspan]');
+        
+        if (tieneTrabajadores) {
+            btnAbrirLocal.disabled = false;
+            btnAbrirLocal.style.opacity = '1';
+            btnAbrirLocal.style.cursor = 'pointer';
+        } else {
+            btnAbrirLocal.disabled = true;
+            btnAbrirLocal.style.opacity = '0.5';
+            btnAbrirLocal.style.cursor = 'not-allowed';
+        }
+    }
+    
+    // Mostrar mensaje temporal
+    function mostrarMensaje(mensaje, tipo = 'success') {
+        const indicator = document.getElementById('planilla-modificada-indicator');
+        if (indicator) {
+            indicator.textContent = mensaje;
+            indicator.style.display = 'block';
+            indicator.style.background = tipo === 'success' 
+                ? 'rgba(76, 175, 80, 0.2)' 
+                : 'rgba(244, 67, 54, 0.2)';
+            indicator.style.borderLeftColor = tipo === 'success' ? '#4caf50' : '#f44336';
+            indicator.style.color = tipo === 'success' ? '#4caf50' : '#f44336';
+            
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        }
+    }
+    
+    function updateModificadaIndicator() {
+        const indicator = document.getElementById('planilla-modificada-indicator');
+        if (indicator) {
+            indicator.style.display = planillaModificada ? 'block' : 'none';
+        }
+    }
+    
+    // La planilla se inicializa desde BD via refrescarPlanillaDesdeBD()
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Inicializando página de turnos...');
+        
+        // Solo inicializar planilla si el turno NO está cerrado
+        if (!turnoCerrado) {
+            // Cargar cargos y empleados (sin bloquear, cada uno se ejecuta independientemente)
+            loadCargos().then(() => {
+                console.log('✅ Cargos cargados correctamente');
+            }).catch(error => {
+                console.error('❌ Error al cargar cargos:', error);
+            });
+            
+            loadEmpleados().then(() => {
+                console.log('✅ Empleados cargados correctamente');
+            }).catch(error => {
+                console.error('❌ Error al cargar empleados:', error);
+            });
+            
+            // Cargar planilla desde BD al inicio
+            const jornadaIdInput = document.getElementById('hidden-jornada-id');
+            if (jornadaIdInput && jornadaIdInput.value) {
+                refrescarPlanillaDesdeBD();
+            }
+            
+            // Actualizar estado inicial del botón Abrir Local
+            actualizarEstadoPlanilla();
+            
+            // Verificar que el botón esté conectado
+            const btnAgregar = document.querySelector('button[onclick*="agregarTrabajadorDesdeFormulario"]');
+            if (btnAgregar) {
+                console.log('✅ Botón agregar trabajador encontrado');
+            } else {
+                console.warn('⚠️ Botón agregar trabajador no encontrado');
+            }
+        } else {
+            console.log('ℹ️ Turno cerrado, no se cargan datos de planilla');
+        }
+        
+        // Validar formulario de eliminar
+        const formEliminar = document.getElementById('form-eliminar-turno');
+        if (formEliminar) {
+            formEliminar.addEventListener('submit', function(e) {
+                const razon = document.getElementById('razon-eliminacion').value.trim();
+                if (razon.length < 10) {
+                    e.preventDefault();
+                    alert('⚠️ Por favor, proporciona una explicación de al menos 10 caracteres.');
+                    return false;
+                }
+                if (!confirm('¿Estás seguro de eliminar este turno?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+        
+        // Cerrar modal al hacer clic fuera
+        const modal = document.getElementById('modal-eliminar-turno');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    cerrarModalEliminar();
+                }
+            });
+        }
+        
+        // Prevenir beforeunload solo si hay cambios
+        window.addEventListener('beforeunload', function(e) {
+            if (planillaModificada) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    });
+    
+    // ============================================
+    // FUNCIONES PARA OVERRIDE DE PAGO
+    // ============================================
+    
+    function abrirModalOverride(planillaId, nombreTrabajador, sueldoActual, bonoActual) {
+        document.getElementById('override-planilla-id').value = planillaId;
+        document.getElementById('override-trabajador-nombre').textContent = nombreTrabajador;
+        document.getElementById('override-sueldo').value = sueldoActual || 0;
+        document.getElementById('override-bono').value = bonoActual || 0;
+        document.getElementById('override-motivo').value = '';
+        document.getElementById('modal-override-pago').style.display = 'flex';
+    }
+    
+    function cerrarModalOverride() {
+        document.getElementById('modal-override-pago').style.display = 'none';
+        document.getElementById('override-motivo').value = '';
+    }
+    
+    async function guardarOverride() {
+        const planillaId = document.getElementById('override-planilla-id').value;
+        const sueldo = parseFloat(document.getElementById('override-sueldo').value) || 0;
+        const bono = parseFloat(document.getElementById('override-bono').value) || 0;
+        const motivo = document.getElementById('override-motivo').value.trim();
+        
+        if (!motivo || motivo.length < 5) {
+            alert('⚠️ Por favor, proporciona un motivo de al menos 5 caracteres.');
+            return;
+        }
+        
+        if (sueldo < 0 || bono < 0) {
+            alert('⚠️ Los valores no pueden ser negativos.');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/admin/jornada/planilla/${planillaId}/override_pago`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+                },
+                body: JSON.stringify({
+                    sueldo: sueldo,
+                    bono: bono,
+                    motivo: motivo
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ Pago actualizado correctamente');
+                cerrarModalOverride();
+                // Recargar la página para mostrar los cambios
+                window.location.reload();
+            } else {
+                alert('❌ Error: ' + (data.error || 'No se pudo actualizar el pago'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error al actualizar el pago: ' + error.message);
+        }
+    }
+</script>
+
+<!-- Modal para Override de Pago -->
+<div id="modal-override-pago" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: #1a1a2e; border: 2px solid #667eea; border-radius: 12px; padding: 30px; max-width: 500px; width: 90%; color: #fff;">
+        <h3 style="margin-top: 0; color: #667eea;">✏️ Modificar Pago</h3>
+        <p style="color: #94a3b8; margin-bottom: 20px;">
+            Trabajador: <strong id="override-trabajador-nombre"></strong>
+        </p>
+        <input type="hidden" id="override-planilla-id">
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; color: #fff;">Sueldo ($):</label>
+            <input type="number" id="override-sueldo" min="0" step="100" 
+                   style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid #667eea; border-radius: 8px; color: #fff; font-size: 16px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; color: #fff;">Bono ($):</label>
+            <input type="number" id="override-bono" min="0" step="100" 
+                   style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid #667eea; border-radius: 8px; color: #fff; font-size: 16px;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; color: #fff;">Motivo del cambio <span style="color: #ff9800;">*</span>:</label>
+            <textarea id="override-motivo" rows="3" required
+                      style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid #667eea; border-radius: 8px; color: #fff; font-family: inherit;"
+                      placeholder="Explica por qué se modifica el pago..."></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button onclick="cerrarModalOverride()" 
+                    style="padding: 10px 20px; background: #555; color: #fff; border: none; border-radius: 8px; cursor: pointer;">
+                Cancelar
+            </button>
+            <button onclick="guardarOverride()" 
+                    style="padding: 10px 20px; background: #667eea; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                💾 Guardar Cambios
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

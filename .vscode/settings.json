@@ -1,0 +1,8 @@
+{
+  "remote.SSH.configFile": "~/.ssh/config",
+  "remote.SSH.defaultExtensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance"
+  ]
+}
+

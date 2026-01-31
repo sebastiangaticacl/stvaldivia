@@ -1,0 +1,82 @@
+{% extends "kiosk/base.html" %}
+
+{% block title %}Procesando Pago - Club Bimba{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='vendor/qrcode.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="waiting-screen">
+    <div class="waiting-content">
+        <div class="waiting-icon">
+            <div class="spinner"></div>
+        </div>
+        <h1>Procesa tu pago</h1>
+        
+        <p class="waiting-message">
+            <strong>Por favor, acércate a la caja para completar tu pago.</strong>
+        </p>
+        <p class="waiting-instructions" style="font-size: 1.2rem; margin-top: 1rem; color: #666;">
+            El personal te ayudará con el proceso de pago.
+        </p>
+        
+        <div class="waiting-status" id="waiting-status">
+            Esperando confirmación...
+        </div>
+    </div>
+</div>
+
+<script>
+const pagoId = '{{ pago_id }}';
+const PAGO_STATUS_URL = "{{ url_for('kiosk.api_pago_status') }}";
+let pollInterval;
+let timeoutTimer;
+
+// Polling para verificar estado del pago
+async function verificarEstadoPago() {
+    try {
+        const response = await fetch(PAGO_STATUS_URL + "?pago_id=" + encodeURIComponent(pagoId));
+        const data = await response.json();
+        
+        if (data.ok) {
+            const estado = data.estado;
+            const statusEl = document.getElementById('waiting-status');
+            
+            if (estado === 'PAID') {
+                // Pago aprobado
+                clearInterval(pollInterval);
+                clearTimeout(timeoutTimer);
+                statusEl.textContent = '¡Pago aprobado!';
+                setTimeout(() => {
+                    window.location.href = `/kiosk/success?pago_id=${pagoId}`;
+                }, 1000);
+            } else if (estado === 'FAILED') {
+                // Pago rechazado
+                clearInterval(pollInterval);
+                clearTimeout(timeoutTimer);
+                alert('El pago fue rechazado. Por favor intenta de nuevo.');
+                window.location.href = '{{ url_for("kiosk.kiosk_home") }}';
+            }
+            // Si es PENDING, continuar esperando
+        }
+    } catch (error) {
+        console.error('Error al verificar estado:', error);
+    }
+}
+
+// Eliminado: polling automático para reducir carga en API
+// pollInterval = setInterval(verificarEstadoPago, 2000);
+
+// Timeout después de 5 minutos
+timeoutTimer = setTimeout(() => {
+    clearInterval(pollInterval);
+    alert('El tiempo de espera ha expirado. Por favor intenta de nuevo.');
+    window.location.href = '{{ url_for("kiosk.kiosk_home") }}';
+}, 300000); // 5 minutos
+
+// Verificar inmediatamente
+verificarEstadoPago();
+</script>
+{% endblock %}
+

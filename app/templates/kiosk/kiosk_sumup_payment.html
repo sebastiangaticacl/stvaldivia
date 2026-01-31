@@ -1,0 +1,264 @@
+{% extends "kiosk/base.html" %}
+
+{% block title %}Pagar con SumUp - Club Bimba{% endblock %}
+
+{% block content %}
+<div class="sumup-payment-screen">
+    <div class="screen-header">
+        <h1>Paga con tu móvil</h1>
+        <p class="subtitle">Escanea el código QR con tu teléfono</p>
+    </div>
+    
+    <div class="sumup-payment-content">
+        <div class="qr-container">
+            {% if qr_image %}
+            <div class="qr-code-wrapper">
+                <img src="{{ qr_image }}" alt="Código QR de pago SumUp" class="qr-code-image">
+            </div>
+            {% else %}
+            <div class="qr-error">
+                <p>⚠️ No se pudo generar el código QR</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="payment-instructions">
+            <h2>Instrucciones:</h2>
+            <ol>
+                <li>Escanea el código QR con la cámara de tu teléfono</li>
+                <li>Se abrirá la página de pago SumUp</li>
+                <li>Paga con Apple Pay, Google Pay o tarjeta</li>
+                <li>Espera la confirmación en pantalla</li>
+            </ol>
+        </div>
+        
+        <div class="payment-info">
+            <div class="payment-amount">
+                <span class="label">Total a pagar:</span>
+                <span class="amount">${{ "{:,.0f}".format(pago.monto) }}</span>
+            </div>
+            <div class="payment-status" id="payment-status">
+                <span class="status-text">Esperando pago...</span>
+            </div>
+        </div>
+        
+        <div class="payment-actions">
+            <button class="btn-secondary btn-large" onclick="window.location.href='{{ url_for('kiosk.kiosk_checkout') }}'">
+                ← Volver
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.sumup-payment-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #FF0000 0%, #FFC72C 100%);
+}
+
+.screen-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: white;
+}
+
+.screen-header h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.screen-header .subtitle {
+    font-size: 1.3rem;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.sumup-payment-content {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.qr-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.qr-code-wrapper {
+    padding: 1rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.qr-code-image {
+    width: 300px;
+    height: 300px;
+    display: block;
+}
+
+.qr-error {
+    text-align: center;
+    padding: 2rem;
+    color: #FF0000;
+    font-size: 1.2rem;
+}
+
+.payment-instructions {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f5f5f5;
+    border-radius: 10px;
+}
+
+.payment-instructions h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.payment-instructions ol {
+    margin-left: 1.5rem;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #555;
+}
+
+.payment-info {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f9f9f9;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.payment-amount {
+    margin-bottom: 1rem;
+}
+
+.payment-amount .label {
+    font-size: 1.2rem;
+    color: #666;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.payment-amount .amount {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #FF0000;
+}
+
+.payment-status {
+    margin-top: 1rem;
+}
+
+.status-text {
+    font-size: 1.1rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.status-text.paid {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-text.error {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.payment-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+@media (max-width: 768px) {
+    .qr-code-image {
+        width: 250px;
+        height: 250px;
+    }
+    
+    .screen-header h1 {
+        font-size: 2rem;
+    }
+}
+</style>
+
+<script>
+const pagoId = {{ pago.id }};
+const STATUS_URL = "{{ url_for('kiosk.api_pago_status') }}";
+let pollInterval;
+
+// Polling para verificar estado del pago
+async function verificarEstadoPago() {
+    try {
+        const response = await fetch(STATUS_URL + "?pago_id=" + encodeURIComponent(pagoId));
+        const data = await response.json();
+        
+        if (data.ok) {
+            const estado = data.estado;
+            const statusEl = document.getElementById('payment-status');
+            const statusText = statusEl.querySelector('.status-text');
+            
+            if (estado === 'PAID') {
+                // Pago aprobado
+                clearInterval(pollInterval);
+                statusText.textContent = '¡Pago aprobado!';
+                statusText.classList.add('paid');
+                setTimeout(() => {
+                    window.location.href = `/kiosk/success?pago_id=${pagoId}`;
+                }, 1500);
+            } else if (estado === 'FAILED') {
+                // Pago rechazado
+                clearInterval(pollInterval);
+                statusText.textContent = 'Pago rechazado. Por favor intenta de nuevo.';
+                statusText.classList.add('error');
+                setTimeout(() => {
+                    window.location.href = '{{ url_for("kiosk.kiosk_checkout") }}';
+                }, 3000);
+            }
+            // Si es PENDING, continuar esperando
+        }
+    } catch (error) {
+        console.error('Error al verificar estado:', error);
+    }
+}
+
+// Iniciar polling cada 3 segundos
+pollInterval = setInterval(verificarEstadoPago, 3000);
+
+// Verificar inmediatamente
+verificarEstadoPago();
+</script>
+{% endblock %}
+

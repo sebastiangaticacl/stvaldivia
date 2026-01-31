@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% block title %}Guardarropía{% endblock %}
+
+{% block content %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        border-radius: 12px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stat-card.success {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    }
+    
+    .stat-card.warning {
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    }
+    
+    .stat-card.danger {
+        background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    }
+    
+    .stat-number {
+        font-size: 36px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-info {
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        color: white;
+    }
+    
+    .btn-action {
+        padding: 15px 30px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+    }
+    
+    .btn-info {
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        color: white;
+    }
+    
+    .items-table {
+        width: 100%;
+        background: #222;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .items-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .items-table th {
+        background: #333;
+        padding: 15px;
+        text-align: left;
+        color: #e8e8e8;
+        font-weight: bold;
+        border-bottom: 2px solid #444;
+    }
+    
+    .items-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #333;
+        color: #e8e8e8;
+    }
+    
+    .items-table tr:hover {
+        background: #2a2a2a;
+    }
+    
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .status-deposited {
+        background: #4caf50;
+        color: white;
+    }
+    
+    .status-retrieved {
+        background: #2196F3;
+        color: white;
+    }
+    
+    .status-lost {
+        background: #f44336;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #888;
+    }
+    
+    .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="admin-page">
+    <h1 class="page-title">
+        🧥 Guardarropía
+    </h1>
+    
+    <!-- Estadísticas Mejoradas -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <!-- Espacios -->
+        <div class="stat-card success">
+            <div class="stat-label">📦 Espacios Ocupados</div>
+            <div class="stat-number">{{ stats.spaces_occupied }}</div>
+            <div class="stat-label" style="font-size: 12px; margin-top: 5px;">
+                de 90 disponibles
+            </div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
+            <div class="stat-label">✅ Espacios Disponibles</div>
+            <div class="stat-number">{{ stats.spaces_available }}</div>
+            <div class="stat-label" style="font-size: 12px; margin-top: 5px;">
+                {{ "%.0f"|format((stats.spaces_available / 90) * 100) }}% disponible
+            </div>
+        </div>
+        
+        <!-- Ingresos -->
+        <div class="stat-card" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);">
+            <div class="stat-label">💰 Ingresos Totales</div>
+            <div class="stat-number">${{ "{:,.0f}".format(stats.total_revenue) }}</div>
+            <div class="stat-label" style="font-size: 12px; margin-top: 5px;">
+                {% if stats.shift_date %}Turno actual{% else %}Histórico{% endif %}
+            </div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+            <div class="stat-label">💵 Efectivo</div>
+            <div class="stat-number">${{ "{:,.0f}".format(stats.revenue_cash) }}</div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
+            <div class="stat-label">💳 Débito</div>
+            <div class="stat-number">${{ "{:,.0f}".format(stats.revenue_debit) }}</div>
+        </div>
+        
+        <div class="stat-card" style="background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);">
+            <div class="stat-label">💳 Crédito</div>
+            <div class="stat-number">${{ "{:,.0f}".format(stats.revenue_credit) }}</div>
+        </div>
+        
+        <!-- Actividad del día -->
+        <div class="stat-card">
+            <div class="stat-label">📥 Depositados Hoy</div>
+            <div class="stat-number">{{ stats.items_today }}</div>
+        </div>
+        
+        <div class="stat-card warning">
+            <div class="stat-label">📤 Retirados Hoy</div>
+            <div class="stat-number">{{ stats.items_retrieved_today }}</div>
+        </div>
+        
+        <!-- Tiempo promedio -->
+        {% if stats.avg_deposit_time %}
+        <div class="stat-card" style="background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);">
+            <div class="stat-label">⏱️ Tiempo Promedio</div>
+            <div class="stat-number">
+                {% if stats.avg_deposit_time < 1 %}
+                    {{ "%.0f"|format(stats.avg_deposit_time * 60) }} min
+                {% else %}
+                    {{ "%.1f"|format(stats.avg_deposit_time) }} hrs
+                {% endif %}
+            </div>
+            <div class="stat-label" style="font-size: 12px; margin-top: 5px;">
+                de almacenamiento
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Totales históricos -->
+        <div class="stat-card">
+            <div class="stat-label">📊 Total Depositados</div>
+            <div class="stat-number">{{ stats.total_deposited }}</div>
+        </div>
+        
+        <div class="stat-card warning">
+            <div class="stat-label">📊 Total Retirados</div>
+            <div class="stat-number">{{ stats.total_retrieved }}</div>
+        </div>
+        
+        <div class="stat-card danger">
+            <div class="stat-label">⚠️ Perdidos</div>
+            <div class="stat-number">{{ stats.total_lost }}</div>
+        </div>
+    </div>
+    
+    <!-- Verificar si hay turno abierto -->
+    {% if not shift_status.is_open %}
+    <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #ff9800;">
+        <h3 style="color: #ff9800; margin-top: 0;">⚠️ No hay turno abierto</h3>
+        <p style="color: #e8e8e8;">Debes abrir un turno de guardarropía para comenzar a vender espacios.</p>
+        <a href="{{ url_for('guardarropia.abrir_turno') }}" 
+           style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px;">
+            🚀 Abrir Turno de Guardarropía
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- Botones de acción -->
+    <div class="action-buttons">
+        {% if shift_status.is_open %}
+        <a href="{{ url_for('guardarropia.pos') }}" class="btn-action btn-primary" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);">
+            💰 POS - Vender Espacio
+        </a>
+        {% else %}
+        <a href="{{ url_for('guardarropia.abrir_turno') }}" class="btn-action btn-primary" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+            🚀 Abrir Turno
+        </a>
+        {% endif %}
+        <a href="{{ url_for('guardarropia.informe_espacios') }}" class="btn-action btn-primary" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
+            📊 Informe de Espacios
+        </a>
+        <a href="{{ url_for('guardarropia.retirar') }}" class="btn-action btn-success">
+            ➖ Retirar Prenda
+        </a>
+        <a href="{{ url_for('guardarropia.buscar') }}" class="btn-action btn-info">
+            🔍 Buscar por Código
+        </a>
+        <a href="{{ url_for('guardarropia.listar') }}" class="btn-action btn-info">
+            📋 Ver Todos los Items
+        </a>
+    </div>
+    
+    <!-- Items depositados actualmente -->
+    <div class="items-table">
+        <h2 style="padding: 20px; margin: 0; color: #e8e8e8; background: #2a2a2a;">
+            Items Actualmente Almacenados ({{ deposited_items|length }})
+        </h2>
+        
+        {% if deposited_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Cliente</th>
+                    <th>Teléfono</th>
+                    <th>Depositado por</th>
+                    <th>Fecha/Hora</th>
+                    <th>Precio/Pago</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in deposited_items %}
+                <tr>
+                    <td><strong>{{ item.ticket_code }}</strong></td>
+                    <td>{{ item.description or '-' }}</td>
+                    <td>{{ item.customer_name or '-' }}</td>
+                    <td>{{ item.customer_phone or '-' }}</td>
+                    <td>{{ item.deposited_by }}</td>
+                    <td>
+                        {% if item.deposited_at %}
+                            {{ item.deposited_at[:16]|replace('T', ' ') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.price %}
+                            <strong style="color: #4caf50;">${{ "{:,.0f}".format(item.price) }}</strong>
+                            <br><small style="color: #888;">{{ item.payment_type or '-' }}</small>
+                        {% else %}
+                            <span style="color: #888;">Gratis</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button onclick="marcarPerdido('{{ item.ticket_code }}')" 
+                                style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                            Marcar Perdido
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🧥</div>
+            <h3>No hay items almacenados actualmente</h3>
+            <p>Deposita una prenda para comenzar</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function marcarPerdido(ticketCode) {
+    if (!confirm(`¿Estás seguro de marcar el item ${ticketCode} como perdido?`)) {
+        return;
+    }
+    
+    fetch('{{ url_for("guardarropia.marcar_perdido") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            ticket_code: ticketCode
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Item marcado como perdido');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al marcar item como perdido');
+    });
+}
+</script>
+{% endblock %}
+
