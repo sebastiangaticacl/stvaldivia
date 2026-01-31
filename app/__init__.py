@@ -1590,6 +1590,44 @@ def create_app():
             return None
 
     # =========================================================================
+    # Gate de acceso al menú principal (visible desde cualquier IP)
+    # =========================================================================
+    # Si defines MENU_GATE_PIN, la home (/) pedirá PIN antes de mostrar el menú.
+    app.config['MENU_GATE_PIN'] = os.environ.get('MENU_GATE_PIN')
+    app.config['MENU_GATE_ENABLED'] = bool(app.config['MENU_GATE_PIN'])
+
+    if app.config['MENU_GATE_ENABLED']:
+        app.logger.warning("🔐 MENU_GATE activo: se requiere PIN antes del menú principal")
+        @app.before_request
+        def _menu_gate_before_request():
+            from flask import request, session, redirect, url_for
+
+            # Si ya está desbloqueado o es admin, permitir
+            if session.get('menu_unlocked') or session.get('admin_logged_in'):
+                return None
+
+            # Permitir estáticos
+            if request.endpoint and request.endpoint.startswith('static'):
+                return None
+
+            # Permitir ver la pantalla de gate (home) y la página pública /bimba
+            if request.path in ('/', '/bimba'):
+                return None
+
+            # Permitir logins públicos existentes
+            allowed_prefixes = (
+                '/login_admin',
+                '/caja/login',
+                '/guardarropia/login',
+                '/scanner/',
+            )
+            if any(request.path.startswith(p) for p in allowed_prefixes):
+                return None
+
+            # Todo lo demás requiere pasar por /
+            return redirect(url_for('home.index'))
+
+    # =========================================================================
     # Overrides finales: MODO SOLO LOCAL (sin conexiones externas)
     # =========================================================================
     if app.config.get('LOCAL_ONLY', True):

@@ -132,7 +132,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-3, 0.75rem) var(--spacing-sm, 0.75rem);
+  padding: var(--space-4, 1rem) var(--spacing-sm, 0.75rem);
   flex-wrap: nowrap;
   gap: var(--space-3, 0.75rem);
   overflow-x: visible;
@@ -143,27 +143,27 @@ body {
 
 @media (min-width: 768px) {
   .admin-nav-container {
-    padding: var(--space-3, 0.75rem) var(--spacing-md, 1rem);
+    padding: var(--space-4, 1rem) var(--spacing-md, 1rem);
   }
 }
 
 @media (min-width: 1024px) {
   .admin-nav-container {
-    padding: var(--space-3, 0.75rem) var(--spacing-md, 1rem);
+    padding: var(--space-4, 1rem) var(--spacing-md, 1rem);
     gap: var(--space-2, 0.5rem); /* Reducir gap para más espacio */
   }
 }
 
 @media (min-width: 1280px) {
   .admin-nav-container {
-    padding: var(--space-3, 0.75rem) var(--space-5, 3rem);
+    padding: var(--space-4, 1rem) var(--space-5, 3rem);
     gap: var(--space-3, 0.75rem);
   }
 }
 
 @media (max-width: 767px) {
   .admin-nav-container {
-    padding: var(--space-2, 0.5rem) var(--spacing-sm, 0.75rem);
+    padding: var(--space-3, 0.75rem) var(--spacing-sm, 0.75rem);
     gap: var(--space-2, 0.5rem);
   }
 }
@@ -229,11 +229,11 @@ body {
 .mobile-menu {
   display: none;
   position: fixed;
-  top: 60px;
+  top: 72px;
   left: 0;
   width: 100%;
   max-width: 100%;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 72px);
   flex-direction: column;
   background: var(--bg-surface, #1a1a2e);
   backdrop-filter: blur(10px);
@@ -261,7 +261,7 @@ body {
   display: flex;
   align-items: center;
   text-decoration: none;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   transition: background-color var(--transition-fast);
 }
@@ -271,13 +271,13 @@ body {
 }
 
 .admin-nav-logo img.logo-img {
-  height: 40px;
+  height: 48px;
   width: auto;
   object-fit: contain;
 }
 
 .admin-nav-logo .logo-text {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl, 1.5rem);
   font-weight: 700;
   color: var(--text-primary);
   margin-left: var(--space-2);
@@ -288,10 +288,11 @@ body {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
   text-decoration: none;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-weight: 500;
+  font-size: var(--text-base, 1rem);
+  font-weight: 700;
+  text-transform: uppercase;
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
@@ -359,7 +360,7 @@ body {
 
 /* Ajuste del padding superior */
 body.has-admin-nav {
-  padding-top: 70px;
+  padding-top: 86px;
 }
 
 /* --- RESPONSIVE NAV --- */
@@ -372,7 +373,7 @@ body.has-admin-nav {
   padding: var(--space-2, 0.5rem);
   border-radius: var(--radius-md, 8px);
   cursor: pointer;
-  font-size: 24px;
+  font-size: 26px;
   min-width: 44px;
   min-height: 44px;
   align-items: center;
@@ -394,7 +395,7 @@ body.has-admin-nav {
 
 .mobile-menu-toggle .hamburger-icon {
   display: block;
-  font-size: 24px;
+  font-size: 26px;
   line-height: 1;
   user-select: none;
   -webkit-user-select: none;
@@ -482,11 +483,11 @@ body.has-admin-nav {
   }
   
   body.has-admin-nav {
-    padding-top: 60px;
+    padding-top: 72px;
   }
   
   .admin-top-nav {
-    height: 60px;
+    height: 72px;
   }
 }
 
@@ -518,7 +519,7 @@ body.has-admin-nav {
   }
   
   .admin-nav-btn {
-    padding: var(--space-2, 0.5rem) var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     font-size: var(--text-xs, 0.875rem);
   }
 }
@@ -531,8 +532,8 @@ body.has-admin-nav {
   }
   
   .admin-nav-btn {
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--text-sm);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base, 1rem);
   }
 }
 
@@ -542,11 +543,11 @@ body.has-admin-nav {
   }
   
   .admin-nav-logo .logo-text {
-    font-size: var(--text-lg);
+    font-size: var(--text-xl);
   }
   
   .admin-nav-logo img.logo-img {
-    height: 32px;
+    height: 38px;
   }
   
   .admin-nav-right {
@@ -554,7 +555,7 @@ body.has-admin-nav {
   }
   
   .admin-nav-btn {
-    font-size: var(--text-sm);
+    font-size: var(--text-base, 1rem);
     padding: var(--space-2) var(--space-3);
   }
 }

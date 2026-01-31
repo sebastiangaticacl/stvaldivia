@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Acceso protegido{% endblock %}
+{% block meta_description %}Acceso protegido al menú principal{% endblock %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 60px auto; padding: 28px; background: rgba(24,24,26,0.85); border: 2px solid rgba(102,126,234,0.35); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.35);">
+  <div style="text-align:center; margin-bottom: 18px;">
+    <h2 style="margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: .5px;">MENÚ PRINCIPAL PROTEGIDO</h2>
+    <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.75); line-height: 1.5;">
+      Ingresa el PIN para acceder al menú.
+    </p>
+  </div>
+
+  {% if error %}
+  <div style="margin: 14px 0; padding: 12px 14px; border-radius: 10px; background: rgba(244,67,54,0.12); border: 1px solid rgba(244,67,54,0.35); color: #ff8a80;">
+    {{ error }}
+  </div>
+  {% endif %}
+
+  <form method="POST" action="/" autocomplete="off" style="display:flex; gap: 10px; align-items: stretch;">
+    <input
+      type="password"
+      name="pin"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      placeholder="PIN"
+      required
+      style="flex:1; padding: 14px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35); color: #fff; font-size: 1rem;"
+    />
+    <button type="submit"
+      style="padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(102,126,234,0.55); background: rgba(102,126,234,0.25); color: #fff; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; cursor:pointer;">
+      Entrar
+    </button>
+  </form>
+
+  <div style="margin-top: 14px; color: rgba(255,255,255,0.55); font-size: 0.9rem;">
+    Tip: define <code style="background: rgba(0,0,0,0.35); padding: 2px 6px; border-radius: 6px;">MENU_GATE_PIN</code> al arrancar el servidor.
+  </div>
+</div>
+{% endblock %}
+

@@ -14,11 +14,12 @@ from dotenv import load_dotenv
 # Cargar .env desde la raíz del proyecto
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 if os.path.exists(env_path):
-    load_dotenv(env_path)
+    # En local, forzar override para que el .env mande (útil con reloader)
+    load_dotenv(env_path, override=True)
     print(f"✅ Variables de entorno cargadas desde: {env_path}")
 else:
     # Intentar cargar desde directorio actual o padres
-    load_dotenv()
+    load_dotenv(override=True)
     print("⚠️  Archivo .env no encontrado en raíz, buscando en directorios padres...")
 
 from app import create_app, socketio
