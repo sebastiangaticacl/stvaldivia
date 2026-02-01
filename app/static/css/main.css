@@ -97,12 +97,19 @@ body {
 }
 
 /* --- BARRA DE NAVEGACIÓN ADMIN MEJORADA --- */
+/* Altura unificada nav = footer (barra inferior) */
+:root {
+  --admin-bar-height: 44px;
+}
+
 .admin-top-nav {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   max-width: 100%;
+  height: var(--admin-bar-height);
+  min-height: var(--admin-bar-height);
   background: var(--gradient-surface);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -113,6 +120,8 @@ body {
   overflow-x: visible; /* Cambiado de hidden a visible */
   overflow-y: visible;
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
 }
 
 .admin-top-nav::after {
@@ -261,7 +270,9 @@ body {
   display: flex;
   align-items: center;
   text-decoration: none;
-  padding: var(--space-3) var(--space-4);
+  padding: 0 var(--space-2, 0.5rem);
+  height: 100%;
+  min-height: var(--admin-bar-height);
   border-radius: var(--radius-md);
   transition: background-color var(--transition-fast);
 }
@@ -271,13 +282,13 @@ body {
 }
 
 .admin-nav-logo img.logo-img {
-  height: 48px;
+  height: 28px;
   width: auto;
   object-fit: contain;
 }
 
 .admin-nav-logo .logo-text {
-  font-size: var(--text-2xl, 1.5rem);
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-primary);
   margin-left: var(--space-2);
@@ -288,9 +299,9 @@ body {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
   text-decoration: none;
-  padding: var(--space-3) var(--space-4);
+  padding: 6px var(--space-3, 0.75rem);
   border-radius: var(--radius-md);
-  font-size: var(--text-base, 1rem);
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   transition: all var(--transition-normal);
@@ -300,9 +311,10 @@ body {
   border: 1px solid transparent;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  flex-shrink: 0; /* Los botones no se reducen */
+  gap: var(--space-1, 0.25rem);
+  flex-shrink: 0;
   min-width: fit-content;
+  min-height: 32px;
 }
 
 .admin-nav-btn::before {
@@ -358,9 +370,9 @@ body {
   color: white;
 }
 
-/* Ajuste del padding superior */
+/* Ajuste del padding superior (misma altura que nav = footer) */
 body.has-admin-nav {
-  padding-top: 86px;
+  padding-top: var(--admin-bar-height);
 }
 
 /* --- RESPONSIVE NAV --- */
@@ -483,11 +495,12 @@ body.has-admin-nav {
   }
   
   body.has-admin-nav {
-    padding-top: 72px;
+    padding-top: var(--admin-bar-height);
   }
   
   .admin-top-nav {
-    height: 72px;
+    height: var(--admin-bar-height);
+    min-height: var(--admin-bar-height);
   }
 }
 
@@ -520,7 +533,7 @@ body.has-admin-nav {
   
   .admin-nav-btn {
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    font-size: var(--text-xs, 0.875rem);
+    font-size: 0.75rem;
   }
 }
 
@@ -533,7 +546,7 @@ body.has-admin-nav {
   
   .admin-nav-btn {
     padding: var(--space-3) var(--space-4);
-    font-size: var(--text-base, 1rem);
+    font-size: 0.75rem;
   }
 }
 
@@ -547,7 +560,7 @@ body.has-admin-nav {
   }
   
   .admin-nav-logo img.logo-img {
-    height: 38px;
+    height: 28px;
   }
   
   .admin-nav-right {
@@ -561,6 +574,17 @@ body.has-admin-nav {
 }
 
 /* --- FOOTER ADMIN --- */
+/* Footer unificado: misma altura que la barra superior (nav) */
+.admin-footer-unified {
+  height: var(--admin-bar-height) !important;
+  min-height: var(--admin-bar-height) !important;
+  padding: 0 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
 .admin-footer {
   position: fixed;
   bottom: 0;
@@ -1194,7 +1218,7 @@ form button[type="submit"]:hover {
 
 .nav-dropdown-header {
   padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
-  font-size: var(--text-xs, 0.75rem);
+  font-size: 0.65rem;
   font-weight: 700;
   color: var(--text-secondary, #aaa);
   text-transform: uppercase;
