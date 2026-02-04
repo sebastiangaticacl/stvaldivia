@@ -13,6 +13,14 @@ if project_root not in sys.path:
 # Cambiar al directorio del proyecto (por si cPanel ejecuta desde otro sitio)
 os.chdir(project_root)
 
+# Asegurar variables de entorno críticas si no están
+# Esto es vital para que create_app() registre los blueprints con el prefijo correcto
+if 'APPLICATION_ROOT' not in os.environ:
+    os.environ['APPLICATION_ROOT'] = '/stvaldivia'
+    
+if 'FLASK_ENV' not in os.environ:
+    os.environ['FLASK_ENV'] = 'production'
+
 from app import create_app
 
 class CPanelMiddleware(object):

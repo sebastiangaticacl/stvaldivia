@@ -9,6 +9,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 
 from app import create_app
 
+# Force configuration for subpath deployment
+if 'APPLICATION_ROOT' not in os.environ:
+    os.environ['APPLICATION_ROOT'] = '/stvaldivia'
+
+if 'FLASK_ENV' not in os.environ:
+    os.environ['FLASK_ENV'] = 'production'
+
 class CPanelMiddleware(object):
     """
     Middleware para corregir problemas de ruta en cPanel/Passenger con subdirectorios.
