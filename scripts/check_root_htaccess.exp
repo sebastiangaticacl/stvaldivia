@@ -1,0 +1,29 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Check public_html (parent of project)
+send "cd public_html\r"
+expect -re {[\$\#]}
+
+# List files to see if .htaccess exists
+send "ls -la .htaccess\r"
+expect -re {[\$\#]}
+
+# Read it if it exists
+send "cat .htaccess\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

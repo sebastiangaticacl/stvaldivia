@@ -1,0 +1,30 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Force restart
+send "mkdir -p tmp\r"
+send "touch tmp/restart.txt\r"
+expect -re {[\$\#]}
+
+# Touch entry point too
+send "touch passenger_wsgi.py\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

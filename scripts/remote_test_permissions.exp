@@ -1,0 +1,37 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]} 
+
+# Check permissions
+send "ls -ld public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Check root index
+send "ls -l public_html/index.html\r"
+expect -re {[\$\#]}
+
+# Disable app htaccess
+send "mv public_html/stvaldivia/.htaccess public_html/stvaldivia/.htaccess_bak\r"
+expect -re {[\$\#]}
+
+# Test static file access again
+send "curl -I -H 'Host: stvaldivia.cl' http://127.0.0.1/stvaldivia/test.html\r"
+expect -re {[\$\#]}
+
+# Restore htaccess
+send "mv public_html/stvaldivia/.htaccess_bak public_html/stvaldivia/.htaccess\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

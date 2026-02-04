@@ -35,7 +35,9 @@ class NotificationSystem {
 
     connectSocket() {
         try {
-            this.socket = io();
+            this.socket = io({
+                path: `${window.APP_ROOT || '/stvaldivia'}/socket.io`
+            });
 
             // Unirse a la sala de admins
             this.socket.emit('join_room', 'admins');
@@ -157,7 +159,7 @@ class NotificationSystem {
 
     async loadNotifications() {
         try {
-            const response = await fetch('/admin/api/notifications');
+            const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/notifications`);
             const data = await response.json();
 
             if (data.success) {
@@ -416,7 +418,7 @@ class NotificationSystem {
 
     async markAsRead(notificationId) {
         try {
-            const response = await fetch(`/admin/api/notifications/${notificationId}/read`, {
+            const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/notifications/${notificationId}/read`, {
                 method: 'POST'
             });
 
@@ -436,7 +438,7 @@ class NotificationSystem {
 
     async markAllAsRead() {
         try {
-            const response = await fetch('/admin/api/notifications/read-all', {
+            const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/notifications/read-all`, {
                 method: 'POST'
             });
 
@@ -453,7 +455,7 @@ class NotificationSystem {
 
     async dismiss(notificationId) {
         try {
-            const response = await fetch(`/admin/api/notifications/${notificationId}/dismiss`, {
+            const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/notifications/${notificationId}/dismiss`, {
                 method: 'POST'
             });
 

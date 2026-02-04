@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+# Files to download
+set files {
+    "public_html/stvaldivia/.htaccess"
+    "public_html/stvaldivia/passenger_wsgi.py"
+    "public_html/stvaldivia/app/__init__.py"
+}
+
+foreach file $files {
+    # Extract destination filename
+    if {$file == "public_html/stvaldivia/.htaccess"} {
+        set dest ".htaccess"
+    } elseif {$file == "public_html/stvaldivia/passenger_wsgi.py"} {
+        set dest "passenger_wsgi.py"
+    } elseif {$file == "public_html/stvaldivia/app/__init__.py"} {
+        set dest "app/__init__.py"
+    }
+    
+    spawn scp $user@$host:$file $dest
+    expect {
+        "assword:" {
+            send "$password\r"
+            exp_continue
+        }
+        "100%" {
+            puts "\n✅ Downloaded $file to $dest"
+        }
+    }
+}
+
+puts "\n🔄 Sync from server complete."
+interact

@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]} 
+
+# Check wsgi.py content for middleware
+send "grep -A 5 'class CPanelMiddleware' public_html/stvaldivia/wsgi.py\r"
+expect -re {[\$\#]}
+
+# Check for error logs in the app directory
+send "ls -la public_html/stvaldivia/stderr.log\r"
+expect -re {[\$\#]}
+send "tail -n 20 public_html/stvaldivia/stderr.log\r"
+expect -re {[\$\#]}
+
+# Check for app internal logs
+send "tail -n 20 public_html/stvaldivia/logs/app.log\r"
+expect -re {[\$\#]}
+
+# Check cPanel main error log (often in public_html/error_log or ~/logs)
+send "tail -n 20 public_html/error_log\r"
+expect -re {[\$\#]}
+
+send "cat public_html/stvaldivia/tmp/restart.txt\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

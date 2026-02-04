@@ -1,0 +1,37 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]} 
+
+# Fix directory permissions to 755 (standard for web accessible folders)
+send "chmod 755 public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Fix file permissions (recursive) just in case?
+# Be careful not to make secrets world-readable, but 644 is standard for web code.
+# Let's just fix the directory first.
+
+# Check permissions again
+send "ls -ld public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Test static file access
+send "curl -I -H 'Host: stvaldivia.cl' http://127.0.0.1/stvaldivia/test.html\r"
+expect -re {[\$\#]}
+
+# Restart app to be sure
+send "touch public_html/stvaldivia/tmp/restart.txt\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

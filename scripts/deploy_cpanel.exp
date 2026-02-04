@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Navigate to project directory
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Pull latest changes
+send "git pull origin main\r"
+expect -re {[\$\#]}
+
+# Restart application
+send "touch passenger_wsgi.py\r"
+expect -re {[\$\#]}
+
+# Verify permissions just in case
+send "chmod 755 ../stvaldivia\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Check logs dir
+send "ls -F logs/\r"
+expect -re {[\$\#]}
+
+# Try to find today's access log and tail it
+# Usually stvaldivia.cl is the filename
+send "tail -n 20 logs/stvaldivia.cl\r"
+expect -re {[\$\#]}
+# Or stvaldivia.cl-ssl_log
+send "tail -n 20 logs/stvaldivia.cl-ssl_log\r"
+expect -re {[\$\#]}
+
+# Also check public_html/stvaldivia/logs if any
+send "ls -F public_html/stvaldivia/logs/\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

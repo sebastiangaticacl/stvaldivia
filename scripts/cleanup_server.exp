@@ -1,0 +1,42 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Remove scripts directory (since I made it? No, I put scripts in stvaldivia/scripts/?)
+# I created scripts locally in /Users/sebagatica/... but I didn't scp them. I used `cat <<EOF` to create them on server?
+# Wait, my previous tool calls used `cat` to create files properly on the server?
+# Actually, I used `send "cat > ..."` in my expect scripts.
+# BUT, the expect scripts themselves are LOCAL.
+# I need to clean up any files I created ON THE SERVER.
+# I created:
+# - passenger_wsgi.py (keep)
+# - .htaccess (keep)
+# - static/ (removed)
+# - public/static/ (removed/symlinked) -> removed
+# - public/test.txt
+# - test_root.txt
+# - tmp/restart.txt (keep for future)
+# - app/static/.htaccess (keep)
+# - app/__init__.py.bak (keep as backup? or remove? keep is safer)
+
+# Clean up test files
+send "rm public/test.txt test_root.txt\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

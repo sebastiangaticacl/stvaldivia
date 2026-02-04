@@ -1,0 +1,56 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Update passenger_wsgi.py
+send "cat > passenger_wsgi.py <<'EOF'\r"
+send "import sys\r"
+send "import os\r"
+send "from dotenv import load_dotenv\r"
+send "from werkzeug.middleware.shared_data import SharedDataMiddleware\r"
+send "\r"
+send "project_root = os.path.abspath(os.path.dirname(__file__))\r"
+send "if project_root not in sys.path:\r"
+send "    sys.path.insert(0, project_root)\r"
+send "os.chdir(project_root)\r"
+send "\r"
+send "load_dotenv(os.path.join(project_root, '.env'))\r"
+send "\r"
+send "if 'FLASK_ENV' not in os.environ:\r"
+send "    os.environ\['FLASK_ENV'\] = 'production'\r"
+send "\r"
+send "from app import create_app\r"
+send "application = create_app()\r"
+send "\r"
+send "# Serve static files directly via WSGI middleware\r"
+send "# This bypasses Apache/Passenger static file configuration issues\r"
+send "application = SharedDataMiddleware(application, {\r"
+send "    '/static': os.path.join(project_root, 'app', 'static')\r"
+send "})\r"
+send "EOF\r"
+
+expect -re {[\$\#]}
+
+# Restart app
+send "touch tmp/restart.txt\r"
+expect -re {[\$\#]}
+send "touch passenger_wsgi.py\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

@@ -1,0 +1,55 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Check running processes and CPU
+send "echo '--- PROCESSES ---'\r"
+send "ps aux | grep python | head -n 10\r"
+expect -re {[\$\#]}
+
+# Check recent logs again to ensure no spam
+send "echo '--- LOGS ---'\r"
+send "tail -n 50 public_html/stvaldivia/stderr.log\r"
+expect -re {[\$\#]}
+
+# Simple DB connection test script
+send "cat > check_db_speed.py <<'EOF'\r"
+send "import os\r"
+send "import time\r"
+send "import sys\r"
+send "from dotenv import load_dotenv\r"
+send "from sqlalchemy import create_engine, text\r"
+send "\r"
+send "load_dotenv('public_html/stvaldivia/.env')\r"
+send "db_url = os.environ.get('DATABASE_URL')\r"
+send "\r"
+send "start = time.time()\r"
+send "try:\r"
+send "    engine = create_engine(db_url)\r"
+send "    with engine.connect() as conn:\r"
+send "        conn.execute(text('SELECT 1'))\r"
+send "    end = time.time()\r"
+send "    print(f'DB Connection Time: {end - start:.4f}s')\r"
+send "except Exception as e:\r"
+send "    print(f'DB Error: {e}')\r"
+send "EOF\r"
+
+expect -re {[\$\#]}
+
+# Run DB check
+send "python3 check_db_speed.py\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

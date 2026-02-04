@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]} 
+
+# Go to app dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Activate virtualenv and run wsgi.py manually
+# Note: wsgi.py usually doesn't do anything when run directly unless it has if __name__ == "__main__"
+# So we will try to just import it via python -c
+send "/home/stvaldivia/virtualenv/public_html/stvaldivia/3.9/bin/python -c \"import sys; sys.path.insert(0, '.'); import wsgi; print('WSGI Import OK')\"\r"
+expect -re {[\$\#]}
+
+# Also try to import passenger_wsgi
+send "/home/stvaldivia/virtualenv/public_html/stvaldivia/3.9/bin/python -c \"import sys; sys.path.insert(0, '.'); import passenger_wsgi; print('Passenger WSGI Import OK')\"\r"
+expect -re {[\$\#]}
+
+# Check environment variables seen by python
+send "/home/stvaldivia/virtualenv/public_html/stvaldivia/3.9/bin/python -c \"import os; print('CWD:', os.getcwd()); print('ENV APP_ROOT:', os.environ.get('APPLICATION_ROOT'))\"\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

@@ -1,0 +1,42 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Check .env content (just first few lines to confirm)
+send "head -n 5 .env\r"
+expect -re {[\$\#]}
+
+# Backup app/__init__.py
+send "cp app/__init__.py app/__init__.py.bak\r"
+expect -re {[\$\#]}
+
+# Use sed to change logger=True to logger=False
+# We target the specific initialization block
+send "sed -i 's/logger=True,/logger=False,/g' app/__init__.py\r"
+expect -re {[\$\#]}
+
+# Verify change
+send "grep -n \"logger=\" app/__init__.py\r"
+expect -re {[\$\#]}
+
+# Restart app
+send "touch tmp/restart.txt passenger_wsgi.py\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

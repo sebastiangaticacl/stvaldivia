@@ -1,0 +1,28 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+set ip "195.250.27.30"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Test static file access via IP
+send "echo '--- TESTING STATIC HOST VIA IP ---'\r"
+# HTTP
+send "curl -I -H 'Host: stvaldivia.cl' http://$ip/stvaldivia/static/css/main.css\r"
+expect -re {[\$\#]}
+
+# HTTPS (insecure to skip cert check for IP)
+send "curl -k -I -H 'Host: stvaldivia.cl' https://$ip/stvaldivia/static/css/main.css\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

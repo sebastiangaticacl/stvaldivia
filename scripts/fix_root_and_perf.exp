@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# 1. Fix .env: Check if APPLICATION_ROOT exists, if not append it
+send "grep 'APPLICATION_ROOT' .env || echo 'APPLICATION_ROOT=/stvaldivia' >> .env\r"
+expect -re {[\$\#]}
+
+# 2. Disable background thread in app/__init__.py
+# Search for the line that starts the thread and comment it out
+# Original: socketio._start_metrics_thread(app)
+send "sed -i 's/socketio._start_metrics_thread(app)/# socketio._start_metrics_thread(app)/g' app/__init__.py\r"
+expect -re {[\$\#]}
+
+# Restart app
+send "touch tmp/restart.txt passenger_wsgi.py\r"
+expect -re {[\$\#]}
+
+# Verify .env
+send "cat .env\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

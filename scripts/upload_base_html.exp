@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+set local_file "app/templates/base.html"
+set remote_path "public_html/stvaldivia/app/templates/base.html"
+
+spawn scp $local_file $user@$host:$remote_path
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect eof

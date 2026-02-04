@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Check if static folder exists in app/
+send "ls -F app/static/\r"
+expect -re {[\$\#]}
+
+# Fetch main page HTML to see asset links
+send "curl -s http://127.0.0.1/stvaldivia/ | grep -o 'src=[\"\\'][^\"\\']*[\"\\']' | head -n 5\r"
+expect -re {[\$\#]}
+send "curl -s http://127.0.0.1/stvaldivia/ | grep -o 'href=[\"\\'][^\"\\']*[\"\\']' | head -n 5\r"
+expect -re {[\$\#]}
+
+# Check stderr.log for recent errors (last 50 lines)
+send "tail -n 50 stderr.log\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

@@ -1,0 +1,43 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]} 
+
+# Go to app dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Pull debug changes
+send "git pull origin main\r"
+expect -re {[\$\#]}
+
+# Restart app
+send "touch tmp/restart.txt\r"
+expect -re {[\$\#]}
+
+# Wait a bit for restart to be picked up (Passenger might delay)
+exec sleep 2
+
+# Make a request to trigger the log (using localhost if possible to avoid DNS/cache issues)
+# But localhost curl might hit a different vhost if not careful.
+# Better to use external curl in next step, or just assume user hitting refresh triggers it.
+# Let's try curl to localhost with Host header
+send "curl -I -H 'Host: stvaldivia.cl' http://127.0.0.1/stvaldivia/\r"
+expect -re {[\$\#]}
+
+# Read the debug log
+send "cat request_debug.txt\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

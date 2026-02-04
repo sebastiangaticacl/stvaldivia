@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+set ip "195.250.27.30"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Check if site returns 200 via IP
+send "echo '--- STATUS CHECK ---'\r"
+send "curl -I -k -H 'Host: stvaldivia.cl' https://$ip/stvaldivia/\r"
+expect -re {[\$\#]}
+
+# Check recent logs for CRASHES
+send "echo '--- ERROR LOGS ---'\r"
+send "tail -n 50 public_html/stvaldivia/stderr.log\r"
+expect -re {[\$\#]}
+
+# Verify app/__init__.py syntax around the change
+send "grep -C 5 \"logger=\" public_html/stvaldivia/app/__init__.py\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

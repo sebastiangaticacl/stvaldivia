@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]} 
+
+# Go to dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# List files to verify content
+send "ls -la\r"
+expect -re {[\$\#]}
+
+# Check passenger_wsgi.py for our middleware
+send "grep -A 5 'class CPanelMiddleware' passenger_wsgi.py\r"
+expect -re {[\$\#]}
+
+# Restart app
+send "mkdir -p tmp\r"
+expect -re {[\$\#]}
+send "touch tmp/restart.txt\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

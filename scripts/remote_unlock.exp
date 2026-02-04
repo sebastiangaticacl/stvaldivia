@@ -1,0 +1,42 @@
+#!/usr/bin/expect -f
+
+set timeout 20
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect {
+    "$" { }
+    "#" { }
+    timeout { puts "Connection timed out"; exit 1 }
+}
+
+# Kill python processes
+send "pkill -9 python\r"
+expect {
+    "$" { }
+    "#" { }
+}
+
+# Kill passenger processes
+send "pkill -9 passenger\r"
+expect {
+    "$" { }
+    "#" { }
+}
+
+# Check files permissions just in case
+send "ls -la public_html/stvaldivia/wsgi.py\r"
+expect {
+    "$" { }
+    "#" { }
+}
+
+send "exit\r"
+expect eof

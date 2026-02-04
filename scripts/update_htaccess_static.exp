@@ -1,0 +1,54 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Add Rewrite Rules to .htaccess with proper escaping
+send "cat > .htaccess <<'EOF'\r"
+send "# Configuración para cPanel / Passenger / LiteSpeed\r"
+send "# Asegura que la aplicación Python cargue correctamente en el subdirectorio\r"
+send "\r"
+send "<IfModule mod_rewrite.c>\r"
+send "    RewriteEngine On\r"
+send "    # Si el archivo o directorio existe, servirlo directamente (bypass Passenger)\r"
+send "    # Escaping brackets for Tcl is not needed within single quotes passed to cat if we use 'send' carefully\r"
+send "    RewriteCond %{REQUEST_FILENAME} -f \[OR\]\r"
+send "    RewriteCond %{REQUEST_FILENAME} -d\r"
+send "    RewriteRule . - \[L\]\r"
+send "\r"
+send "    # Forzar HTTPS\r"
+send "    RewriteCond %{HTTPS} off\r"
+send "    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} \[L,R=301\]\r"
+send "</IfModule>\r"
+send "\r"
+send "<IfModule mod_passenger.c>\r"
+send "    PassengerEnabled On\r"
+send "    PassengerBaseURI /stvaldivia\r"
+send "    PassengerAppRoot /home/stvaldivia/public_html/stvaldivia\r"
+send "    PassengerPython /home/stvaldivia/virtualenv/public_html/stvaldivia/3.9/bin/python\r"
+send "    PassengerFriendlyErrorPages On\r"
+send "</IfModule>\r"
+send "EOF\r"
+
+expect -re {[\$\#]}
+
+# Restart app
+send "touch passenger_wsgi.py\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

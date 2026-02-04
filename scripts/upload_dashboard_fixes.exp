@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set password "Tabxyh-jubvem-5pysxa"
+set host "stvaldivia.cl"
+set user "stvaldivia"
+
+# Files to upload
+set files {
+    "app/templates/base.html"
+    "app/templates/admin_dashboard.html"
+    "app/static/js/notifications.js"
+}
+
+foreach file $files {
+    spawn scp $file $user@$host:public_html/stvaldivia/$file
+    expect {
+        "assword:" {
+            send "$password\r"
+            exp_continue
+        }
+        "100%" {
+            puts "\n✅ Uploaded $file"
+        }
+    }
+}
+
+# Restart Passenger
+spawn ssh $user@$host "touch public_html/stvaldivia/tmp/restart.txt"
+expect {
+    "assword:" {
+        send "$password\r"
+        exp_continue
+    }
+}
+
+puts "\n🚀 Dashboard fixes uploaded and application restarted."
+interact

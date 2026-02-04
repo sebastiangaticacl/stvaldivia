@@ -1,0 +1,34 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Define python path from .htaccess
+set python_exec "/home/stvaldivia/virtualenv/public_html/stvaldivia/3.9/bin/python"
+
+# Test import
+send "echo '--- TESTING IMPORT ---'\r"
+send "$python_exec -c 'import sys; sys.path.insert(0, \".\"); from app import create_app; print(\"Import success\")'\r"
+expect -re {[\$\#]}
+
+# Test instantiating app (will trigger init code)
+send "echo '--- TESTING CREATE_APP ---'\r"
+send "$python_exec -c 'import sys; sys.path.insert(0, \".\"); from app import create_app; create_app(); print(\"App created\")'\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

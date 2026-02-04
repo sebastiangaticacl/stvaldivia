@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+set ip "195.250.27.30"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Measure TTFB for main page (via IP)
+send "echo '--- TTFB Main Page ---'\r"
+send "curl -k -o /dev/null -w 'Connect: %{time_connect} TTFB: %{time_starttransfer} Total: %{time_total}\\n' -H 'Host: stvaldivia.cl' https://$ip/stvaldivia/\r"
+expect -re {[\$\#]}
+
+# Measure TTFB for Login Admin
+send "echo '--- TTFB Login Admin ---'\r"
+send "curl -k -o /dev/null -w 'Connect: %{time_connect} TTFB: %{time_starttransfer} Total: %{time_total}\\n' -H 'Host: stvaldivia.cl' https://$ip/stvaldivia/login_admin\r"
+expect -re {[\$\#]}
+
+# Check logs for warnings/errors
+send "echo '--- RECENT LOGS ---'\r"
+send "tail -n 50 public_html/stvaldivia/stderr.log\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

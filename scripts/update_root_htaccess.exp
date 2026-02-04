@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to public_html (web root)
+send "cd public_html\r"
+expect -re {[\$\#]}
+
+# Update .htaccess with specific redirects
+send "cat > .htaccess <<'EOF'\r"
+send "RewriteEngine On\r"
+send "\r"
+send "# Redirect root to app\r"
+send "RewriteRule ^$ /stvaldivia/ \[L,R=301\]\r"
+send "\r"
+send "# Redirect login_admin to app login\r"
+send "RewriteRule ^login_admin$ /stvaldivia/login_admin \[L,R=301\]\r"
+send "RewriteRule ^login_admin/$ /stvaldivia/login_admin \[L,R=301\]\r"
+send "EOF\r"
+
+expect -re {[\$\#]}
+
+# Verify content
+send "cat .htaccess\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

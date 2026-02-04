@@ -1,0 +1,25 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Run DB check using virtualenv python
+send "/home/stvaldivia/virtualenv/public_html/stvaldivia/3.9/bin/python check_db_speed.py\r"
+expect -re {[\$\#]}
+
+# Check for resource usage limits (CloudLinux/cPanel often has lve_limits)
+send "cat /proc/user_beancounters\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

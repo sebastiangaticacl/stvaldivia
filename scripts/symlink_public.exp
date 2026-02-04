@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Remove root symlink
+send "rm static\r"
+expect -re {[\$\#]}
+
+# Create symlink in public/
+send "cd public\r"
+expect -re {[\$\#]}
+send "ln -s ../app/static static\r"
+expect -re {[\$\#]}
+
+# Verify
+send "ls -la static\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

@@ -2,26 +2,29 @@
 <html lang="es">
 
 {% macro get_meta_description() -%}
-    {% block meta_description %}Sistema de Gestión de Entregas BIMBA{% endblock %}
+{% block meta_description %}Sistema de Gestión de Entregas BIMBA{% endblock %}
 {%- endmacro %}
 
 {% macro get_title() -%}
-    {% block title %}BIMBA - Sistema de Gestión{% endblock %}
+{% block title %}BIMBA - Sistema de Gestión{% endblock %}
 {%- endmacro %}
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
     <script>
-      (function(){
-        var t;
-        try { t = localStorage.getItem('theme'); } catch (e) { t = null; }
-        if (t === 'light' || t === 'dark') {
-          document.documentElement.setAttribute('data-theme', t);
-        } else {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
-      })();
+        (function () {
+            // Definir raíz de la aplicación para JavaScript
+            window.APP_ROOT = '{{ app_root or "/stvaldivia" }}';
+
+            var t;
+            try { t = localStorage.getItem('theme'); } catch (e) { t = null; }
+            if (t === 'light' || t === 'dark') {
+                document.documentElement.setAttribute('data-theme', t);
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
     </script>
     {% set meta_desc = get_meta_description() %}
     <meta name="description" content="{{ meta_desc }}">
@@ -29,30 +32,30 @@
     <meta name="author" content="BIMBA System">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#1a1a2e">
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.url }}">
     <meta property="og:title" content="{% block og_title %}{{ get_title() }}{% endblock %}">
     <meta property="og:description" content="{{ get_meta_description() }}">
-    
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="{{ request.url }}">
     <meta property="twitter:title" content="{{ get_title() }}">
     <meta property="twitter:description" content="{{ get_meta_description() }}">
-    
+
     <title>{{ get_title() }}</title>
-    
+
     <!-- Canonical URL -->
     <link rel="canonical" href="{{ request.url }}">
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/bimba-logo.png') }}">
 
     {# Cache-busting para CSS - Versión estable para producción #}
     {% set CSS_VERSION = current_app.config.get('CSS_VERSION', '20250115-01') if current_app else '20250115-01' %}
-    
+
     <!-- CSS BASE (carga primero) -->
     <!-- Sistema de Diseño (Design System) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}?v={{ CSS_VERSION }}">
@@ -62,7 +65,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v={{ CSS_VERSION }}">
     <!-- Progress Bars y Toast Notifications -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/progress-toast.css') }}?v={{ CSS_VERSION }}">
-    
+
     <!-- CSS RESPONSIVE (carga después para override) -->
     <!-- Sistema Responsive Base (Mobile-First) - DEBE cargar después de main.css -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-base.css') }}?v={{ CSS_VERSION }}">
@@ -70,7 +73,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tables-responsive.css') }}?v={{ CSS_VERSION }}">
     <!-- Formularios mejorados -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forms-enhanced.css') }}?v={{ CSS_VERSION }}">
-    
+
     <!-- CSS CONDICIONAL (admin) -->
     {% if session.get('admin_logged_in') %}
     <!-- Estilo estandarizado para páginas admin (basado en /encuesta/admin) -->
@@ -78,25 +81,25 @@
     <!-- Sistema de Notificaciones -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v={{ CSS_VERSION }}">
     {% endif %}
-    
+
     <!-- CSRF Token Meta Tag para JavaScript -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Prefijo de app para subpath (ej. /stvaldivia en cPanel) -->
     <script>
-      window.APP_ROOT = {{ (app_root or '')|tojson }};
-      (function(){
-        if (!window.APP_ROOT) return;
-        var root = window.APP_ROOT.replace(/\/+$/, '');
-        var _fetch = window.fetch;
-        window.fetch = function(url, opts) {
-          if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) url = root + url;
-          return _fetch.apply(this, arguments);
-        };
-      })();
+        window.APP_ROOT = {{ (app_root or '')| tojson }};
+        (function () {
+            if (!window.APP_ROOT) return;
+            var root = window.APP_ROOT.replace(/\/+$/, '');
+            var _fetch = window.fetch;
+            window.fetch = function (url, opts) {
+                if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) url = root + url;
+                return _fetch.apply(this, arguments);
+            };
+        })();
     </script>
 
     {% block head_extra %}{% endblock %}
-    
+
     <!-- Utilidades JavaScript -->
 </head>
 
@@ -106,15 +109,16 @@
 
     <!-- Toggle tema claro/oscuro (header mínimo) -->
     <header class="theme-header" aria-label="Tema">
-        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema claro/oscuro"><span class="theme-toggle-label">Oscuro</span></button>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema claro/oscuro"><span
+                class="theme-toggle-label">Oscuro</span></button>
     </header>
-    
+
     <!-- Barra de Navegación Superior Sticky (solo para admin) -->
     {% if session.get('admin_logged_in') %}
     <nav class="admin-top-nav">
         <div class="admin-nav-container">
             <div class="admin-nav-left">
-                <a href="{{ app_root or '' }}/admin" class="admin-nav-logo">
+                <a href="{{ url_for('routes.admin_dashboard') }}" class="admin-nav-logo">
                     <img src="{{ url_for('static', filename='img/bimba-logo.png') }}" alt="BIMBA" class="logo-img"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <!-- Texto de respaldo solo si falla la imagen -->
@@ -126,14 +130,15 @@
             </button>
             <!-- Menú desktop (visible solo en >=1024px) -->
             <div class="admin-nav-right admin-nav-desktop">
-                <a href="{{ app_root or '' }}/admin"
-                    class="admin-nav-btn {% if request.endpoint == 'routes.admin_dashboard' %}active{% endif %}"
+                <a href="{{ url_for('routes.admin_dashboard') }}"
+                    class="nav-dropdown-item {% if request.endpoint == 'routes.admin_dashboard' %}active{% endif %}"
                     aria-label="Inicio">
                     🏠 Home
                 </a>
-                
+
                 <!-- Desplegable Ventas -->
-                <div class="nav-dropdown {% if request.endpoint == 'routes.admin_logs' or request.path.startswith((app_root or '') ~ '/caja') or request.path.startswith((app_root or '') ~ '/kiosk') or request.path.startswith((app_root or '') ~ '/ecommerce') or request.endpoint == 'routes.admin_scanner' or (request.endpoint and ('caja' in request.endpoint or 'kiosk' in request.endpoint or 'ecommerce' in request.endpoint or request.endpoint == 'scanner.scanner')) %}active{% endif %}">
+                <div
+                    class="nav-dropdown {% if request.endpoint == 'routes.admin_logs' or request.path.startswith((app_root or '') ~ '/caja') or request.path.startswith((app_root or '') ~ '/kiosk') or request.path.startswith((app_root or '') ~ '/ecommerce') or request.endpoint == 'routes.admin_scanner' or (request.endpoint and ('caja' in request.endpoint or 'kiosk' in request.endpoint or 'ecommerce' in request.endpoint or request.endpoint == 'scanner.scanner')) %}active{% endif %}">
                     <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Ventas" aria-expanded="false">
                         💰 Ventas <span class="dropdown-arrow">▼</span>
                     </button>
@@ -155,17 +160,17 @@
                             aria-label="Kioskos">
                             🛒 Kioskos {% if tpv_status.kioskos.activos > 0 %}●{% else %}○{% endif %}
                         </a>
-                <a href="{{ app_root or '' }}/ecommerce"
-                    class="nav-dropdown-item {% if request.path.startswith((app_root or '') ~ '/ecommerce') or (request.endpoint and 'ecommerce' in request.endpoint) %}active{% endif %}"
-                    aria-label="Ecommerce">
-                    🌐 Ecommerce {% if tpv_status.ecommerce.activo %}●{% else %}○{% endif %}
-                </a>
-                <a href="{{ url_for('ecommerce.landing') }}"
-                    class="nav-dropdown-item {% if request.path == '/ecommerce/landing' or (request.endpoint == 'ecommerce.landing') %}active{% endif %}"
-                    aria-label="Landing Page">
-                    🎯 Landing Page
-                </a>
-                <div class="nav-dropdown-divider"></div>
+                        <a href="{{ url_for('ecommerce.index') }}"
+                            class="nav-dropdown-item {% if request.path.startswith((app_root or '') ~ '/ecommerce') or (request.endpoint and 'ecommerce' in request.endpoint) %}active{% endif %}"
+                            aria-label="Ecommerce">
+                            🌐 Ecommerce {% if tpv_status.ecommerce.activo %}●{% else %}○{% endif %}
+                        </a>
+                        <a href="{{ url_for('ecommerce.landing') }}"
+                            class="nav-dropdown-item {% if request.path == '/ecommerce/landing' or (request.endpoint == 'ecommerce.landing') %}active{% endif %}"
+                            aria-label="Landing Page">
+                            🎯 Landing Page
+                        </a>
+                        <div class="nav-dropdown-divider"></div>
                         <a href="{{ url_for('routes.admin_scanner') }}"
                             class="nav-dropdown-item {% if request.endpoint == 'scanner.scanner' or request.endpoint == 'routes.admin_scanner' %}active{% endif %}"
                             aria-label="Escaneo de Tickets">
@@ -173,9 +178,10 @@
                         </a>
                     </div>
                 </div>
-                
+
                 <!-- Desplegable Gestión -->
-                <div class="nav-dropdown {% if request.endpoint and (request.endpoint.startswith('survey.') or request.path.startswith((app_root or '') ~ '/admin/inventario') or request.path.startswith((app_root or '') ~ '/admin/inventory') or request.path.startswith((app_root or '') ~ '/admin/ingredients') or request.endpoint == 'routes.register_inventory' or request.endpoint == 'routes.view_inventory' or ('inventory' in request.endpoint or 'ingredient' in request.endpoint) or request.endpoint.startswith('equipo.') or request.endpoint.startswith('guardarropia.') or request.endpoint.startswith('guardarropia_admin.')) %}active{% endif %}">
+                <div
+                    class="nav-dropdown {% if request.endpoint and (request.endpoint.startswith('survey.') or request.path.startswith((app_root or '') ~ '/admin/inventario') or request.path.startswith((app_root or '') ~ '/admin/inventory') or request.path.startswith((app_root or '') ~ '/admin/ingredients') or request.endpoint == 'routes.register_inventory' or request.endpoint == 'routes.view_inventory' or ('inventory' in request.endpoint or 'ingredient' in request.endpoint) or request.endpoint.startswith('equipo.') or request.endpoint.startswith('guardarropia.') or request.endpoint.startswith('guardarropia_admin.')) %}active{% endif %}">
                     <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Gestión" aria-expanded="false">
                         📊 Gestión <span class="dropdown-arrow">▼</span>
                     </button>
@@ -202,10 +208,12 @@
                         </a>
                     </div>
                 </div>
-                
+
                 <!-- Desplegable Administración -->
-                <div class="nav-dropdown {% if request.endpoint == 'routes.admin_turnos' or request.endpoint == 'routes.admin_programacion' or request.path.startswith((app_root or '') ~ '/admin/programacion') or request.endpoint == 'routes.admin_panel_control' or (request.endpoint and 'payment_machines' in request.endpoint) %}active{% endif %}">
-                    <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Administración" aria-expanded="false">
+                <div
+                    class="nav-dropdown {% if request.endpoint == 'routes.admin_turnos' or request.endpoint == 'routes.admin_programacion' or request.path.startswith((app_root or '') ~ '/admin/programacion') or request.endpoint == 'routes.admin_panel_control' or (request.endpoint and 'payment_machines' in request.endpoint) %}active{% endif %}">
+                    <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Administración"
+                        aria-expanded="false">
                         ⚙️ Administración <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="nav-dropdown-menu">
@@ -231,7 +239,7 @@
                         </a>
                     </div>
                 </div>
-                
+
                 <a href="{{ url_for('auth.logout_admin') }}" class="admin-nav-btn logout-btn"
                     aria-label="Cerrar Sesión de Administrador">🔓 Salir</a>
             </div>
@@ -240,14 +248,15 @@
     <!-- Menú móvil (fuera del nav para evitar clipping por overflow) -->
     {% if session.get('admin_logged_in') %}
     <div class="admin-nav-right mobile-menu" id="mobile-menu">
-        <a href="{{ app_root or '' }}/admin"
+        <a href="{{ url_for('routes.admin_dashboard') }}"
             class="admin-nav-btn {% if request.endpoint == 'routes.admin_dashboard' %}active{% endif %}"
             aria-label="Inicio">
             🏠 Home
         </a>
-        
+
         <!-- Desplegable Ventas (móvil) -->
-        <div class="nav-dropdown {% if request.endpoint == 'routes.admin_logs' or request.path.startswith((app_root or '') ~ '/caja') or request.path.startswith((app_root or '') ~ '/kiosk') or request.path.startswith((app_root or '') ~ '/ecommerce') or request.endpoint == 'routes.admin_scanner' or (request.endpoint and ('caja' in request.endpoint or 'kiosk' in request.endpoint or 'ecommerce' in request.endpoint or request.endpoint == 'scanner.scanner')) %}active{% endif %}">
+        <div
+            class="nav-dropdown {% if request.endpoint == 'routes.admin_logs' or request.path.startswith((app_root or '') ~ '/caja') or request.path.startswith((app_root or '') ~ '/kiosk') or request.path.startswith((app_root or '') ~ '/ecommerce') or request.endpoint == 'routes.admin_scanner' or (request.endpoint and ('caja' in request.endpoint or 'kiosk' in request.endpoint or 'ecommerce' in request.endpoint or request.endpoint == 'scanner.scanner')) %}active{% endif %}">
             <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Ventas" aria-expanded="false">
                 💰 Ventas <span class="dropdown-arrow">▼</span>
             </button>
@@ -269,7 +278,7 @@
                     aria-label="Kioskos">
                     🛒 Kioskos {% if tpv_status.kioskos.activos > 0 %}●{% else %}○{% endif %}
                 </a>
-                <a href="{{ app_root or '' }}/ecommerce"
+                <a href="{{ url_for('ecommerce.index') }}"
                     class="nav-dropdown-item {% if request.path.startswith((app_root or '') ~ '/ecommerce') or (request.endpoint and 'ecommerce' in request.endpoint) %}active{% endif %}"
                     aria-label="Ecommerce">
                     🌐 Ecommerce {% if tpv_status.ecommerce.activo %}●{% else %}○{% endif %}
@@ -287,9 +296,10 @@
                 </a>
             </div>
         </div>
-        
+
         <!-- Desplegable Gestión (móvil) -->
-        <div class="nav-dropdown {% if request.endpoint and (request.endpoint.startswith('survey.') or request.path.startswith((app_root or '') ~ '/admin/inventario') or request.path.startswith((app_root or '') ~ '/admin/inventory') or request.path.startswith((app_root or '') ~ '/admin/ingredients') or request.endpoint == 'routes.register_inventory' or request.endpoint == 'routes.view_inventory' or ('inventory' in request.endpoint or 'ingredient' in request.endpoint) or request.endpoint.startswith('equipo.') or request.endpoint.startswith('guardarropia.') or request.endpoint.startswith('guardarropia_admin.')) %}active{% endif %}">
+        <div
+            class="nav-dropdown {% if request.endpoint and (request.endpoint.startswith('survey.') or request.path.startswith((app_root or '') ~ '/admin/inventario') or request.path.startswith((app_root or '') ~ '/admin/inventory') or request.path.startswith((app_root or '') ~ '/admin/ingredients') or request.endpoint == 'routes.register_inventory' or request.endpoint == 'routes.view_inventory' or ('inventory' in request.endpoint or 'ingredient' in request.endpoint) or request.endpoint.startswith('equipo.') or request.endpoint.startswith('guardarropia.') or request.endpoint.startswith('guardarropia_admin.')) %}active{% endif %}">
             <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Gestión" aria-expanded="false">
                 📊 Gestión <span class="dropdown-arrow">▼</span>
             </button>
@@ -316,9 +326,10 @@
                 </a>
             </div>
         </div>
-        
+
         <!-- Desplegable Administración (móvil) -->
-        <div class="nav-dropdown {% if request.endpoint == 'routes.admin_turnos' or request.endpoint == 'routes.admin_programacion' or request.path.startswith((app_root or '') ~ '/admin/programacion') or request.endpoint == 'routes.admin_panel_control' or (request.endpoint and 'payment_machines' in request.endpoint) %}active{% endif %}">
+        <div
+            class="nav-dropdown {% if request.endpoint == 'routes.admin_turnos' or request.endpoint == 'routes.admin_programacion' or request.path.startswith((app_root or '') ~ '/admin/programacion') or request.endpoint == 'routes.admin_panel_control' or (request.endpoint and 'payment_machines' in request.endpoint) %}active{% endif %}">
             <button class="admin-nav-btn nav-dropdown-toggle" aria-label="Menú Administración" aria-expanded="false">
                 ⚙️ Administración <span class="dropdown-arrow">▼</span>
             </button>
@@ -345,7 +356,7 @@
                 </a>
             </div>
         </div>
-        
+
         <a href="{{ url_for('auth.logout_admin') }}" class="admin-nav-btn logout-btn"
             aria-label="Cerrar Sesión de Administrador">🔓 Salir</a>
     </div>
@@ -385,7 +396,9 @@
             {% if app_version %}
             <span style="margin-left: 10px; color: #888; font-size: 0.85em;">| {{ app_version }}</span>
             {% endif %}
-            <span class="footer-theme-wrap" style="margin-left: 10px;">| Tema: <button type="button" class="theme-toggle theme-toggle-footer" aria-label="Cambiar tema"><span class="theme-toggle-label">Oscuro</span></button></span>
+            <span class="footer-theme-wrap" style="margin-left: 10px;">| Tema: <button type="button"
+                    class="theme-toggle theme-toggle-footer" aria-label="Cambiar tema"><span
+                        class="theme-toggle-label">Oscuro</span></button></span>
         </footer>
     </div>
 
@@ -400,7 +413,7 @@
             </p>
             {% endif %}
         </div>
-        </div>
+    </div>
     </div>
     {% endif %}
 
@@ -419,7 +432,8 @@
                 <span style="color: #4caf50; font-weight: bold;">Turno Abierto</span>
             </div>
             <div style="color: #aaa; font-size: 0.9rem;">
-                <strong>Tiempo:</strong> <span id="footer-tiempo">{{ shift_metrics_actual.get('tiempo_transcurrido', 'N/A') }}</span>
+                <strong>Tiempo:</strong> <span id="footer-tiempo">{{ shift_metrics_actual.get('tiempo_transcurrido',
+                    'N/A') }}</span>
             </div>
             <div style="color: #aaa; font-size: 0.9rem;">
                 <strong>Entregas:</strong> <span id="footer-entregas" style="color: #4caf50; font-weight: bold;">{{
@@ -452,7 +466,8 @@
             <span style="color: #667eea; font-weight: 500;">{{ app_version }}</span>
             {% endif %}
             <span>|</span>
-            <span>Tema: <button type="button" class="theme-toggle theme-toggle-footer" aria-label="Cambiar tema"><span class="theme-toggle-label">Oscuro</span></button></span>
+            <span>Tema: <button type="button" class="theme-toggle theme-toggle-footer" aria-label="Cambiar tema"><span
+                        class="theme-toggle-label">Oscuro</span></button></span>
         </div>
 
         <!-- Countdown solo en /admin/logs -->
@@ -536,7 +551,7 @@
         // Actualizar inmediatamente y luego cada segundo
         updateFooterTime();
         setInterval(updateFooterTime, 1000);
-        
+
         // Actualizar métricas del footer (tiempo, entregas, entradas)
         {% if shift_status_actual.get('is_open', False) %}
         let footerOpenedAt = null;
@@ -549,12 +564,12 @@
             if (isNaN(footerOpenedAt.getTime())) {
                 footerOpenedAt = null;
             }
-        } catch(e) {
+        } catch (e) {
             console.error('Error parseando fecha de apertura:', e);
             footerOpenedAt = null;
         }
         {% endif %}
-        
+
         function updateFooterMetrics() {
             // Actualizar tiempo transcurrido cada minuto
             if (footerOpenedAt && !isNaN(footerOpenedAt.getTime())) {
@@ -573,12 +588,12 @@
                 updateFooterTimeFromAPI();
             }
         }
-        
+
         async function updateFooterTimeFromAPI() {
             try {
-                const response = await fetch('/admin/api/dashboard/metrics');
+                const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/dashboard/metrics`);
                 const data = await response.json();
-                
+
                 if (data.success && data.metrics && data.metrics.turno_actual && data.metrics.turno_actual.abierto_en) {
                     footerOpenedAt = new Date(data.metrics.turno_actual.abierto_en);
                     updateFooterMetrics();
@@ -587,12 +602,12 @@
                 console.error('Error obteniendo fecha de apertura:', error);
             }
         }
-        
+
         async function updateFooterMetricsFromAPI() {
             try {
-                const response = await fetch('/admin/api/dashboard/metrics');
+                const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/dashboard/metrics`);
                 const data = await response.json();
-                
+
                 if (data.success && data.metrics) {
                     // Actualizar entregas desde métricas de entregas
                     if (data.metrics.entregas) {
@@ -603,13 +618,13 @@
                             entregasElement.textContent = totalEntregas;
                         }
                     }
-                    
+
                     // Actualizar tiempo si no lo tenemos
                     if (!footerOpenedAt && data.metrics.turno_actual && data.metrics.turno_actual.abierto_en) {
                         footerOpenedAt = new Date(data.metrics.turno_actual.abierto_en);
                         updateFooterMetrics();
                     }
-                    
+
                     // Actualizar entradas (por ahora se mantiene en 0, ya que está deshabilitado en el context processor)
                     // TODO: Implementar cuando se habilite la carga de entradas
                 }
@@ -617,11 +632,11 @@
                 console.error('Error actualizando métricas del footer:', error);
             }
         }
-        
+
         // Actualizar tiempo cada minuto
         updateFooterMetrics();
         setInterval(updateFooterMetrics, 60000);
-        
+
         // Actualizar entregas y tiempo desde API cada 30 segundos
         updateFooterMetricsFromAPI();
         setInterval(updateFooterMetricsFromAPI, 30000);
@@ -776,26 +791,26 @@
         document.addEventListener('DOMContentLoaded', (event) => {
             // JavaScript personalizado si es necesario
         });
-        
+
         // Función para toggle del menú móvil (SIMPLIFICADA Y ROBUSTA)
         function toggleMobileMenu(e) {
             if (e) {
                 e.preventDefault();
                 e.stopPropagation();
             }
-            
+
             const menu = document.getElementById('mobile-menu');
             const toggle = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
-            
+
             if (!menu || !toggle) {
                 console.warn('Menu elements not found', { menu: !!menu, toggle: !!toggle });
                 return false;
             }
-            
+
             const isOpen = menu.classList.contains('mobile-menu-open');
-            
+
             console.log('Toggle menu:', { isOpen, menuExists: !!menu, toggleExists: !!toggle, menuDisplay: menu ? window.getComputedStyle(menu).display : 'N/A' });
-            
+
             if (isOpen) {
                 // Cerrar menú
                 console.log('Cerrando menú...');
@@ -824,24 +839,24 @@
                 document.body.style.overflow = 'hidden';
                 console.log('Menú abierto. Display:', window.getComputedStyle(menu).display, 'Classes:', menu.className);
             }
-            
+
             return false;
         }
-        
+
         // Asegurar que la función esté disponible globalmente
         window.toggleMobileMenu = toggleMobileMenu;
-        
+
         // Inicialización del menú móvil (EJECUTAR INMEDIATAMENTE Y EN DOMContentLoaded)
         (function initMobileMenu() {
             function setupMenu() {
                 const toggleBtn = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
                 const menu = document.getElementById('mobile-menu');
-                
+
                 if (!menu) {
                     console.warn('Menu no encontrado en setupMenu');
                     return;
                 }
-                
+
                 // Asegurar que el menú esté oculto por defecto en móvil
                 if (window.innerWidth <= 1023) {
                     menu.classList.remove('mobile-menu-open');
@@ -852,18 +867,18 @@
                     menu.style.removeProperty('visibility');
                     menu.style.removeProperty('pointer-events');
                 }
-                
+
                 if (toggleBtn) {
                     console.log('Toggle button encontrado, agregando listeners...');
                     // Remover cualquier listener previo clonando el elemento
                     const newToggleBtn = toggleBtn.cloneNode(true);
                     toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
-                    
+
                     // Función handler compartida - CON PROTECCIÓN CONTRA DOBLE DISPARO
                     let isToggling = false;
-                    const handleMenuToggle = function(e) {
+                    const handleMenuToggle = function (e) {
                         console.log('🔵 Evento detectado:', e.type, 'isToggling:', isToggling);
-                        
+
                         // Prevenir doble disparo
                         if (isToggling) {
                             console.log('⏸️ Bloqueado: ya está procesando');
@@ -871,27 +886,27 @@
                             e.stopPropagation();
                             return false;
                         }
-                        
+
                         isToggling = true;
                         setTimeout(() => { isToggling = false; }, 300);
-                        
+
                         try {
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
-                            
+
                             const menu = document.getElementById('mobile-menu');
                             const toggle = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
-                            
+
                             if (!menu || !toggle) {
                                 console.error('❌ Elementos no encontrados:', { menu: !!menu, toggle: !!toggle });
                                 isToggling = false;
                                 return false;
                             }
-                            
+
                             const isOpen = menu.classList.contains('mobile-menu-open');
                             console.log('📊 Estado actual del menú:', { isOpen, menuDisplay: window.getComputedStyle(menu).display });
-                            
+
                             if (isOpen) {
                                 console.log('🔴 CERRANDO menú...');
                                 menu.classList.remove('mobile-menu-open');
@@ -926,43 +941,43 @@
                         }
                         return false;
                     };
-                    
+
                     // SOLO usar addEventListener, NO onclick (evita doble disparo)
                     // Usar capture: true para capturar el evento antes que otros listeners
                     newToggleBtn.addEventListener('click', handleMenuToggle, { capture: true, passive: false });
-                    
+
                     // Para touch, prevenir que también dispare click
-                    newToggleBtn.addEventListener('touchstart', function(e) {
+                    newToggleBtn.addEventListener('touchstart', function (e) {
                         e.preventDefault();
                         handleMenuToggle(e);
                     }, { passive: false });
-                    
+
                     console.log('Listeners agregados correctamente al botón');
-                    
+
                     console.log('Listeners agregados correctamente');
                 } else {
                     console.warn('Toggle button NO encontrado');
                 }
             }
-            
+
             // Ejecutar inmediatamente si el DOM ya está listo
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', setupMenu);
             } else {
                 setupMenu();
             }
-            
+
             // También ejecutar después de un pequeño delay para asegurar que todo esté cargado
             setTimeout(setupMenu, 50);
         })();
-        
+
         // Cerrar menú móvil al hacer click fuera
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const menu = document.getElementById('mobile-menu');
             const toggle = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
-            
-            if (menu && toggle && 
-                !menu.contains(event.target) && 
+
+            if (menu && toggle &&
+                !menu.contains(event.target) &&
                 !toggle.contains(event.target) &&
                 menu.classList.contains('mobile-menu-open')) {
                 menu.classList.remove('mobile-menu-open');
@@ -974,16 +989,16 @@
                 document.body.style.overflow = '';
             }
         });
-        
+
         // Cerrar menú móvil al hacer click en un enlace
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const adminNavLinks = document.querySelectorAll('#mobile-menu .admin-nav-btn:not(.nav-dropdown-toggle), #mobile-menu .nav-dropdown-item');
             const menu = document.getElementById('mobile-menu');
             const toggle = document.querySelector('.mobile-menu-toggle') || document.getElementById('mobile-menu-toggle-btn');
-            
+
             if (adminNavLinks && adminNavLinks.length > 0) {
-                adminNavLinks.forEach(function(link) {
-                    link.addEventListener('click', function() {
+                adminNavLinks.forEach(function (link) {
+                    link.addEventListener('click', function () {
                         if (window.innerWidth <= 1023 && menu) {
                             menu.classList.remove('mobile-menu-open');
                             if (toggle) toggle.classList.remove('active');
@@ -996,29 +1011,29 @@
                     });
                 });
             }
-            
+
         });
-        
+
         // Manejo de desplegables del menú
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
-            
-            dropdownToggles.forEach(function(toggle) {
-                toggle.addEventListener('click', function(e) {
+
+            dropdownToggles.forEach(function (toggle) {
+                toggle.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    
+
                     const dropdown = this.closest('.nav-dropdown');
                     const isOpen = dropdown.classList.contains('open');
-                    
+
                     // Cerrar todos los demás desplegables
-                    document.querySelectorAll('.nav-dropdown').forEach(function(dd) {
+                    document.querySelectorAll('.nav-dropdown').forEach(function (dd) {
                         if (dd !== dropdown) {
                             dd.classList.remove('open');
                             dd.querySelector('.nav-dropdown-toggle').setAttribute('aria-expanded', 'false');
                         }
                     });
-                    
+
                     // Toggle del desplegable actual
                     if (isOpen) {
                         dropdown.classList.remove('open');
@@ -1029,20 +1044,20 @@
                     }
                 });
             });
-            
+
             // Cerrar desplegables al hacer click fuera
-            document.addEventListener('click', function(e) {
+            document.addEventListener('click', function (e) {
                 if (!e.target.closest('.nav-dropdown')) {
-                    document.querySelectorAll('.nav-dropdown').forEach(function(dropdown) {
+                    document.querySelectorAll('.nav-dropdown').forEach(function (dropdown) {
                         dropdown.classList.remove('open');
                         dropdown.querySelector('.nav-dropdown-toggle').setAttribute('aria-expanded', 'false');
                     });
                 }
             });
-            
+
             // Cerrar desplegables al hacer click en un item del menú (solo en desktop)
-            document.querySelectorAll('.nav-dropdown-item').forEach(function(item) {
-                item.addEventListener('click', function() {
+            document.querySelectorAll('.nav-dropdown-item').forEach(function (item) {
+                item.addEventListener('click', function () {
                     if (window.innerWidth >= 1024) {
                         const dropdown = this.closest('.nav-dropdown');
                         if (dropdown) {
@@ -1064,9 +1079,9 @@
     <script src="{{ url_for('static', filename='js/error_capture.js') }}"></script>
     {% endif %}
     <!-- SocketIO (self-hosted) -->
-    <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}?v={{ CSS_VERSION }}" defer></script>
     <!-- Chart.js para gráficos (self-hosted) -->
-    <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}?v={{ CSS_VERSION }}" defer></script>
 
     <!-- Módulos JavaScript reutilizables (optimización) -->
     <script src="{{ url_for('static', filename='js/utils/dateFormatter.js') }}"></script>
@@ -1075,7 +1090,7 @@
 
     <!-- Sistema de Notificaciones (solo para admin) -->
     {% if session.get('admin_logged_in') %}
-    <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}?v={{ CSS_VERSION }}" defer></script>
     {% endif %}
 
     <!-- Toggle tema claro/oscuro -->

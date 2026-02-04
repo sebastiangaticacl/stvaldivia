@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]} 
+
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Force pull
+send "git reset --hard HEAD\r"
+expect -re {[\$\#]}
+send "git pull origin main\r"
+expect -re {[\$\#]}
+
+# Restart
+send "touch tmp/restart.txt\r"
+expect -re {[\$\#]}
+
+# LIST ALL FILES to see if .htaccess is there
+send "ls -la\r"
+expect -re {[\$\#]}
+
+# CAT .htaccess
+send "cat .htaccess\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

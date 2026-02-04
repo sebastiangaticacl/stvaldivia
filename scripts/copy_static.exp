@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Remove symlink
+send "rm static\r"
+expect -re {[\$\#]}
+
+# Copy folder
+# We copy content of app/static to static
+send "cp -r app/static static\r"
+expect -re {[\$\#]}
+
+# Create .htaccess in new static folder just in case
+send "echo 'PassengerEnabled Off' > static/.htaccess\r"
+expect -re {[\$\#]}
+
+# Verify content
+send "ls -la static\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

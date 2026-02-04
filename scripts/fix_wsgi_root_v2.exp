@@ -1,0 +1,70 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# 1. Remove APPLICATION_ROOT from .env (fixes double prefix)
+send "sed -i '/APPLICATION_ROOT/d' .env\r"
+expect -re {[\$\#]}
+
+# 2. Update passenger_wsgi.py
+# Escaping brackets [ ] for Expect
+send "cat > passenger_wsgi.py <<'EOF'\r"
+send "import sys\r"
+send "import os\r"
+send "from dotenv import load_dotenv\r"
+send "\r"
+send "# Project root\r"
+send "project_root = os.path.abspath(os.path.dirname(__file__))\r"
+send "if project_root not in sys.path:\r"
+send "    sys.path.insert(0, project_root)\r"
+send "\r"
+send "os.chdir(project_root)\r"
+send "\r"
+send "# Load env\r"
+send "load_dotenv(os.path.join(project_root, '.env'))\r"
+send "\r"
+send "# Force production\r"
+send "if 'FLASK_ENV' not in os.environ:\r"
+send "    os.environ\['FLASK_ENV'\] = 'production'\r"
+send "\r"
+send "from app import create_app\r"
+send "\r"
+send "application = create_app()\r"
+send "\r"
+send "# WSGI Middleware to fix SCRIPT_NAME (cPanel/Passenger fix)\r"
+send "class PassengerPathInfoFix(object):\r"
+send "    def __init__(self, app):\r"
+send "        self.app = app\r"
+send "    def __call__(self, environ, start_response):\r"
+send "        # Force SCRIPT_NAME to /stvaldivia if it's missing or root\r"
+send "        script_name = environ.get('SCRIPT_NAME', '')\r"
+send "        if not script_name or script_name == '/':\r"
+send "            environ\['SCRIPT_NAME'\] = '/stvaldivia'\r"
+send "        return self.app(environ, start_response)\r"
+send "\r"
+send "application.wsgi_app = PassengerPathInfoFix(application.wsgi_app)\r"
+send "EOF\r"
+
+expect -re {[\$\#]}
+
+# Restart app
+send "touch tmp/restart.txt\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

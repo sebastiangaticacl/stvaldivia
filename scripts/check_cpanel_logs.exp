@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]}
+
+# Go to project dir
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Check git remote
+send "echo '--- GIT REMOTE ---'\r"
+send "git remote -v\r"
+expect -re {[\$\#]}
+
+# Check passenger_wsgi content
+send "echo '--- PASSENGER_WSGI ---'\r"
+send "cat passenger_wsgi.py\r"
+expect -re {[\$\#]}
+
+# Check logs in current dir and parent
+send "echo '--- ERROR LOGS ---'\r"
+send "tail -n 20 error_log\r"
+expect -re {[\$\#]}
+send "tail -n 20 ../error_log\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

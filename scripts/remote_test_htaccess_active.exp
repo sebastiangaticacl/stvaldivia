@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set host "stvaldivia.cl"
+set user "stvaldivia"
+set password "Tabxyh-jubvem-5pysxa"
+
+spawn ssh $user@$host
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r" }
+}
+
+expect -re {[\$\#]} 
+
+send "cd public_html/stvaldivia\r"
+expect -re {[\$\#]}
+
+# Append garbage to .htaccess to force 500 Internal Server Error
+send "echo 'INVALID_DIRECTIVE_TO_TEST_HTACCESS' >> .htaccess\r"
+expect -re {[\$\#]}
+
+# Test URL with curl
+send "curl -I -H 'Host: stvaldivia.cl' http://127.0.0.1/stvaldivia/\r"
+expect -re {[\$\#]}
+
+# Restore .htaccess (remove last line)
+# Using head to remove last line is tricky in place. We will just checkout it again.
+send "git checkout .htaccess\r"
+expect -re {[\$\#]}
+
+send "exit\r"
+expect eof

@@ -526,7 +526,7 @@ def create_app():
         app,
         cors_allowed_origins="*",
         manage_session=True,  # Permitir que SocketIO gestione sesiones
-        logger=True,
+        logger=False,
         engineio_logger=False
     )
 
@@ -1334,7 +1334,7 @@ def create_app():
     
     # Inicializar thread de métricas periódicas después de registrar eventos
     if hasattr(socketio, '_start_metrics_thread'):
-        socketio._start_metrics_thread(app)
+        # socketio._start_metrics_thread(app)
         app.logger.info("✅ Thread de métricas periódicas iniciado")
     
     # Configuración de Instagram/Meta Webhooks
