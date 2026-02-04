@@ -18,3 +18,4 @@ logs.csv
 .DS_Store
 __MACOSX/
 backups/
+node_modules/
