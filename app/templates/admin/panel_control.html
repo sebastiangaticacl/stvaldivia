@@ -47,8 +47,8 @@
     }
 
     .info-card {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
         border-radius: 16px;
         padding: 25px;
         transition: all 0.3s ease;
@@ -56,8 +56,8 @@
 
     .info-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        border-color: rgba(102, 126, 234, 0.3);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--border-color);
     }
 
     .info-card .icon {
@@ -67,14 +67,14 @@
     }
 
     .info-card h3 {
-        color: #e8e8e8;
+        color: var(--text-primary);
         margin: 0 0 8px 0;
         font-size: 1rem;
         font-weight: bold;
     }
 
     .info-card p {
-        color: #aaa;
+        color: var(--text-secondary);
         margin: 5px 0;
         font-size: 0.8rem;
         line-height: 1.4;
@@ -84,17 +84,17 @@
         display: inline-block;
         margin-top: 5px;
         padding: 3px 8px;
-        background: rgba(102, 126, 234, 0.2);
+        background: var(--bg-surface-hover);
         border-radius: 15px;
         font-size: 0.7rem;
-        color: #667eea;
+        color: var(--accent);
     }
 
     .btn-config {
         padding: 10px 20px;
-        background: rgba(102, 126, 234, 0.3);
-        border: 1px solid rgba(102, 126, 234, 0.5);
-        color: #667eea;
+        background: var(--bg-surface-hover);
+        border: 1px solid var(--border-color);
+        color: var(--accent);
         border-radius: 8px;
         cursor: pointer;
         font-size: 0.95rem;
@@ -105,14 +105,14 @@
     }
 
     .btn-config:hover {
-        background: rgba(102, 126, 234, 0.5);
-        border-color: rgba(102, 126, 234, 0.7);
-        color: #fff;
+        background: var(--bg-surface-hover);
+        border-color: var(--text-secondary);
+        color: var(--text-primary);
     }
 
     .time-display {
         font-size: 1.5rem;
-        color: #667eea;
+        color: var(--accent);
         font-weight: bold;
         margin: 10px 0;
         font-family: 'Courier New', monospace;
@@ -127,13 +127,13 @@
     }
 
     .status-online {
-        background: #4caf50;
-        box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        background: var(--success);
+        box-shadow: 0 0 10px var(--success-light);
     }
 
     .status-offline {
-        background: #f44336;
-        box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+        background: var(--danger);
+        box-shadow: 0 0 10px var(--danger-light);
     }
 </style>
 {% endblock %}
@@ -142,38 +142,36 @@
 <div class="admin-container">
     <div class="info-grid">
         <!-- Información de Fecha y Hora (Compacta) -->
-        <div class="info-card"
-            style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); border-color: rgba(102, 126, 234, 0.5); padding: 10px;">
+        <div class="info-card" style="padding: 10px;">
             <span class="icon" style="font-size: 1.5rem; margin-bottom: 5px;">🕐</span>
             <h3 style="font-size: 0.9rem; margin: 0 0 5px 0;">Fecha y Hora</h3>
             <p class="time-display" id="current-time-display" style="font-size: 0.9rem; margin: 3px 0;">{{
                 system_info.current_time }}</p>
-            <p style="font-size: 0.7rem; color: #e8e8e8; margin: 2px 0;">
+            <p style="font-size: 0.7rem; color: var(--text-primary); margin: 2px 0;">
                 <strong>{{ system_info.day_name }}</strong>, {{ system_info.current_date }}
             </p>
-            <p style="font-size: 0.65rem; color: #aaa; margin: 2px 0;">
+            <p style="font-size: 0.65rem; color: var(--text-secondary); margin: 2px 0;">
                 {{ system_info.timezone }}
             </p>
-            <span class="badge"
-                style="background: rgba(102, 126, 234, 0.3); color: #667eea; font-size: 0.65rem; padding: 2px 6px; margin-top: 3px;">
+            <span class="badge" style="font-size: 0.65rem; padding: 2px 6px; margin-top: 3px;">
                 Tiempo real
             </span>
         </div>
 
         <!-- Toggle Base de Datos (Solo Superadmin) -->
         {% if is_superadmin %}
-        <div class="info-card" style="border-color: rgba(255, 193, 7, 0.5); background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);">
+        <div class="info-card" style="border-color: var(--warning);">
             <span class="icon">🗄️</span>
             <h3>Base de Datos</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Cambiar entre base de datos de desarrollo y producción<br>
-                <span style="font-size: 0.75rem; color: #888;">Ambas bases de datos están en el servidor VM</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Ambas bases de datos están en el servidor VM</span>
             </p>
             
             <div style="margin-top: 15px;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <span style="color: #e8e8e8; font-size: 0.85rem;">Modo actual:</span>
-                    <span id="db-mode-display" style="color: #ffc107; font-weight: bold; font-size: 0.9rem; text-transform: uppercase;">
+                    <span style="color: var(--text-primary); font-size: 0.85rem;">Modo actual:</span>
+                    <span id="db-mode-display" style="color: var(--warning); font-weight: bold; font-size: 0.9rem; text-transform: uppercase;">
                         {{ db_info.mode|default('PROD') }}
                     </span>
                 </div>
@@ -181,32 +179,32 @@
                 <div style="display: flex; gap: 10px;">
                     <button id="db-switch-dev" 
                             class="btn-config" 
-                            style="flex: 1; {% if db_info.mode == 'dev' %}background: rgba(76, 175, 80, 0.3); border-color: rgba(76, 175, 80, 0.5); color: #4caf50;{% endif %}"
+                            style="flex: 1; {% if db_info.mode == 'dev' %}background: var(--success-light); border-color: var(--success); color: var(--success);{% endif %}"
                             onclick="switchDatabase('dev')">
                         🧪 Desarrollo
                     </button>
                     <button id="db-switch-prod" 
                             class="btn-config" 
-                            style="flex: 1; {% if db_info.mode == 'prod' %}background: rgba(244, 67, 54, 0.3); border-color: rgba(244, 67, 54, 0.5); color: #f44336;{% endif %}"
+                            style="flex: 1; {% if db_info.mode == 'prod' %}background: var(--danger-light); border-color: var(--danger); color: var(--danger);{% endif %}"
                             onclick="switchDatabase('prod')">
                         🚀 Producción
                     </button>
                 </div>
                 
-                <p id="db-status" style="font-size: 0.75rem; color: #aaa; margin-top: 10px; min-height: 20px;"></p>
+                <p id="db-status" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 10px; min-height: 20px;"></p>
             </div>
             
-            <span class="badge" style="background: rgba(255, 193, 7, 0.3); color: #ffc107;">
+            <span class="badge" style="background: var(--warning-light); color: var(--warning);">
                 {% if db_info.mode == 'dev' %}Modo Desarrollo{% else %}Modo Producción{% endif %}
             </span>
         </div>
         {% endif %}
 
         <!-- EQUIPO -->
-        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.5);">
+        <div class="info-card">
             <span class="icon">👥</span>
             <h3>EQUIPO</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Gestiona el equipo del sistema de forma local
             </p>
             <div style="margin-top: 15px;">
@@ -215,16 +213,16 @@
                     👥 Gestionar Equipo
                 </a>
             </div>
-            <span class="badge" style="background: rgba(102, 126, 234, 0.3); color: #667eea;">
+            <span class="badge">
                 Gestión Local
             </span>
         </div>
 
         <!-- Ecommerce -->
-        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.5);">
+        <div class="info-card" >
             <span class="icon">🛒</span>
             <h3>Ecommerce</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Gestión de compras y compradores online
             </p>
             <div style="margin-top: 15px;">
@@ -233,34 +231,34 @@
                     🛒 Ver Compras
                 </a>
             </div>
-            <span class="badge" style="background: rgba(102, 126, 234, 0.3); color: #667eea;">
+            <span class="badge" style="">
                 Ventas Online
             </span>
         </div>
 
         <!-- Dashboard de TPV -->
-        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.5);">
+        <div class="info-card" >
             <span class="icon">🏪</span>
             <h3>Dashboard de TPV</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Monitoreo en tiempo real de puntos de venta
             </p>
             <div style="margin-top: 15px;">
                 <a href="{{ url_for('inventory_admin.dashboard') }}" class="btn-config"
-                    style="text-decoration: none; display: block; text-align: center; background: rgba(102, 126, 234, 0.3); border-color: rgba(102, 126, 234, 0.5); color: #667eea;">
+                    style="text-decoration: none; display: block; text-align: center;">
                     🏪 Ver Dashboard
                 </a>
             </div>
-            <span class="badge" style="background: rgba(102, 126, 234, 0.3); color: #667eea;">
+            <span class="badge" style="">
                 Monitoreo
             </span>
         </div>
 
         <!-- Administración de TPV -->
-        <div class="info-card" style="border-color: rgba(255, 193, 7, 0.5);">
+        <div class="info-card" style="border-color: var(--warning);">
             <span class="icon">💰</span>
             <h3>Administración de TPV</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Crea, edita y gestiona los puntos de venta (TPV) del sistema
             </p>
             <div style="margin-top: 15px;">
@@ -275,10 +273,10 @@
         </div>
 
         <!-- Gestión de Cargos -->
-        <div class="info-card" style="border-color: rgba(156, 39, 176, 0.5);">
+        <div class="info-card" style="border-color: var(--accent2);">
             <span class="icon">👔</span>
             <h3>Gestión de Cargos</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Crea, edita o elimina los cargos disponibles para asignar a los miembros del equipo
             </p>
             <div style="margin-top: 15px;">
@@ -293,10 +291,10 @@
         </div>
 
         <!-- Generar Pagos -->
-        <div class="info-card" style="border-color: rgba(255, 193, 7, 0.5);">
+        <div class="info-card" style="border-color: var(--warning);">
             <span class="icon">💵</span>
             <h3>Generar Pagos</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Visualiza y gestiona todos los pagos pendientes agrupados por trabajador. Paga completo o realiza
                 abonos.
             </p>
@@ -312,10 +310,10 @@
         </div>
 
         <!-- Actualizar Sitio en Producción -->
-        <div class="info-card" style="border-color: rgba(76, 175, 80, 0.5);">
+        <div class="info-card" style="border-color: var(--success);">
             <span class="icon">🚀</span>
             <h3>Actualizar Sitio</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Despliega los últimos cambios a producción (stvaldivia.cl). Esto actualiza el sitio en vivo.
             </p>
             <div style="margin-top: 15px;">
@@ -332,10 +330,10 @@
         </div>
 
         <!-- Monitoreo de Servicios -->
-        <div class="info-card" style="border-color: rgba(0, 255, 255, 0.5);">
+        <div class="info-card" style="border-color: var(--info);">
             <span class="icon">🔍</span>
             <h3>Monitoreo de Servicios</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Monitorea el estado en tiempo real de todos los servicios del sistema: base de datos, cache, APIs y servicios del sistema.
             </p>
             <div style="margin-top: 15px;">
@@ -350,10 +348,10 @@
         </div>
 
         <!-- Logs del Sistema -->
-        <div class="info-card" style="border-color: rgba(76, 175, 80, 0.5);">
+        <div class="info-card" style="border-color: var(--success);">
             <span class="icon">📋</span>
             <h3>Logs del Sistema</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Visualiza y exporta todos los logs de entregas de productos. Filtra por bartender, barra, venta o fecha.
             </p>
             <div style="margin-top: 15px;">
@@ -368,10 +366,10 @@
         </div>
 
         <!-- Logs del Agente BIMBA -->
-        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.5);">
+        <div class="info-card" >
             <span class="icon">🤖</span>
             <h3>Logs del Agente BIMBA</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Visualiza logs de conversaciones del agente de IA BIMBA, prueba respuestas y monitorea el rendimiento del agente.
             </p>
             <div style="margin-top: 15px; display: flex; gap: 10px;">
@@ -384,17 +382,18 @@
                     ⚙️ Configurar
                 </a>
             </div>
-            <span class="badge" style="background: rgba(102, 126, 234, 0.3); color: #667eea;">
+            <span class="badge" style="">
                 Agente BIMBA
             </span>
         </div>
 
         <!-- Monitor de Base de Datos -->
-        <div class="info-card" style="border-color: rgba(255, 152, 0, 0.5);">
+        {% if db_monitor_available %}
+        <div class="info-card" style="border-color: var(--warning);">
             <span class="icon">🗄️</span>
             <h3>Monitor de Base de Datos</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
-                Monitorea estadísticas detalladas de PostgreSQL: tamaño, conexiones activas, tablas más grandes, índices y pool de conexiones.
+            <p style="font-size: 0.9rem; margin: 10px 0;">
+                Monitorea la BD MySQL de cPanel: tamaño, conexiones, tablas más grandes, índices y pool de conexiones.
             </p>
             <div style="margin-top: 15px;">
                 <a href="{{ url_for('routes.admin_db_monitor') }}" class="btn-config"
@@ -403,16 +402,17 @@
                 </a>
             </div>
             <span class="badge" style="background: rgba(255, 152, 0, 0.3); color: #ff9800;">
-                PostgreSQL
+                MySQL (cPanel)
             </span>
         </div>
+        {% endif %}
 
         <!-- Sincronizar Datos (solo en desarrollo local) -->
         {% if not is_production %}
-        <div class="info-card" style="border-color: rgba(33, 150, 243, 0.5);">
+        <div class="info-card" style="border-color: var(--info);">
             <span class="icon">🔄</span>
             <h3>Sincronizar Datos</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Sincroniza datos entre la versión local y la VM de Google (producción). Actualiza empleados, jornadas, planilla y más.
             </p>
             <div style="margin-top: 15px;">
@@ -422,10 +422,10 @@
                 </button>
             </div>
         {% else %}
-        <div class="info-card" style="border-color: rgba(102, 126, 234, 0.3); opacity: 0.6;">
+        <div class="info-card" style="border-color: var(--border-color); opacity: 0.6;">
             <span class="icon">🔄</span>
             <h3>Sincronizar Datos</h3>
-            <p style="font-size: 0.9rem; color: #aaa; margin: 10px 0;">
+            <p style="font-size: 0.9rem; margin: 10px 0;">
                 Esta función solo está disponible en el ambiente local. En producción no se usan archivos locales.
             </p>
             <div style="margin-top: 15px;">

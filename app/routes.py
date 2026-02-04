@@ -244,12 +244,14 @@ def admin_panel_control():
         current_app.logger.error(f"Error al obtener info de BD: {e}", exc_info=True)
         db_info = {'mode': 'prod', 'url': 'No disponible'}
     
+    db_monitor_available = (current_app.config.get('DB_TYPE') == 'mysql')
     return render_template('admin/panel_control.html', 
                          system_info=system_info,
                          is_superadmin=is_superadmin,
                          audit_logs=audit_logs,
                          audit_alerts_count=audit_alerts_count,
-                         db_info=db_info)
+                         db_info=db_info,
+                         db_monitor_available=db_monitor_available)
 
 
 @bp.route('/admin/panel_control/logs')
@@ -350,14 +352,17 @@ def admin_panel_control_logs():
 
 @bp.route('/admin/panel_control/db_monitor')
 def admin_db_monitor():
-    """Monitor de base de datos con estadísticas detalladas"""
+    """Monitor de base de datos: solo disponible con MySQL (cPanel)."""
     if not session.get('admin_logged_in'):
         return redirect(url_for('auth.login_admin'))
-    
+
+    if current_app.config.get('DB_TYPE') != 'mysql':
+        flash('El Monitor de BD solo está disponible cuando la aplicación está conectada a la base de datos MySQL de cPanel. Conecta usando DATABASE_URL en .env.', 'warning')
+        return redirect(url_for('routes.admin_panel_control'))
+
     try:
         from app.helpers.db_monitor import get_database_stats
         db_stats = get_database_stats()
-        
         return render_template('admin/db_monitor.html', db_stats=db_stats)
     except Exception as e:
         current_app.logger.error(f"Error al cargar monitor de DB: {e}", exc_info=True)

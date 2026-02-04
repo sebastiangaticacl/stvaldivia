@@ -530,9 +530,12 @@ def create_app():
         engineio_logger=False
     )
 
-    # Obtener prefijo de URL de variables de entorno
-    url_prefix = os.environ.get('APPLICATION_ROOT', '')
-    
+    # Obtener prefijo de URL de variables de entorno (ej. /stvaldivia para https://stvaldivia.cl/stvaldivia/)
+    url_prefix = (os.environ.get('APPLICATION_ROOT') or '').strip()
+    if url_prefix and not url_prefix.startswith('/'):
+        url_prefix = '/' + url_prefix
+    app.config['APPLICATION_ROOT'] = url_prefix
+
     # Registrar blueprint de home (ruta raíz)
     from .routes.home_routes import home_bp
     app.register_blueprint(home_bp, url_prefix=url_prefix)
@@ -902,8 +905,13 @@ def create_app():
                 'is_production': False,
                 'is_cloud_run': False
             }
-    
-        # Registrar blueprint de Ecommerce (Venta de Entradas)
+
+    # Context processor: prefijo para subpath (ej. /stvaldivia en cPanel)
+    @app.context_processor
+    def inject_app_root():
+        return {'app_root': app.config.get('APPLICATION_ROOT', '')}
+
+    # Registrar blueprint de Ecommerce (Venta de Entradas)
     try:
         from .blueprints.ecommerce import ecommerce_bp
         if url_prefix:

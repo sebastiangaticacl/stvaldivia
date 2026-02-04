@@ -3,39 +3,177 @@
 {% block meta_description %}Acceso protegido al menú principal{% endblock %}
 
 {% block content %}
-<div style="max-width: 520px; margin: 60px auto; padding: 28px; background: rgba(24,24,26,0.85); border: 2px solid rgba(102,126,234,0.35); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.35);">
+<style>
+  .menu-gate-card {
+    max-width: 520px;
+    margin: 60px auto;
+    padding: 28px;
+    background: rgba(24, 24, 26, 0.85);
+    border: 2px solid rgba(102, 126, 234, 0.35);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(10px);
+  }
+
+  .menu-gate-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  .menu-gate-subtitle {
+    margin: 10px 0 0 0;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.5;
+  }
+
+  .menu-gate-error {
+    margin: 14px 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(244, 67, 54, 0.12);
+    border: 1px solid rgba(244, 67, 54, 0.35);
+    color: #ff8a80;
+  }
+
+  .menu-gate-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: stretch;
+    margin-top: 8px;
+  }
+
+  .menu-gate-pin {
+    width: 100%;
+    padding: 14px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0.35em;
+  }
+
+  .menu-gate-pin::placeholder {
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    opacity: 0.6;
+  }
+
+  .menu-gate-pin:focus {
+    outline: none;
+    border-color: rgba(102, 126, 234, 0.75);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.18);
+  }
+
+  .menu-gate-btn {
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(102, 126, 234, 0.55);
+    background: rgba(102, 126, 234, 0.28);
+    color: #fff;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    cursor: pointer;
+    min-width: 110px;
+  }
+
+  .menu-gate-btn:hover {
+    background: rgba(102, 126, 234, 0.38);
+  }
+
+  .menu-gate-hint {
+    margin-top: 14px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    .menu-gate-card {
+      margin: 26px 14px;
+      padding: 20px;
+    }
+
+    .menu-gate-form {
+      grid-template-columns: 1fr;
+    }
+
+    .menu-gate-btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="menu-gate-card">
   <div style="text-align:center; margin-bottom: 18px;">
-    <h2 style="margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: .5px;">MENÚ PRINCIPAL PROTEGIDO</h2>
-    <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.75); line-height: 1.5;">
-      Ingresa el PIN para acceder al menú.
-    </p>
+    <h2 class="menu-gate-title">Menú principal protegido</h2>
+    <p class="menu-gate-subtitle">Ingresa el PIN para acceder al menú.</p>
   </div>
 
   {% if error %}
-  <div style="margin: 14px 0; padding: 12px 14px; border-radius: 10px; background: rgba(244,67,54,0.12); border: 1px solid rgba(244,67,54,0.35); color: #ff8a80;">
+  <div class="menu-gate-error" role="alert">
     {{ error }}
   </div>
   {% endif %}
 
-  <form method="POST" action="/" autocomplete="off" style="display:flex; gap: 10px; align-items: stretch;">
+  <form method="POST" action="{{ app_root or '' }}/" autocomplete="off" class="menu-gate-form" id="menu-gate-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input
       type="password"
       name="pin"
       inputmode="numeric"
       pattern="[0-9]*"
-      placeholder="PIN"
+      autocomplete="one-time-code"
+      placeholder="••••"
       required
-      style="flex:1; padding: 14px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35); color: #fff; font-size: 1rem;"
+      autofocus
+      maxlength="8"
+      class="menu-gate-pin"
+      id="menu-gate-pin"
     />
     <button type="submit"
-      style="padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(102,126,234,0.55); background: rgba(102,126,234,0.25); color: #fff; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; cursor:pointer;">
-      Entrar
+      class="menu-gate-btn">
+      Acceder
     </button>
   </form>
 
-  <div style="margin-top: 14px; color: rgba(255,255,255,0.55); font-size: 0.9rem;">
+  <div class="menu-gate-hint">
     Tip: define <code style="background: rgba(0,0,0,0.35); padding: 2px 6px; border-radius: 6px;">MENU_GATE_PIN</code> al arrancar el servidor.
   </div>
 </div>
+
+<script>
+  (function () {
+    const pin = document.getElementById('menu-gate-pin');
+    const form = document.getElementById('menu-gate-form');
+    if (!pin || !form) return;
+
+    const normalize = (v) => (v || '').replace(/\D/g, '');
+
+    // Limpiar caracteres no-numéricos y auto-submit cuando hay 4+ dígitos
+    pin.addEventListener('input', () => {
+      const v = normalize(pin.value);
+      if (pin.value !== v) pin.value = v;
+      if (v.length >= 4 && v.length === pin.maxLength) form.submit();
+    });
+
+    // Permitir pegar PIN
+    pin.addEventListener('paste', (e) => {
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const v = normalize(text);
+      if (v) {
+        e.preventDefault();
+        pin.value = v.slice(0, pin.maxLength);
+        if (pin.value.length >= 4) form.submit();
+      }
+    });
+  })();
+</script>
 {% endblock %}
 

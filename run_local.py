@@ -4,6 +4,7 @@ Script para ejecutar la aplicación Flask localmente
 """
 import os
 import sys
+import secrets
 
 # Agregar el directorio actual al path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -22,11 +23,78 @@ else:
     load_dotenv(override=True)
     print("⚠️  Archivo .env no encontrado en raíz, buscando en directorios padres...")
 
+def _env_flag(name: str, default: bool) -> bool:
+    v = os.environ.get(name)
+    if v is None:
+        return default
+    return str(v).strip().lower() in ("1", "true", "yes", "y", "on")
+
+def _reset_local_state_if_needed():
+    """
+    En local: limpiar persistencia para "olvidar todo" en cada arranque.
+    - Borra SQLite local (instance/bimba.db)
+    - Borra admin users cache (instance/.admin_users.json)
+    - Borra logs locales
+    - Rota FLASK_SECRET_KEY para invalidar sesiones/cookies
+    """
+    local_only = _env_flag("LOCAL_ONLY", True)
+    flask_env = (os.environ.get("FLASK_ENV") or "development").strip().lower()
+    reset_on_start = _env_flag("RESET_LOCAL_STATE_ON_START", True)
+
+    if not (local_only and reset_on_start and flask_env != "production"):
+        return
+
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    instance_dir = os.path.join(root_dir, "instance")
+    logs_dir = os.path.join(root_dir, "logs")
+
+    paths_to_remove = [
+        os.path.join(instance_dir, "bimba.db"),
+        os.path.join(instance_dir, ".admin_users.json"),
+        os.path.join(logs_dir, "app.log"),
+        os.path.join(logs_dir, "getnet.log"),
+    ]
+
+    removed_any = False
+    for p in paths_to_remove:
+        try:
+            if os.path.exists(p):
+                os.remove(p)
+                removed_any = True
+        except Exception as e:
+            print(f"⚠️  No se pudo borrar {p}: {e}")
+
+    # Rotar secret key para invalidar sesiones previas (menu gate, etc.)
+    os.environ["FLASK_SECRET_KEY"] = secrets.token_urlsafe(32)
+
+    if removed_any:
+        print("🧹 Reset local: BD/estado/logs limpiados para iniciar en limpio")
+    else:
+        print("🧹 Reset local: sin archivos que limpiar, iniciando en limpio")
+
+_reset_local_state_if_needed()
+
 from app import create_app, socketio
 
 if __name__ == '__main__':
     # Crear la aplicación (ya carga .env internamente, pero lo hacemos antes por seguridad)
     app = create_app()
+
+    # Seed opcional de datos demo en local (útil cuando también reseteamos estado al arrancar)
+    try:
+        def _should_run_seed() -> bool:
+            # En modo reloader, ejecutar solo en el proceso "main" de werkzeug
+            debug_enabled = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+            if debug_enabled and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+                return False
+            return _env_flag("SEED_LOCAL_DATA_ON_START", False)
+
+        if _should_run_seed():
+            from scripts.seed_local_demo_data import seed_local_demo_data
+            with app.app_context():
+                seed_local_demo_data()
+    except Exception as e:
+        print(f"⚠️  Seed local demo falló (continuando igual): {e}")
     
     # Configurar para desarrollo local (sobrescribir si es necesario)
     app.config['FLASK_ENV'] = os.environ.get('FLASK_ENV', 'development')

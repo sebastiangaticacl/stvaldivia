@@ -2,12 +2,14 @@
 set -euo pipefail
 
 VM="stvaldivia"
+ZONE="${ZONE:-southamerica-west1-a}"
+PROJECT_ID="${GCP_PROJECT:-stvaldivia}"
 
 echo "=== PUSH A GITHUB ==="
 git push
 
-echo "=== DEPLOY EN VM: $VM ==="
-gcloud compute ssh "$VM" --command '
+echo "=== DEPLOY EN VM: $VM (zone: $ZONE) ==="
+gcloud compute ssh "$VM" --zone="$ZONE" --project="$PROJECT_ID" --command '
 set -euo pipefail
 
 echo ">> Entrando a /var/www/stvaldivia"

@@ -142,8 +142,9 @@ def ficha_personal(employee_id):
     if require_admin():
         return require_admin()
     
+    review_log = None  # Por si falla el registro de revisión
     try:
-        # Registrar revisión de ficha
+        # Registrar revisión de ficha (opcional: si la BD es solo lectura, la ficha sigue cargando)
         try:
             reviewer_name = session.get('admin_username', 'Admin')
             # Obtener hora actual en Chile y convertir a UTC para almacenar
@@ -162,8 +163,10 @@ def ficha_personal(employee_id):
             db.session.add(review_log)
             db.session.commit()
         except Exception as e:
+            db.session.rollback()  # Dejar la sesión limpia para el resto de la petición
+            review_log = None
             current_app.logger.error(f"Error al registrar revisión de ficha: {e}", exc_info=True)
-            # No fallar si no se puede registrar el log
+            # No fallar si no se puede registrar el log (p. ej. BD de solo lectura)
         
         # Obtener empleado (solo locales)
         employee = Employee.query.filter(
@@ -174,12 +177,13 @@ def ficha_personal(employee_id):
             flash("Miembro del equipo no encontrado.", "error")
             return redirect(url_for('equipo.listar'))
         
-        # Actualizar nombre del empleado en el log si se creó antes de obtener el empleado
-        try:
-            review_log.employee_name = employee.name or 'Sin nombre'
-            db.session.commit()
-        except:
-            pass
+        # Actualizar nombre del empleado en el log si se creó correctamente
+        if review_log is not None:
+            try:
+                review_log.employee_name = employee.name or 'Sin nombre'
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
         
         # Obtener configuración de sueldo
         salary_config = EmployeeSalaryConfig.query.filter_by(employee_id=employee_id).first()

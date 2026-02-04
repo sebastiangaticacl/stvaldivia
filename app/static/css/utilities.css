@@ -618,11 +618,6 @@ select:focus-visible {
   animation: scaleIn 0.3s ease-out;
 }
 
-/* --- DARK MODE SUPPORT (Preparado para futuro) --- */
-@media (prefers-color-scheme: dark) {
-  /* Ya estamos en modo oscuro por defecto */
-}
-
 /* --- PRINT STYLES --- */
 @media print {
   .admin-top-nav,

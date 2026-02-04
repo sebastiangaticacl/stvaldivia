@@ -1,31 +1,43 @@
 /* 
    🎨 BIMBA DESIGN SYSTEM
    Sistema de diseño unificado para consistencia y UX
+   Light/Dark: use data-theme="light" | data-theme="dark" on <html> o <body>
+
+   LIGHT/DARK READINESS CHECKLIST:
+   [x] Base tokens in :root (default dark)
+   [x] [data-theme="dark"] overrides defined
+   [x] [data-theme="light"] overrides defined
+   [x] body uses --bg-body, --text-primary
+   [x] panels/cards use --bg-surface, --border-color
+   [x] buttons use --primary, --bg-surface, --text-inverse, --text-primary
+   [x] forms use --bg-input, --border-color, --text-primary, --primary
+   [x] Reserved tokens marked (unused, for future use)
+   [x] Spacing/layout unchanged
 */
 
+/* ========== BASE TOKENS (default: dark) ========== */
 :root {
-  /* --- COLORES ESTANDARIZADOS --- */
-  /* Marca Principal - Verde BIMBA */
-  --primary: #00ff00;
-  --primary-hover: #00cc00;
-  --primary-light: rgba(0, 255, 0, 0.1);
-  --primary-dark: #00aa00;
-
-  /* Fondos */
+  /* --- SEMANTIC: fondos --- */
   --bg-body: #0f0f1e;
   --bg-surface: #1a1a2e;
   --bg-surface-hover: #252540;
   --bg-input: #222222;
-  --bg-card: #1a1a2e;
 
-  /* Texto */
+  /* --- SEMANTIC: texto --- */
   --text-primary: #e8e8e8;
   --text-secondary: #aaaaaa;
   --text-muted: #666666;
   --text-inverse: #000000;
-  --text-accent: #00ff00;
 
-  /* Estados */
+  /* --- SEMANTIC: marca y acento --- */
+  --primary: #00ff00;
+  --primary-hover: #00cc00;
+  --primary-light: rgba(0, 255, 0, 0.1);
+
+  /* --- SEMANTIC: bordes --- */
+  --border-color: rgba(255, 255, 255, 0.1);
+
+  /* --- Estados (semantic) --- */
   --success: #4caf50;
   --success-light: rgba(76, 175, 80, 0.2);
   --warning: #ff9800;
@@ -35,79 +47,172 @@
   --info: #2196f3;
   --info-light: rgba(33, 150, 243, 0.2);
 
-  /* Bordes */
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-focus: #007bff;
-
-  /* --- TIPOGRAFÍA ESTANDARIZADA --- */
+  /* --- Tipografía (no theme-dependent) --- */
   --font-family: 'Segoe UI', 'Roboto', 'Inter', system-ui, -apple-system, -apple-system-blink-mac-system-font, sans-serif;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-
   --text-xs: 0.75rem;
-  /* 12px */
   --text-sm: 0.875rem;
-  /* 14px */
   --text-base: 1rem;
-  /* 16px */
   --text-lg: 1.125rem;
-  /* 18px */
   --text-xl: 1.25rem;
-  /* 20px */
   --text-2xl: 1.5rem;
-  /* 24px */
   --text-3xl: 2rem;
-  /* 32px */
 
-  /* --- ESPACIADO --- */
+  /* --- Espaciado (no theme-dependent) --- */
   --space-1: 0.25rem;
-  /* 4px */
   --space-2: 0.5rem;
-  /* 8px */
   --space-3: 0.75rem;
-  /* 12px */
   --space-4: 1rem;
-  /* 16px */
   --space-5: 1.5rem;
-  /* 24px */
   --space-6: 2rem;
-  /* 32px */
-  --space-8: 3rem;
-  /* 48px */
 
-  /* --- BORDES --- */
+  /* --- Bordes / radios --- */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* --- SOMBRAS --- */
+  /* --- Sombras --- */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 15px rgba(0, 255, 0, 0.3);
 
-  /* --- TRANSICIONES --- */
+  /* --- Transiciones --- */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* --- ELEVACIONES PROFESIONALES --- */
-  --elevation-0: none;
+
+  /* --- Elevaciones --- */
   --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
   --elevation-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
   --elevation-3: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
   --elevation-4: 0 15px 30px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
-  
-  /* --- GRADIENTES PROFESIONALES --- */
+
+  /* --- Gradientes (semantic) --- */
   --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-surface: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+
+  /* --- RESERVED TOKENS (unused; for future use) --- */
+  --primary-dark: #00aa00;
+  --bg-card: #1a1a2e;
+  --text-accent: #00ff00;
+  --border-focus: #007bff;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --space-8: 3rem;
+  --elevation-0: none;
   --gradient-success: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
   --gradient-danger: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-  --gradient-surface: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   --gradient-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.8) 100%);
+
+  /* --- ALIAS (CSS Unifier) --- */
+  --bg: var(--bg-body);
+  --bg-panel: var(--bg-surface);
+  --bg-panel2: var(--bg-surface-hover);
+  --text: var(--text-primary);
+  --border: var(--border-color);
+  --accent: #667eea;
+  --accent2: #764ba2;
+  --ok: var(--success);
+  --gap-1: var(--space-2);
+  --gap-2: var(--space-4);
+  --gap-3: var(--space-5);
+  --gap-4: var(--space-6);
+  --transition: var(--transition-fast);
+  --transition-slow: var(--transition-normal);
+  --spacing-sm: var(--space-3);
+  --spacing-md: var(--space-4);
+  --spacing-lg: var(--space-5);
+}
+
+/* ========== THEME: DARK (explicit) ========== */
+[data-theme="dark"] {
+  --bg-body: #0f0f1e;
+  --bg-surface: #1a1a2e;
+  --bg-surface-hover: #252540;
+  --bg-input: #222222;
+  --bg-card: #1a1a2e;
+  --text-primary: #e8e8e8;
+  --text-secondary: #aaaaaa;
+  --text-muted: #666666;
+  --text-inverse: #000000;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --gradient-surface: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ========== THEME: LIGHT ========== */
+[data-theme="light"] {
+  --bg-body: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #e2e8f0;
+  --bg-input: #ffffff;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --gradient-surface: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* --- THEME TOGGLE (solo variables del design system) --- */
+.theme-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 10001;
+  padding: var(--space-2);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.theme-toggle {
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.theme-toggle:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--text-secondary);
+}
+
+.theme-toggle:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.theme-toggle-label {
+  display: inline-block;
+}
+
+.theme-toggle-footer {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+}
+
+body.has-admin-nav .theme-header {
+  top: var(--admin-bar-height, 44px);
 }
 
 /* --- RESET BÁSICO MEJORADO --- */

@@ -1,7 +1,7 @@
 """
 Rutas de administración - Visor de Cajas en Tiempo Real (FASE 8)
 """
-from flask import render_template, session, redirect, url_for, jsonify, current_app
+from flask import render_template, session, redirect, url_for, jsonify, current_app, request
 from app.models.pos_models import PosRegister, RegisterSession, PosSale, PaymentAgent, PaymentIntent
 from app.models.jornada_models import Jornada
 from app.helpers.register_session_service import RegisterSessionService

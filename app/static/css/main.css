@@ -31,6 +31,42 @@ body {
   box-sizing: border-box;
 }
 
+/* Light theme: forzar fondo y texto usando tokens (data-theme está en html) */
+html[data-theme="light"] {
+  background-color: var(--bg-body) !important;
+  background-image: none !important;
+  color: var(--text-primary);
+}
+[data-theme="light"] body {
+  background-color: var(--bg-body) !important;
+  background-image: none !important;
+  color: var(--text-primary) !important;
+}
+
+/* Light: tarjeta PIN / menu gate (estilos en template) */
+[data-theme="light"] .menu-gate-card {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+[data-theme="light"] .menu-gate-title,
+[data-theme="light"] .menu-gate-subtitle {
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .menu-gate-subtitle {
+  color: var(--text-secondary) !important;
+}
+[data-theme="light"] .menu-gate-pin {
+  background: var(--bg-input) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .menu-gate-btn {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--text-inverse) !important;
+}
+
 .container {
   padding: var(--spacing-sm, 0.75rem);
   width: 100%;
@@ -350,7 +386,9 @@ body {
   background: rgba(102, 126, 234, 0.25);
   border-color: rgba(102, 126, 234, 0.6);
   color: #fff;
-  font-weight: 600;
+  font-size: inherit;
+  font-weight: 700;
+  min-height: 32px;
   box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
 }
 
@@ -574,15 +612,25 @@ body.has-admin-nav {
 }
 
 /* --- FOOTER ADMIN --- */
-/* Footer unificado: misma altura que la barra superior (nav) */
+/* Footer unificado: misma altura que la barra superior (nav); usa tokens para light/dark */
 .admin-footer-unified {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: var(--admin-bar-height) !important;
   min-height: var(--admin-bar-height) !important;
-  padding: 0 20px !important;
+  padding: 12px 20px !important;
   display: flex !important;
   align-items: center !important;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 15px;
+  background: var(--bg-surface);
+  border-top: 2px solid var(--border-color);
+  z-index: 999;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .admin-footer {
@@ -600,7 +648,7 @@ body.has-admin-nav {
   gap: var(--space-3);
 }
 
-/* --- MENSAJES FLASH MEJORADOS --- */
+/* --- MENSAJES FLASH MEJORADOS (sin duplicación) --- */
 .flash-container {
   list-style: none;
   padding: 0;
@@ -611,17 +659,20 @@ body.has-admin-nav {
 }
 
 .flash {
-  padding: var(--space-4) var(--space-5);
-  margin-bottom: var(--space-3);
-  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
   border-left: 4px solid;
   box-shadow: var(--elevation-2);
-  animation: slideInRight 0.3s ease-out;
+  animation: fadeIn var(--transition-normal);
   display: flex;
   align-items: center;
   gap: var(--space-3);
   position: relative;
   overflow: hidden;
+  font-weight: 600;
+  text-align: center;
+  font-size: var(--text-sm);
 }
 
 .flash::before {
@@ -647,61 +698,31 @@ body.has-admin-nav {
 }
 
 .flash-success {
-  background: var(--success-light);
+  background-color: var(--success-light);
+  border: 1px solid rgba(76, 175, 80, 0.3);
   border-left-color: var(--success);
   color: #81c784;
 }
 
 .flash-error {
-  background: var(--danger-light);
+  background-color: var(--danger-light);
+  border: 1px solid rgba(244, 67, 54, 0.3);
   border-left-color: var(--danger);
   color: #e57373;
 }
 
 .flash-warning {
-  background: var(--warning-light);
+  background-color: var(--warning-light);
+  border: 1px solid rgba(255, 152, 0, 0.3);
   border-left-color: var(--warning);
   color: #ffb74d;
 }
 
 .flash-info {
-  background: var(--info-light);
+  background-color: var(--info-light);
+  border: 1px solid rgba(33, 150, 243, 0.3);
   border-left-color: var(--info);
   color: #64b5f6;
-}
-
-.flash {
-  padding: var(--space-3);
-  margin-bottom: var(--space-2);
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  text-align: center;
-  font-size: var(--text-sm);
-  animation: fadeIn var(--transition-normal);
-}
-
-.flash-info {
-  background-color: rgba(33, 150, 243, 0.2);
-  color: #64b5f6;
-  border: 1px solid rgba(33, 150, 243, 0.3);
-}
-
-.flash-success {
-  background-color: rgba(76, 175, 80, 0.2);
-  color: #81c784;
-  border: 1px solid rgba(76, 175, 80, 0.3);
-}
-
-.flash-error {
-  background-color: rgba(244, 67, 54, 0.2);
-  color: #e57373;
-  border: 1px solid rgba(244, 67, 54, 0.3);
-}
-
-.flash-warning {
-  background-color: rgba(255, 152, 0, 0.2);
-  color: #ffb74d;
-  border: 1px solid rgba(255, 152, 0, 0.3);
 }
 
 /* --- FORMULARIOS --- */
@@ -1212,7 +1233,8 @@ form button[type="submit"]:hover {
 .nav-dropdown-item.active {
   background: rgba(102, 126, 234, 0.3);
   color: #fff;
-  font-weight: 600;
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 700;
   border-left: 3px solid rgba(102, 126, 234, 0.8);
 }
 

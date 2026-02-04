@@ -1,0 +1,25 @@
+/*
+   CSS Unifier - BIMBA
+   ===================
+   Unifica la carga de estilos en un solo archivo (mismo orden que base.html).
+   Reduce peticiones HTTP cuando no necesitas admin-standard ni notifications.
+
+   Uso (una sola petición):
+     <link rel="stylesheet" href="{{ url_for('static', filename='css/unified.css') }}?v={{ CSS_VERSION }}">
+
+   Fuente de verdad de variables: design-system.css
+   Alias para bimba_ui/otros: --bg, --accent, --gap-*, etc. definidos en design-system.css
+*/
+
+/* 1. Design System (variables y base) */
+@import url('design-system.css');
+/* 2. Utilidades */
+@import url('utilities.css');
+/* 3. Estilos principales */
+@import url('main.css');
+/* 4. Progress y Toast */
+@import url('progress-toast.css');
+/* 5. Responsive */
+@import url('responsive-base.css');
+@import url('tables-responsive.css');
+@import url('forms-enhanced.css');
