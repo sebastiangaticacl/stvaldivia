@@ -262,7 +262,7 @@
                 Crea, edita y gestiona los puntos de venta (TPV) del sistema
             </p>
             <div style="margin-top: 15px;">
-                <a href="/admin/cajas/" class="btn-config"
+                <a href="{{ url_for('register_admin.list_registers') }}" class="btn-config"
                     style="text-decoration: none; display: block; text-align: center; background: rgba(255, 193, 7, 0.3); border-color: rgba(255, 193, 7, 0.5); color: #ffc107;">
                     💰 Gestionar TPV
                 </a>
@@ -657,7 +657,7 @@
                                 modal.style.cssText = 'display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: rgba(0, 0, 0, 0.8) !important; z-index: 10002 !important; align-items: center !important; justify-content: center !important;';
                                 
                                 // Cargar configuración actual
-                                fetch('/admin/api/n8n/config')
+                                fetch((window.APP_ROOT || '').replace(/\/$/, '') + '/admin/api/n8n/config')
                                     .then(response => response.json())
                                     .then(data => {
                                         if (data.success && data.config) {

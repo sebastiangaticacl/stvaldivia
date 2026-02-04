@@ -121,7 +121,7 @@ async function pagarConSumUp() {
     if (loadingDiv) loadingDiv.style.display = 'block';
     
     try {
-        const response = await fetch('/kiosk/api/pagos/sumup/create', {
+        const response = await fetch((window.APP_ROOT || '') + '/kiosk/api/pagos/sumup/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -135,7 +135,7 @@ async function pagarConSumUp() {
         
         if (data.ok && data.pago_id) {
             // Redirigir a pantalla de pago SumUp
-            window.location.href = `/kiosk/sumup/payment/${data.pago_id}`;
+            window.location.href = (window.APP_ROOT || '') + `/kiosk/sumup/payment/${data.pago_id}`;
         } else {
             alert('Error al crear el pago: ' + (data.error || 'Error desconocido'));
             if (btnSumUp) btnSumUp.style.display = 'block';

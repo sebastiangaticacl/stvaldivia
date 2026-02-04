@@ -13,6 +13,18 @@
 import Getnet from "../getnet/getnet.min.js";
 
 /**
+ * Construye URL con subpath (APPLICATION_ROOT en producción)
+ * @param {string} path - Ruta absoluta, ej. '/api/caja/venta-ok'
+ * @returns {string} URL con base si existe
+ */
+function buildUrl(path) {
+    const base = (window.APP_ROOT || '').replace(/\/$/, '');
+    let p = (path || '');
+    if (p && p.charAt(0) !== '/') p = '/' + p;
+    return base ? base + p : p;
+}
+
+/**
  * Estado interno del módulo
  */
 const estado = {
@@ -256,7 +268,7 @@ async function handleGetnetOK(resp, datos) {
         console.log('[Getnet Linux] Enviando venta OK al backend...');
         
         // Llamar al backend
-        const response = await fetch('/api/caja/venta-ok', {
+        const response = await fetch(buildUrl('/api/caja/venta-ok'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -331,7 +343,7 @@ async function handleGetnetFail(resp, datos) {
         
         // Llamar al backend (no crítico si falla)
         try {
-            const response = await fetch('/api/caja/venta-fallida-log', {
+            const response = await fetch(buildUrl('/api/caja/venta-fallida-log'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta
 import uuid
 from decimal import ROUND_HALF_UP
-from flask import render_template, request, jsonify, session, redirect, url_for, flash, current_app, send_file, send_from_directory
+from flask import render_template, request, jsonify, session, redirect, url_for, flash, current_app, send_file, send_from_directory, abort
 from app.utils.timezone import CHILE_TZ
 from app.blueprints.pos import caja_bp
 from app.blueprints.pos.services import pos_service
@@ -1729,62 +1729,113 @@ def api_venta_fallida_log():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
+def _fmt_cl_money(n):
+    """Formato moneda Chile: 5000 -> '5.000', soporta None y negativos"""
+    if n is None:
+        return "0"
+    try:
+        num = float(n)
+        # Manejar negativos: -5000 -> '-5.000'
+        sign = "-" if num < 0 else ""
+        abs_num = abs(num)
+        return sign + f"{abs_num:,.0f}".replace(",", ".")
+    except (ValueError, TypeError):
+        return "0"
+
+
+def _get_voucher_data(venta_id):
+    """
+    Obtiene los datos de una venta para el voucher (vista o API).
+    Retorna un diccionario con fecha, ticket_code, items, subtotal, total, medio_pago, getnet.
+    Retorna None si la venta no existe.
+    Siempre entrega defaults seguros para todos los campos.
+    """
+    venta = PosSale.query.get(venta_id)
+    if not venta:
+        return None
+    
+    # Items con manejo seguro de valores None
+    items = PosSaleItem.query.filter_by(sale_id=venta_id).all()
+    items_formateados = []
+    for item in items:
+        try:
+            precio = float(item.unit_price) if item.unit_price is not None else 0.0
+            cant = int(item.quantity) if item.quantity is not None else 0
+            subtotal_item = precio * cant
+            items_formateados.append({
+                'sku': item.product_id or '',
+                'nombre': item.product_name or str(item.product_id) if item.product_id else 'Producto sin nombre',
+                'cantidad': cant,
+                'precio_unitario': precio,
+                'subtotal_item': subtotal_item,
+                'precio_display': _fmt_cl_money(precio),
+                'subtotal_display': _fmt_cl_money(subtotal_item),
+            })
+        except (ValueError, TypeError, AttributeError) as e:
+            logger.warning(f"Error procesando item de venta {venta_id}: {e}")
+            continue
+    
+    # Ticket code con fallback seguro
+    ticket_code = venta.sale_id_phppos if venta.sale_id_phppos else f"TOTEM-{venta_id}"
+    
+    # Fecha con fallback seguro
+    try:
+        fecha = venta.created_at.strftime('%d/%m/%Y %H:%M:%S') if venta.created_at else datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    except (AttributeError, ValueError):
+        fecha = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    
+    # Medio de pago con defaults seguros
+    medio_pago = venta.payment_type if venta.payment_type else 'TARJETA_GETNET'
+    if getattr(venta, 'payment_provider', None) == 'GETNET':
+        medio_pago = 'TARJETA_GETNET'
+    
+    # Total con manejo seguro de None
+    try:
+        total = float(venta.total_amount) if venta.total_amount is not None else 0.0
+    except (ValueError, TypeError):
+        total = 0.0
+    
+    # Getnet con acceso seguro
+    getnet = None
+    auth_code = getattr(venta, 'getnet_authorization_code', None)
+    if auth_code:
+        getnet = {'authorizationCode': str(auth_code)}
+    
+    return {
+        'venta_id': venta_id,  # Para fallback en template
+        'fecha': fecha,
+        'ticket_code': ticket_code,
+        'items': items_formateados,  # Siempre lista (puede estar vacía)
+        'subtotal': total,
+        'total': total,
+        'subtotal_display': _fmt_cl_money(total),
+        'total_display': _fmt_cl_money(total),
+        'medio_pago': medio_pago,
+        'getnet': getnet,  # None o dict con authorizationCode
+    }
+
+
 @caja_bp.route('/api/caja/venta/<int:venta_id>/voucher', methods=['GET'])
 def api_venta_voucher(venta_id):
     """
-    Endpoint para obtener datos de una venta para mostrar en el voucher.
-    
-    Usado por voucher.html para renderizar el ticket térmico.
+    Endpoint para obtener datos de una venta para mostrar en el voucher (JSON).
+    Mantenido por compatibilidad; la página de voucher se renderiza 100% server-side.
     """
     try:
-        from app.models.pos_models import PosSale, PosSaleItem
-        from datetime import datetime
-        
-        # Obtener la venta
-        venta = PosSale.query.get(venta_id)
-        if not venta:
+        data = _get_voucher_data(venta_id)
+        if not data:
             return jsonify({'error': 'Venta no encontrada'}), 404
-        
-        # Obtener items de la venta
-        items = PosSaleItem.query.filter_by(sale_id=venta_id).all()
-        
-        # Formatear items para el voucher
-        items_formateados = []
-        for item in items:
-            items_formateados.append({
-                'sku': item.product_id,
-                'nombre': item.product_name,
-                'cantidad': item.quantity,
-                'precio_unitario': float(item.unit_price)
-            })
-        
-        # Obtener ticket_code
-        ticket_code = venta.sale_id_phppos or f"TOTEM-{venta_id}"
-        
-        # Formatear fecha (shift_date es String, usar created_at si está disponible)
-        fecha = venta.created_at.strftime('%d/%m/%Y %H:%M:%S') if venta.created_at else datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        
-        # Determinar medio de pago
-        medio_pago = venta.payment_type or 'TARJETA_GETNET'
-        if venta.payment_provider == 'GETNET':
-            medio_pago = 'TARJETA_GETNET'
-        
-        # Preparar respuesta
-        respuesta = {
-            'fecha': fecha,
-            'ticket_code': ticket_code,
-            'items': items_formateados,
-            'subtotal': float(venta.total_amount),
-            'total': float(venta.total_amount),
-            'medio_pago': medio_pago
-        }
-        
-        # Agregar datos de Getnet si están disponibles (desde PaymentIntent u otra fuente)
-        # TODO: Si guardas datos de Getnet en PaymentIntent, agregarlos aquí
-        # respuesta['getnet'] = { ... }
-        
-        return jsonify(respuesta), 200
-        
+        # Formato API: items con sku/precio_unitario (sin subtotal_item)
+        api_items = [{'sku': it.get('sku'), 'nombre': it['nombre'], 'cantidad': it['cantidad'], 'precio_unitario': it['precio_unitario']} for it in data['items']]
+        return jsonify({
+            'fecha': data['fecha'],
+            'ticket_code': data['ticket_code'],
+            'items': api_items,
+            'subtotal': data['subtotal'],
+            'total': data['total'],
+            'medio_pago': data['medio_pago'],
+            'getnet': data['getnet'],
+        }), 200
     except Exception as e:
         logger.error(f"Error en api_venta_voucher: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
@@ -1793,19 +1844,10 @@ def api_venta_voucher(venta_id):
 @caja_bp.route('/voucher/<int:venta_id>', methods=['GET'])
 def voucher_page(venta_id):
     """
-    Página HTML para mostrar e imprimir el voucher de una venta.
-    
-    Esta página se abre automáticamente después de una venta exitosa
-    y llama a window.print() para imprimir el ticket térmico.
+    Página HTML del voucher renderizada 100% en el servidor (sin fetch).
+    Imprime automáticamente con window.print(). Compatible con subpath (APPLICATION_ROOT).
     """
-    import os
-    voucher_path = os.path.join(current_app.static_folder, 'html', 'voucher.html')
-    
-    if os.path.exists(voucher_path):
-        return send_from_directory(
-            os.path.join(current_app.static_folder, 'html'),
-            'voucher.html'
-        )
-    else:
-        # Fallback: renderizar template si existe
-        return render_template('voucher.html', venta_id=venta_id), 404
+    data = _get_voucher_data(venta_id)
+    if not data:
+        abort(404)
+    return render_template('voucher.html', **data)

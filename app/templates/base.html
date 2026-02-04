@@ -15,7 +15,7 @@
     <script>
         (function () {
             // Definir raíz de la aplicación para JavaScript
-            window.APP_ROOT = '{{ app_root or "/stvaldivia" }}';
+            window.APP_ROOT = {{ (app_root or '')|tojson }};
 
             var t;
             try { t = localStorage.getItem('theme'); } catch (e) { t = null; }
@@ -84,19 +84,26 @@
 
     <!-- CSRF Token Meta Tag para JavaScript -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <!-- Prefijo de app para subpath (ej. /stvaldivia en cPanel) -->
+    <!-- Prefijo de app para subpath (ej. en cPanel) -->
     <script>
-        window.APP_ROOT = {{ (app_root or '')| tojson }};
+        window.APP_ROOT = {{ (app_root or '')|tojson }};
         (function () {
-            if (!window.APP_ROOT) return;
-            var root = window.APP_ROOT.replace(/\/+$/, '');
-            var _fetch = window.fetch;
-            window.fetch = function (url, opts) {
-                if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) url = root + url;
+          if (!window.APP_ROOT) return;
+          var root = window.APP_ROOT.replace(/\/+$/, '');
+          var _fetch = window.fetch;
+      
+          window.fetch = function (url, opts) {
+            if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) {
+              // Si ya está prefijado con APP_ROOT, no duplicar
+              if (root && url.startsWith(root + '/')) {
                 return _fetch.apply(this, arguments);
-            };
+              }
+              url = root + url;
+            }
+            return _fetch.apply(this, [url, opts]);
+          };
         })();
-    </script>
+      </script>
 
     {% block head_extra %}{% endblock %}
 
@@ -591,7 +598,7 @@
 
         async function updateFooterTimeFromAPI() {
             try {
-                const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/dashboard/metrics`);
+                const response = await fetch((window.APP_ROOT || '') + '/admin/api/dashboard/metrics');
                 const data = await response.json();
 
                 if (data.success && data.metrics && data.metrics.turno_actual && data.metrics.turno_actual.abierto_en) {
@@ -605,7 +612,7 @@
 
         async function updateFooterMetricsFromAPI() {
             try {
-                const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/dashboard/metrics`);
+                const response = await fetch((window.APP_ROOT || '') + '/admin/api/dashboard/metrics');
                 const data = await response.json();
 
                 if (data.success && data.metrics) {

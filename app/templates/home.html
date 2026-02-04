@@ -574,13 +574,13 @@
     
     <div class="menu-options">
         {% if jornada_abierta %}
-        <a href="/caja/login" class="menu-option caja" aria-label="Abrir sistema de caja">
+        <a href="{{ url_for('caja.login') }}" class="menu-option caja" aria-label="Abrir sistema de caja">
             <span class="icon" aria-hidden="true">💳</span>
             <h2>Abrir Caja</h2>
             <p>Gestión completa de cajas registradoras y operaciones de venta</p>
         </a>
         
-        <a href="/bartender" class="menu-option barra" aria-label="Abrir sistema de barra">
+        <a href="{{ url_for('scanner.seleccionar_bartender') }}" class="menu-option barra" aria-label="Abrir sistema de barra">
             <span class="icon" aria-hidden="true">🍺</span>
             <h2>Abrir Barra</h2>
             <p>Control de entregas y registro de tickets escaneados en tiempo real</p>
@@ -599,13 +599,13 @@
         </div>
         {% endif %}
         
-        <a href="/login_admin" class="menu-option admin" aria-label="Acceder al panel de administración">
+        <a href="{{ url_for('auth.login_admin') }}" class="menu-option admin" aria-label="Acceder al panel de administración">
             <span class="icon" aria-hidden="true">⚙️</span>
             <h2>Panel Administrativo</h2>
             <p>Gestión completa del sistema, reportes y configuración avanzada</p>
         </a>
         
-        <a href="/bimba" class="menu-option bimba" aria-label="Hablar con BIMBA, el agente de IA">
+        <a href="{{ url_for('home.chat_bimba') }}" class="menu-option bimba" aria-label="Hablar con BIMBA, el agente de IA">
             <span class="icon" aria-hidden="true">🤖</span>
             <h2>¡Habla con BIMBA!</h2>
             <p>Conoce más sobre eventos, precios y el local con nuestra agente de IA</p>

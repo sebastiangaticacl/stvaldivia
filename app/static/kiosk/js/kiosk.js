@@ -3,6 +3,17 @@
  * Funciones comunes y utilidades
  */
 
+// Base path para subpath (APPLICATION_ROOT en producción)
+function getAppRoot() {
+    return (window.APP_ROOT || '').replace(/\/$/, '');
+}
+function joinPath(base, path) {
+    const b = (base || '').replace(/\/$/, '');
+    const p = (path || '').replace(/^\//, '');
+    if (!b) return '/' + p;
+    return b + '/' + p;
+}
+
 // Prevenir zoom accidental en dispositivos táctiles
 document.addEventListener('touchstart', function(event) {
     if (event.touches.length > 1) {
@@ -63,9 +74,11 @@ function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
         // Solo redirigir si estamos en la pantalla de inicio o productos
-        const currentPath = window.location.pathname;
-        if (currentPath === '/kiosk' || currentPath === '/kiosk/products') {
-            window.location.href = '/kiosk';
+        const currentPath = window.location.pathname.replace(/\/$/, '');
+        const kioskRoot = joinPath(getAppRoot(), '/kiosk').replace(/\/$/, '');
+        const kioskProducts = joinPath(getAppRoot(), '/kiosk/products').replace(/\/$/, '');
+        if (currentPath === kioskRoot || currentPath === kioskProducts) {
+            window.location.href = joinPath(getAppRoot(), '/kiosk');
         }
     }, INACTIVITY_TIMEOUT);
 }

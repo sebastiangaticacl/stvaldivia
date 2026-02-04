@@ -302,6 +302,9 @@
     </style>
 </head>
 <body>
+    <script>
+        window.APP_ROOT = {{ (app_root or '')|tojson }};
+    </script>
     <div class="container">
         <h1>¿CÓMO CALIFICARÍAS TU EXPERIENCIA DE ATENCIÓN?</h1>
         
@@ -1070,7 +1073,7 @@
             if (!selectedRating) return;
 
             try {
-                const response = await fetch('/encuesta/submit', {
+                const response = await fetch((window.APP_ROOT || '') + '/encuesta/submit', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

@@ -855,7 +855,7 @@ async function verifyPinForClose() {
     }
     
     try {
-        const response = await fetch('/caja/api/verify-pin', {
+        const response = await fetch((window.APP_ROOT || '').replace(/\/$/, '') + '/caja/api/verify-pin', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

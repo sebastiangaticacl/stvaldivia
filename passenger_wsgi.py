@@ -21,14 +21,18 @@ from app import create_app
 application = create_app()
 
 # WSGI Middleware to fix SCRIPT_NAME (cPanel/Passenger fix)
+# Usa APPLICATION_ROOT de entorno; nunca hardcodear subpath.
 class PassengerPathInfoFix(object):
     def __init__(self, app):
         self.app = app
     def __call__(self, environ, start_response):
-        # Force SCRIPT_NAME to /stvaldivia if it's missing or root
         script_name = environ.get('SCRIPT_NAME', '')
         if not script_name or script_name == '/':
-            environ['SCRIPT_NAME'] = '/stvaldivia'
+            root = (os.environ.get('APPLICATION_ROOT') or '').strip()
+            if root and not root.startswith('/'):
+                root = '/' + root
+            if root:
+                environ['SCRIPT_NAME'] = root
         return self.app(environ, start_response)
 
 application.wsgi_app = PassengerPathInfoFix(application.wsgi_app)

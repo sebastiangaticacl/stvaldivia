@@ -16,8 +16,10 @@
     <div class="kiosk-container">
         {% block content %}{% endblock %}
     </div>
-    
-    <script src="{{ url_for('static', filename='js/kiosk.js') }}"></script>
+    <script>
+        window.APP_ROOT = {{ (app_root or '')|tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='kiosk/js/kiosk.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

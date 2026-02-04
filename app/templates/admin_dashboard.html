@@ -1045,8 +1045,8 @@ turnos y estadísticas del negocio.{% endblock %}
     // Conectar a Socket.IO para actualizaciones en tiempo real
     function connectSocketIO() {
         try {
-            socket = io(`${window.APP_ROOT || '/stvaldivia'}/admin_stats`, {
-                path: `${window.APP_ROOT || '/stvaldivia'}/socket.io`,
+            socket = io(`${window.APP_ROOT || ''}/admin_stats`, {
+                path: `${window.APP_ROOT || ''}/socket.io`,
                 transports: ['websocket', 'polling']
             });
 
@@ -1072,7 +1072,7 @@ turnos y estadísticas del negocio.{% endblock %}
     // Cargar métricas iniciales
     async function loadMetrics() {
         try {
-            const response = await fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/dashboard/metrics`);
+            const response = await fetch(`${window.APP_ROOT || ''}/admin/api/dashboard/metrics`);
             const data = await response.json();
 
             if (data.success && data.metrics) {
@@ -1335,7 +1335,7 @@ turnos y estadísticas del negocio.{% endblock %}
             return;
         }
 
-        fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/register/clear-all`, {
+        fetch(`${window.APP_ROOT || ''}/admin/api/register/clear-all`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1719,7 +1719,7 @@ turnos y estadísticas del negocio.{% endblock %}
             refreshBtn.disabled = true;
         }
 
-        fetch(`${window.APP_ROOT || '/stvaldivia'}/admin/api/getnet/status?register_id=1`)
+        fetch(`${window.APP_ROOT || ''}/admin/api/getnet/status?register_id=1`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);

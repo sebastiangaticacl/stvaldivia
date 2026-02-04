@@ -527,7 +527,7 @@ def create_app():
         engineio_logger=False
     )
 
-    # Obtener prefijo de URL de variables de entorno (ej. /stvaldivia para https://stvaldivia.cl/stvaldivia/)
+    # Obtener prefijo de URL de variables de entorno (APPLICATION_ROOT)
     url_prefix = (os.environ.get('APPLICATION_ROOT') or '').strip()
     if url_prefix and not url_prefix.startswith('/'):
         url_prefix = '/' + url_prefix
@@ -895,9 +895,13 @@ def create_app():
                 pass
             return {'is_production': False}
 
-    # Context processor: prefijo para subpath (ej. /stvaldivia en cPanel)
+    # Context processor: prefijo para subpath (APPLICATION_ROOT)
+    # En producción con Passenger, SCRIPT_NAME es la fuente de verdad; app_root se deriva de ahí.
     @app.context_processor
     def inject_app_root():
+        from flask import request
+        if hasattr(request, 'script_root') and request.script_root:
+            return {'app_root': request.script_root.rstrip('/') or request.script_root}
         return {'app_root': app.config.get('APPLICATION_ROOT', '')}
 
     # Registrar blueprint de Ecommerce (Venta de Entradas)
@@ -1671,5 +1675,12 @@ def create_app():
             'TWILIO_ACCOUNT_SID': None,
             'TWILIO_AUTH_TOKEN': None,
         })
+
+    # ProxyFix: detrás de proxy/Passenger, usar X-Forwarded-Proto y X-Forwarded-Host
+    try:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+    except ImportError:
+        pass
 
     return app# Version bump Sun Dec  7 02:37:54 -03 2025
