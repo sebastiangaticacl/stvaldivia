@@ -336,7 +336,7 @@ object {
    CARDS RESPONSIVE
    ============================================ */
 .card-responsive {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #0a0a0a 0%, #000000 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: var(--spacing-md);
@@ -379,7 +379,7 @@ object {
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  background: #1a1a2e;
+  background: #0a0a0a;
   border-radius: 12px;
   padding: var(--spacing-md);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);

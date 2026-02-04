@@ -6,7 +6,7 @@ echo "=========================================="
 
 VM_USER="stvaldiviazal"
 VM_IP="34.176.144.166"
-SSH_KEY="$HOME/.ssh/id_ed25519_gcp"
+SSH_KEY="$HOME/.ssh/id_ed25519"
 
 ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$VM_USER@$VM_IP" "sudo bash << 'SYSTEMD'
 cat > /etc/systemd/system/stvaldivia.service << 'SERVICE'

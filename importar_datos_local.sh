@@ -9,7 +9,7 @@ echo "=========================================="
 LOCAL_DB="instance/bimba.db"
 VM_USER="stvaldiviazal"
 VM_IP="34.176.144.166"
-SSH_KEY="$HOME/.ssh/id_ed25519_gcp"
+SSH_KEY="$HOME/.ssh/id_ed25519"
 
 if [ ! -f "$LOCAL_DB" ]; then
     echo "❌ Base de datos local no encontrada: $LOCAL_DB"

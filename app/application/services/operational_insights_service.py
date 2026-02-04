@@ -18,14 +18,7 @@ class OperationalInsightsService:
             from app.helpers.production_check import is_production
             return is_production()
         except ImportError:
-            # Fallback si no existe production_check
-            is_cloud_run = bool(
-                os.environ.get('K_SERVICE') or 
-                os.environ.get('GAE_ENV') or 
-                os.environ.get('CLOUD_RUN_SERVICE')
-            )
-            flask_env = os.environ.get('FLASK_ENV', '').lower()
-            return is_cloud_run or (flask_env == 'production')
+            return os.environ.get('FLASK_ENV', '').lower() == 'production'
     
     @staticmethod
     def get_daily_summary() -> Optional[Dict[str, Any]]:

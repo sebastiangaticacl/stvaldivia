@@ -280,7 +280,7 @@ html[data-theme="light"] {
   max-width: 100%;
   height: calc(100vh - 72px);
   flex-direction: column;
-  background: var(--bg-surface, #1a1a2e);
+  background: var(--bg-surface, #0a0a0a);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
@@ -1199,7 +1199,7 @@ form button[type="submit"]:hover {
   top: calc(100% + 8px);
   left: 0;
   min-width: 220px;
-  background: var(--bg-surface, #1a1a2e);
+  background: var(--bg-surface, #0a0a0a);
   border: 1px solid rgba(102, 126, 234, 0.3);
   border-radius: var(--radius-md, 8px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);

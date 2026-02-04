@@ -12,8 +12,7 @@ if [ -z "$VM_IP" ]; then
     echo "❌ ERROR: Necesitas proporcionar la IP de la VM"
     echo "Uso: ./deploy_directo.sh [IP_VM] [USUARIO]"
     echo ""
-    echo "O ejecuta primero: gcloud auth login"
-    echo "Luego: ./ejecutar_todo.sh"
+    echo "Ejemplo: ./deploy_completo.sh  (deploy completo por SSH)"
     exit 1
 fi
 

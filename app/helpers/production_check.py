@@ -6,20 +6,13 @@ import os
 
 def is_production():
     """
-    Verifica si la aplicación está corriendo en producción (Cloud Run)
+    Verifica si la aplicación está corriendo en producción.
     
     Returns:
-        bool: True si está en producción, False si está en desarrollo local
+        bool: True si FLASK_ENV=production, False en desarrollo local
     """
     try:
-        is_cloud_run = bool(
-            os.environ.get('K_SERVICE') or 
-            os.environ.get('GAE_ENV') or 
-            os.environ.get('CLOUD_RUN_SERVICE')
-        )
-        flask_env = os.environ.get('FLASK_ENV', '').lower()
-        is_prod_env = flask_env == 'production'
-        return is_cloud_run or is_prod_env
+        return os.environ.get('FLASK_ENV', '').lower() == 'production'
     except Exception:
         return False
 

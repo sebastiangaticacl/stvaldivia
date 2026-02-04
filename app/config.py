@@ -96,8 +96,7 @@ def init_app_config(app: Flask):
     """
     # Verificar si estamos en producción
     import os
-    is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
-    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
     
     if is_production:
         # En producción, no usar archivos locales

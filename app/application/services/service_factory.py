@@ -406,26 +406,18 @@ def create_inventory_service(
         import os
         from flask import current_app
         
-        # Detectar si estamos en Cloud Run
-        is_cloud_run = bool(
-            os.environ.get('K_SERVICE') or 
-            os.environ.get('GAE_ENV') or 
-            os.environ.get('CLOUD_RUN_SERVICE')
-        )
-        
-        # En Cloud Run, SIEMPRE usar SQL (JSON no funciona con sistema de archivos efímero)
-        if is_cloud_run:
+        # En producción usar SQL (JSON no en sistema de archivos de servidor)
+        is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
+        if is_production:
             try:
                 inventory_repository = SqlInventoryRepository()
                 try:
-                    current_app.logger.info("✅ SqlInventoryRepository inicializado correctamente en Cloud Run")
+                    current_app.logger.info("✅ SqlInventoryRepository inicializado correctamente")
                 except RuntimeError:
-                    # Si no hay contexto de Flask, usar logging estándar
                     import logging
-                    logging.getLogger(__name__).info("✅ SqlInventoryRepository inicializado correctamente en Cloud Run")
+                    logging.getLogger(__name__).info("✅ SqlInventoryRepository inicializado correctamente")
             except Exception as e:
-                # En Cloud Run, NO hacer fallback a JSON - fallar explícitamente
-                error_msg = f"❌ Error crítico: No se pudo inicializar SqlInventoryRepository en Cloud Run: {e}"
+                error_msg = f"❌ Error crítico: No se pudo inicializar SqlInventoryRepository: {e}"
                 try:
                     current_app.logger.error(error_msg, exc_info=True)
                 except RuntimeError:

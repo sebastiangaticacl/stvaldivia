@@ -2924,8 +2924,7 @@ def admin_api_sync_start():
         return jsonify({'success': False, 'error': 'No autenticado'}), 401
     
     # Verificar que NO estamos en producción
-    is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
-    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
     
     if is_production:
         return jsonify({
@@ -3019,33 +3018,14 @@ def admin_api_deploy():
         from threading import Thread
         from flask import copy_current_request_context
         
-        # Verificar que gcloud esté disponible antes de iniciar el thread
-        try:
-            subprocess.run(
-                ['gcloud', '--version'],
-                check=True,
-                timeout=5,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-            return jsonify({
-                'success': False,
-                'error': 'gcloud CLI no está instalado o no está disponible. El deployment solo funciona en servidores con gcloud configurado.'
-            }), 400
-        
-        # Configuración de deployment para VM
-        INSTANCE_NAME = "stvaldivia"
-        ZONE = "southamerica-west1-a"
-        PROJECT_ID = "stvaldivia"
+        # Configuración de deployment para VM (acceso por SSH)
         VM_IP = "34.176.144.166"
         
         # Función para ejecutar deployment en background
         @copy_current_request_context
         def run_deployment():
             try:
-                # Script de deployment
+                # Script de deployment (ejecutado en la VM vía SSH)
                 deploy_script = """
 set -e
 echo '🔄 Actualizando código...'
@@ -3115,76 +3095,17 @@ fi
 echo '✅ Deploy completado'
 """
                 
-                # Intentar primero con gcloud compute ssh
-                use_gcloud = False
-                try:
-                    auth_check = subprocess.run(
-                        ['gcloud', 'auth', 'list', '--filter=status:ACTIVE', '--format=value(account)'],
-                        check=True,
-                        timeout=10,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        text=True
-                    )
-                    if auth_check.stdout.strip():
-                        use_gcloud = True
-                        # Configurar proyecto
-                        subprocess.run(
-                            ['gcloud', 'config', 'set', 'project', PROJECT_ID, '--quiet'],
-                            check=True,
-                            timeout=30,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            text=True
-                        )
-                except:
-                    use_gcloud = False
-                
-                current_app.logger.info(f"🚀 Iniciando deployment a VM: {INSTANCE_NAME} ({VM_IP})...")
-                
-                if use_gcloud:
-                    # Método 1: Usar gcloud compute ssh (requiere autenticación)
-                    current_app.logger.info("🔐 Usando gcloud compute ssh...")
-                    try:
-                        process = subprocess.Popen(
-                            ['gcloud', 'compute', 'ssh', INSTANCE_NAME,
-                             '--zone', ZONE,
-                             '--project', PROJECT_ID,
-                             '--command', deploy_script],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            text=True,
-                            env=os.environ.copy()
-                        )
-                        stdout, stderr = process.communicate(timeout=300)
-                        
-                        if process.returncode == 0:
-                            current_app.logger.info(f"✅ Deployment exitoso a VM")
-                            if stdout:
-                                current_app.logger.info(f"Output: {stdout[:500]}")
-                            return
-                        else:
-                            error_msg = stderr[:1000] if stderr else "Error desconocido"
-                            current_app.logger.warning(f"⚠️  gcloud falló: {error_msg[:200]}")
-                            current_app.logger.info("🔄 Intentando con SSH directo...")
-                    except Exception as e:
-                        current_app.logger.warning(f"⚠️  Error con gcloud: {str(e)[:200]}")
-                        current_app.logger.info("🔄 Intentando con SSH directo...")
-                
-                # Método 2: SSH directo (fallback, requiere SSH configurado)
-                current_app.logger.info("🔐 Usando SSH directo...")
+                current_app.logger.info(f"🚀 Iniciando deployment a VM ({VM_IP}) vía SSH...")
                 import getpass
                 import os.path
                 ssh_user = getpass.getuser()
                 
-                # Buscar clave SSH (preferir la que generamos para GCP)
+                # Buscar clave SSH
                 ssh_key_paths = [
-                    os.path.expanduser('~/.ssh/id_ed25519_gcp'),
-                    os.path.expanduser('~/.ssh/id_rsa'),
                     os.path.expanduser('~/.ssh/id_ed25519'),
+                    os.path.expanduser('~/.ssh/id_rsa'),
                     os.path.expanduser('~/.ssh/id_ecdsa'),
                 ]
-                
                 ssh_key = None
                 for key_path in ssh_key_paths:
                     if os.path.exists(key_path):
@@ -3192,9 +3113,7 @@ echo '✅ Deploy completado'
                         current_app.logger.info(f"🔑 Usando clave SSH: {ssh_key}")
                         break
                 
-                # Intentar con diferentes usuarios comunes en GCP
-                # El usuario en la VM es stvaldiviazal según el prompt
-                ssh_users = ['stvaldiviazal', ssh_user, 'gcp-user', 'ubuntu', 'debian']
+                ssh_users = ['stvaldiviazal', ssh_user, 'ubuntu', 'debian']
                 
                 for user in ssh_users:
                     try:
@@ -3233,20 +3152,15 @@ echo '✅ Deploy completado'
                         current_app.logger.debug(f"Error intentando SSH con {user}: {str(e)[:100]}")
                         continue
                 
-                # Si llegamos aquí, ambos métodos fallaron
-                current_app.logger.error("❌ No se pudo conectar a la VM ni con gcloud ni con SSH directo")
-                current_app.logger.error("💡 Soluciones:")
-                current_app.logger.error("   1. Ejecuta: gcloud auth login")
-                current_app.logger.error("   2. O configura SSH keys para acceso directo")
-                current_app.logger.error(f"   3. O verifica que puedes conectarte manualmente: ssh {ssh_user}@{VM_IP}")
+                current_app.logger.error("❌ No se pudo conectar a la VM por SSH")
+                current_app.logger.error("💡 Verifica: clave SSH en ~/.ssh y acceso a la VM")
+                current_app.logger.error(f"   Ejemplo: ssh {ssh_user}@{VM_IP}")
                     
-            except FileNotFoundError:
-                current_app.logger.error("❌ gcloud CLI no está instalado o no está en el PATH")
             except subprocess.TimeoutExpired:
                 current_app.logger.error("❌ Deployment timeout después de 10 minutos")
             except subprocess.CalledProcessError as e:
                 error_msg = e.stderr[:500] if e.stderr else str(e)
-                current_app.logger.error(f"❌ Error en comando gcloud: {error_msg}")
+                current_app.logger.error(f"❌ Error en deployment: {error_msg}")
             except Exception as e:
                 current_app.logger.error(f"❌ Error al ejecutar deployment: {e}", exc_info=True)
         

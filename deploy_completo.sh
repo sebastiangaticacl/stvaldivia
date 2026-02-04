@@ -7,13 +7,16 @@ echo "============================================================"
 VM_USER="stvaldiviazal"
 VM_IP="34.176.144.166"
 VM_DIR="/var/www/stvaldivia"
-SSH_KEY="$HOME/.ssh/id_ed25519_gcp"
-
-# Verificar que existe la clave SSH
-if [ ! -f "$SSH_KEY" ]; then
-    echo "❌ Error: No se encuentra la clave SSH: $SSH_KEY"
+# Clave SSH para conectar a la VM de producción
+if [ -f "$HOME/.ssh/id_ed25519" ]; then
+    SSH_KEY="$HOME/.ssh/id_ed25519"
+elif [ -f "$HOME/.ssh/id_rsa" ]; then
+    SSH_KEY="$HOME/.ssh/id_rsa"
+else
+    echo "❌ Error: No se encuentra clave SSH en ~/.ssh/id_ed25519 ni ~/.ssh/id_rsa"
     exit 1
 fi
+echo "🔑 Usando clave: $SSH_KEY"
 
 echo ""
 echo "📦 Paso 1: Haciendo backup de la VM actual..."

@@ -28,8 +28,7 @@ def setup_security_headers(app: Flask):
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         
         # Detectar entorno (DEV vs PROD)
-        is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
-        is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+        is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
         
         # Content Security Policy (ajustar según necesidades)
         # Self-hosted: todas las librerías están en /static/vendor/

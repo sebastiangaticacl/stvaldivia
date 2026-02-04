@@ -17,11 +17,11 @@
 
 /* ========== BASE TOKENS (default: dark) ========== */
 :root {
-  /* --- SEMANTIC: fondos --- */
-  --bg-body: #0f0f1e;
-  --bg-surface: #1a1a2e;
-  --bg-surface-hover: #252540;
-  --bg-input: #222222;
+  /* --- SEMANTIC: fondos (negro) --- */
+  --bg-body: #000000;
+  --bg-surface: #0a0a0a;
+  --bg-surface-hover: #141414;
+  --bg-input: #111111;
 
   /* --- SEMANTIC: texto --- */
   --text-primary: #e8e8e8;
@@ -91,11 +91,11 @@
 
   /* --- Gradientes (semantic) --- */
   --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-surface: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --gradient-surface: linear-gradient(135deg, #0a0a0a 0%, #000000 100%);
 
   /* --- RESERVED TOKENS (unused; for future use) --- */
   --primary-dark: #00aa00;
-  --bg-card: #1a1a2e;
+  --bg-card: #0a0a0a;
   --text-accent: #00ff00;
   --border-focus: #007bff;
   --font-weight-normal: 400;
@@ -130,11 +130,11 @@
 
 /* ========== THEME: DARK (explicit) ========== */
 [data-theme="dark"] {
-  --bg-body: #0f0f1e;
-  --bg-surface: #1a1a2e;
-  --bg-surface-hover: #252540;
-  --bg-input: #222222;
-  --bg-card: #1a1a2e;
+  --bg-body: #000000;
+  --bg-surface: #0a0a0a;
+  --bg-surface-hover: #141414;
+  --bg-input: #111111;
+  --bg-card: #0a0a0a;
   --text-primary: #e8e8e8;
   --text-secondary: #aaaaaa;
   --text-muted: #666666;
@@ -143,7 +143,7 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
-  --gradient-surface: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --gradient-surface: linear-gradient(135deg, #0a0a0a 0%, #000000 100%);
   --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 

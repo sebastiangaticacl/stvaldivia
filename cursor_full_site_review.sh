@@ -2,30 +2,25 @@
 set -euo pipefail
 
 # === Ajusta si cambia ===
-PROJECT_ID="stvaldivia"
-ZONE="southamerica-west1-a"
+VM_IP="${VM_IP:-34.176.144.166}"
 VM="stvaldivia"
 USER="stvaldiviazal"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+[ ! -f "$SSH_KEY" ] && SSH_KEY="$HOME/.ssh/id_rsa"
 
-# Carpeta app en la VM
 APP_DIR="/var/www/stvaldivia"
 SERVICE_APP="stvaldivia"
-SERVICE_PROXY="cloud-sql-proxy"
 
-# Reporte local
 OUT_DIR="./site_review_reports"
 TS="$(date +%Y%m%d-%H%M%S)"
 OUT_FILE="${OUT_DIR}/site_review_${VM}_${TS}.txt"
 
 mkdir -p "$OUT_DIR"
 
-gcloud config set project "$PROJECT_ID" >/dev/null
-gcloud config set compute/zone "$ZONE" >/dev/null
-
-echo "== Ejecutando revisión completa contra VM ${VM} (${ZONE}) =="
+echo "== Ejecutando revisión contra VM ${USER}@${VM_IP} =="
 echo "== Reporte: ${OUT_FILE} =="
 
-gcloud compute ssh "${USER}@${VM}" --command "sudo bash -lc '
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${USER}@${VM_IP}" "sudo bash -lc '
 set -eo pipefail
 
 redact() {

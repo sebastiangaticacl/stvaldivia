@@ -1,5 +1,7 @@
 # 🚀 INSTRUCCIONES PARA DEPLOY EN CLOUD RUN
 
+> **Deprecado:** Ya no usamos Google Cloud. Ver `docs/DEPLOY_PRODUCCION.md`.
+
 **Proyecto:** `stvaldiviacl`  
 **Estado:** Listo para deploy manual desde Console
 

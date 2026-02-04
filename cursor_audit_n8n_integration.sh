@@ -2,10 +2,11 @@
 set -euo pipefail
 
 # === Ajusta si cambia ===
-PROJECT_ID="stvaldivia"
-ZONE="southamerica-west1-a"
+VM_IP="${VM_IP:-34.176.144.166}"
 VM="stvaldivia"
 USER="stvaldiviazal"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+[ ! -f "$SSH_KEY" ] && SSH_KEY="$HOME/.ssh/id_rsa"
 APP_DIR="/var/www/stvaldivia"
 SERVICE="stvaldivia"
 
@@ -15,13 +16,10 @@ OUT_FILE="${OUT_DIR}/n8n_audit_${VM}_${TS}.txt"
 
 mkdir -p "$OUT_DIR"
 
-gcloud config set project "$PROJECT_ID" >/dev/null
-gcloud config set compute/zone "$ZONE" >/dev/null
-
-echo "== Ejecutando auditoría n8n en VM ${VM} =="
+echo "== Ejecutando auditoría n8n en VM ${USER}@${VM_IP} =="
 echo "== Reporte: ${OUT_FILE} =="
 
-gcloud compute ssh "${USER}@${VM}" --command "sudo bash -lc '
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${USER}@${VM_IP}" "sudo bash -lc '
 set -euo pipefail
 
 APP_DIR=\"$APP_DIR\"

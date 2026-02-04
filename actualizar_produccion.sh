@@ -1,70 +1,49 @@
 #!/bin/bash
-# Script para actualizar producción rápidamente
-# Usa el script deploy_vm.sh completo o hace pull si existe git
+# Actualizar producción: SSH a la VM, git pull y reiniciar gunicorn
 
-INSTANCE_NAME="stvaldivia"
-ZONE="southamerica-west1-a"
-PROJECT_ID="stvaldivia"
+VM_IP="${1:-34.176.144.166}"
+VM_USER="${2:-stvaldiviazal}"
 WEBROOT="/var/www/stvaldivia"
+
+# Clave SSH
+SSH_KEY="$HOME/.ssh/id_ed25519"
+[ -f "$HOME/.ssh/id_rsa" ] && SSH_KEY="$HOME/.ssh/id_rsa"
+[ ! -f "$SSH_KEY" ] && echo "❌ No se encuentra clave SSH" && exit 1
 
 echo "🚀 ACTUALIZANDO PRODUCCIÓN"
 echo "=========================="
+echo "📍 $VM_USER@$VM_IP"
 echo ""
 
-gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_ID << 'ENDSSH'
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$VM_USER@$VM_IP" << ENDSSH
     set -e
-    WEBROOT="/var/www/stvaldivia"
-    
-    echo "📥 Actualizando código desde GitHub..."
-    cd "$WEBROOT"
-    
-    # Si es un repositorio git, hacer pull
+    WEBROOT="$WEBROOT"
+    echo "📥 Actualizando código..."
+    cd "\$WEBROOT"
     if [ -d .git ]; then
         git fetch origin
         git pull origin main || git pull origin master
-        echo "✅ Código actualizado desde git"
+        echo "✅ Código actualizado"
     else
-        echo "⚠️  No es un repositorio git, necesitas hacer deploy completo"
-        echo "   Usa: ./deploy_vm.sh"
+        echo "⚠️  No es repo git. Usa ./deploy_completo.sh para subir código."
         exit 1
     fi
-    
-    echo ""
     echo "🔄 Reiniciando gunicorn..."
-    pkill -f 'gunicorn.*app:create_app' || true
+    sudo pkill -f 'gunicorn.*app:create_app' || true
     sleep 2
-    
-    cd "$WEBROOT"
+    cd "\$WEBROOT"
     source venv/bin/activate
-    
-    # Reiniciar gunicorn
-    gunicorn --pythonpath "$WEBROOT" \
-        --bind 127.0.0.1:5001 \
-        --workers 4 \
-        --worker-class eventlet \
-        --timeout 30 \
-        --access-logfile "$WEBROOT/logs/access.log" \
-        --error-logfile "$WEBROOT/logs/error.log" \
-        --daemon \
-        app:create_app
-    
+    nohup gunicorn --pythonpath "\$WEBROOT" --bind 127.0.0.1:5001 --workers 4 --worker-class eventlet --timeout 30 --daemon app:create_app > /dev/null 2>&1 &
     sleep 2
-    
-    # Verificar que está corriendo
     if pgrep -f 'gunicorn.*app:create_app' > /dev/null; then
-        echo "✅ Gunicorn reiniciado correctamente"
+        echo "✅ Gunicorn reiniciado"
     else
-        echo "❌ Error: Gunicorn no está corriendo"
+        echo "❌ Gunicorn no arrancó"
         exit 1
     fi
-    
-    echo ""
     echo "✅ ACTUALIZACIÓN COMPLETADA"
 ENDSSH
 
 echo ""
-echo "✅ Proceso completado"
-echo "📍 Verifica: http://34.176.144.166"
-
-
-
+echo "📍 Verifica: http://$VM_IP"
+echo ""

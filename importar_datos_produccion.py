@@ -163,7 +163,7 @@ def main():
     
     VM_USER = "stvaldiviazal"
     VM_IP = "34.176.144.166"
-    SSH_KEY = os.path.expanduser("~/.ssh/id_ed25519_gcp")
+    SSH_KEY = os.path.expanduser("~/.ssh/id_ed25519")
     
     # Subir CSVs
     for table_name, csv_file, count in exported_tables:

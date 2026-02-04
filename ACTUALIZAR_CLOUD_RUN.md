@@ -1,5 +1,7 @@
 # 🚀 ACTUALIZAR CLOUD RUN - GUÍA RÁPIDA
 
+> **Deprecado:** Ya no usamos Google Cloud. Deploy por SSH: ver `docs/DEPLOY_PRODUCCION.md` y `./deploy_completo.sh`
+
 **Proyecto:** `stvaldiviacl`  
 **Servicio:** `bimba`  
 **Región:** `southamerica-west1`

@@ -1,8 +1,10 @@
 # 🤖 Configurar Dialogflow para BIMBA
 
+> **Deshabilitado:** Ya no usamos Google (ni gcloud ni Dialogflow). El bot usa OpenAI y respuestas por reglas. Esta guía se mantiene solo como referencia histórica.
+
 ## 📋 Resumen
 
-El sistema BIMBA ahora soporta **Google Dialogflow** como motor de inteligencia generativa. Dialogflow es ideal para chatbots conversacionales con intenciones y entidades predefinidas.
+El sistema BIMBA soportaba **Google Dialogflow** como motor de inteligencia generativa. Dialogflow es ideal para chatbots conversacionales con intenciones y entidades predefinidas.
 
 ## 🎯 Ventajas de Dialogflow
 

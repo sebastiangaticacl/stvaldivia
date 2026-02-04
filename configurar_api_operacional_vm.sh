@@ -9,7 +9,7 @@ echo ""
 # Configuración de conexión a la VM
 VM_USER="stvaldiviazal"
 VM_IP="34.176.144.166"
-SSH_KEY="$HOME/.ssh/id_ed25519_gcp"
+SSH_KEY="$HOME/.ssh/id_ed25519"
 
 # Verificar que existe la clave SSH
 if [ ! -f "$SSH_KEY" ]; then

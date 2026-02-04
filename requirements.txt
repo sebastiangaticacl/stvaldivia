@@ -12,7 +12,6 @@ python-barcode==0.15.1
 Pillow==10.0.1
 qrcode==7.4.2
 openai==2.8.1
-google-cloud-dialogflow>=2.20.0
 pytest==7.4.3
 pytest-flask==1.3.0
 pytest-cov==4.1.0
@@ -23,7 +22,7 @@ pytest-cov==4.1.0
 
 
 
-# PostgreSQL driver (requerido para Cloud Run / Cloud SQL)
+# PostgreSQL driver (opcional, para PostgreSQL)
 psycopg2-binary>=2.9.9
 
 # MySQL driver

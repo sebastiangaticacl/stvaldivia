@@ -9,10 +9,11 @@ set -euo pipefail
 ###############################################################################
 # CONFIG (AJUSTA SI CAMBIA)
 ###############################################################################
-PROJECT_ID="stvaldivia"
-ZONE="southamerica-west1-a"
+VM_IP="${VM_IP:-34.176.144.166}"
 VM_NAME="stvaldivia"
-SSH_USER="stvaldiviazal"   # tu usuario ssh en la VM
+SSH_USER="stvaldiviazal"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+[ ! -f "$SSH_KEY" ] && SSH_KEY="$HOME/.ssh/id_rsa"
 
 OUT_DIR="./audit_reports"
 TS="$(date +%Y%m%d-%H%M%S)"
@@ -20,14 +21,9 @@ OUT_FILE="${OUT_DIR}/audit_${VM_NAME}_${TS}.txt"
 
 mkdir -p "$OUT_DIR"
 
-echo "== Configurando gcloud =="
-gcloud config set project "$PROJECT_ID" >/dev/null
-gcloud config set compute/zone "$ZONE" >/dev/null
+echo "== Ejecutando auditoría remota en VM ${SSH_USER}@${VM_IP} =="
 
-echo "== Ejecutando auditoría remota en VM ${VM_NAME} (esto puede tardar un poco) =="
-
-# Nota: usamos sudo para leer configs/servicios; no imprimimos secretos (redactamos).
-gcloud compute ssh "${SSH_USER}@${VM_NAME}" --zone "$ZONE" --command "sudo bash -lc '
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${SSH_USER}@${VM_IP}" "sudo bash -lc '
 set -euo pipefail
 
 redact() {

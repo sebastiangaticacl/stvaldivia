@@ -278,8 +278,7 @@ def sync_table(prod_conn, local_conn, table_config, progress_callback=None):
 def sync_all_data_async():
     """Sincroniza todos los datos de forma asíncrona"""
     # Verificar que NO estamos en producción
-    is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
-    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
     
     if is_production:
         return {

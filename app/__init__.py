@@ -23,8 +23,7 @@ socketio = SocketIO(cors_allowed_origins="*")
 def create_app():
     # Cargar variables de entorno
     # En producción, solo cargar desde variables de entorno del sistema, no desde archivos
-    is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
-    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
     
     # VALIDACIÓN CRÍTICA ANTES de crear la app Flask
     if is_production:
@@ -48,7 +47,7 @@ def create_app():
         # En desarrollo: intentar cargar desde archivos .env
         env_paths = [
             os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'),  # Raíz del proyecto
-            '/var/www/flask_app/.env',  # Servidor producción común (solo si no es Cloud Run)
+            '/var/www/flask_app/.env',  # Servidor producción común
             os.path.expanduser('~/.env'),  # Home del usuario
             '.env'  # Directorio actual
         ]
@@ -164,9 +163,9 @@ def create_app():
         flask_env = os.environ.get('FLASK_ENV', '').lower()
         flask_debug = os.environ.get('FLASK_DEBUG', '').lower()
         
-        # Si no es producción ni Cloud Run, asumimos que es desarrollo
+        # Si no es producción, asumimos que es desarrollo
         # Esto es más seguro: solo habilitamos CSRF en producción explícita
-        is_development = not is_production and not is_cloud_run
+        is_development = not is_production
         
         # También verificar variables de entorno explícitas
         if flask_env == 'production':
@@ -323,8 +322,7 @@ def create_app():
 
     # Configuración de logs - ahora se guarda en base de datos
     # En producción, no usar archivos locales
-    is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
-    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
     
     if is_production:
         # En producción, no usar archivos locales
@@ -344,8 +342,7 @@ def create_app():
 
     # Configuración de base de datos para BIMBA System
     # Migrado a MySQL - soporta MySQL, PostgreSQL (legacy) y SQLite (desarrollo)
-    is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
-    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
+    is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
     
     # Leer modo de base de datos desde variable de entorno
     # Las URLs de dev y prod deben estar en variables de entorno:
@@ -889,22 +886,14 @@ def create_app():
     @app.context_processor
     def inject_production_check():
         try:
-            is_cloud_run = bool(os.environ.get('K_SERVICE') or os.environ.get('GAE_ENV') or os.environ.get('CLOUD_RUN_SERVICE'))
-            is_production = os.environ.get('FLASK_ENV', '').lower() == 'production' or is_cloud_run
-            return {
-                'is_production': is_production,
-                'is_cloud_run': is_cloud_run
-            }
+            is_production = os.environ.get('FLASK_ENV', '').lower() == 'production'
+            return {'is_production': is_production}
         except Exception as e:
-            # En caso de error, retornar valores por defecto seguros
             try:
                 app.logger.warning(f"Error en inject_production_check: {e}")
-            except:
+            except Exception:
                 pass
-            return {
-                'is_production': False,
-                'is_cloud_run': False
-            }
+            return {'is_production': False}
 
     # Context processor: prefijo para subpath (ej. /stvaldivia en cPanel)
     @app.context_processor

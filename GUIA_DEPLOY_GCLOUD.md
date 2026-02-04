@@ -1,5 +1,7 @@
 # 🚀 Guía de Deploy en Google Cloud Run
 
+> **Deprecado:** Ya no usamos Google Cloud. Deploy por SSH: `docs/DEPLOY_PRODUCCION.md`, `./deploy_completo.sh`
+
 **Fecha:** 2026-01-03  
 **Incluye:** Integración n8n corregida
 

@@ -163,19 +163,18 @@ gcloud compute ssh stvaldivia --zone=southamerica-west1-a --command "sudo comand
 ## Variables de Entorno Útiles
 
 ```bash
-# Agregar al ~/.bashrc o ~/.zshrc
-export PATH="$HOME/google-cloud-sdk/bin:$PATH"
-export PROJECT_ID="stvaldivia"
-export ZONE="southamerica-west1-a"
-export VM_NAME="stvaldivia"
+# Opcional: alias para conectar por SSH
+export VM_IP="34.176.144.166"
+export VM_USER="stvaldiviazal"
 ```
 
 ## Atajos Rápidos
 
 ```bash
-# Crear alias en ~/.bashrc o ~/.zshrc
-alias vm-ssh='gcloud compute ssh stvaldivia --zone=southamerica-west1-a'
-alias vm-cmd='gcloud compute ssh stvaldivia --zone=southamerica-west1-a --command'
+# Crear alias en ~/.bashrc o ~/.zshrc (conexión por SSH)
+alias vm-ssh='ssh -i ~/.ssh/id_ed25519 $VM_USER@${VM_IP:-34.176.144.166}'
+alias vm-cmd='ssh -i ~/.ssh/id_ed25519 $VM_USER@${VM_IP:-34.176.144.166}'
+# Ejemplo: vm-cmd "sudo systemctl status stvaldivia"  (ejecuta el comando entre comillas en la VM)
 
 # Uso:
 vm-ssh
