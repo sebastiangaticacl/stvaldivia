@@ -1,2 +1,20 @@
-PassengerEnabled On
-PassengerAppRoot /home/stvaldivia/public_html/stvaldivia
+# Configuración para cPanel / Passenger / LiteSpeed
+# Asegura que la aplicación Python cargue correctamente en el subdirectorio
+
+<IfModule mod_passenger.c>
+    PassengerEnabled On
+    # Ruta base de la aplicación
+    PassengerAppRoot /home/stvaldivia/public_html/stvaldivia
+    # Intérprete Python del entorno virtual
+    PassengerPython /home/stvaldivia/virtualenv/public_html/stvaldivia/3.9/bin/python
+    # Mostrar errores detallados (útil para debug, desactivar en producción final si se desea)
+    PassengerFriendlyErrorPages On
+</IfModule>
+
+# Reglas opcionales para forzar HTTPS o manejar headers
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Forzar HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
