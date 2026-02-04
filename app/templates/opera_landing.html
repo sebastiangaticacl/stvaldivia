@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ópera — Sistema operativo nocturno</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #000;
+      color: #e0e0e0;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      padding: clamp(1.5rem, 5vw, 3rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 52rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    h1 {
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #fff;
+      margin: 0 0 0.25em;
+    }
+    .subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: #999;
+      margin-bottom: 2rem;
+    }
+    .desc {
+      color: #b0b0b0;
+      margin-bottom: 2.5rem;
+    }
+    .packs {
+      margin-bottom: 2.5rem;
+    }
+    .packs h2 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #666;
+      margin: 0 0 1rem;
+    }
+    .packs ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .packs li {
+      padding: 0.35em 0;
+      color: #ccc;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .packs li:last-child { border-bottom: none; }
+    .cta {
+      display: inline-block;
+      padding: 0.6rem 1.2rem;
+      background: transparent;
+      color: #fff;
+      border: 1px solid #444;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .cta:hover {
+      border-color: #888;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ópera</h1>
+  <p class="subtitle">Tú creas. Nosotros operamos.</p>
+  <p class="desc">
+    Ópera centraliza la operación nocturna y registra lo que realmente ocurre.
+    Controla entregas, inventarios y equipo en tiempo real.
+    No promete vender más. Promete perder menos.
+  </p>
+  <section class="packs">
+    <h2>Packs</h2>
+    <ul>
+      <li>Operar Entregas</li>
+      <li>Operar Entregas e Inventarios</li>
+      <li>Operar por Completo</li>
+    </ul>
+  </section>
+  <a href="#" class="cta">Hablar sobre Ópera</a>
+</body>
+</html>

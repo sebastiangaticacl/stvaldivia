@@ -53,6 +53,12 @@ def index():
     return resp
 
 
+@home_bp.route('/opera', methods=['GET'])
+def opera_landing():
+    """Landing estática Ópera — sistema operativo nocturno."""
+    return render_template('opera_landing.html')
+
+
 @home_bp.route('/bimba', methods=['GET'])
 def chat_bimba():
     """Página pública para chatear con BIMBA, el agente de IA"""
