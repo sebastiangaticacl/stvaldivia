@@ -26,24 +26,26 @@ from app import create_app
 class CPanelMiddleware(object):
     """
     Middleware para corregir problemas de ruta en cPanel/Passenger con subdirectorios.
-    Si la app espera manejar la ruta completa (incluyendo /stvaldivia) vía APPLICATION_ROOT,
-    necesitamos restaurar el prefijo que Passenger suele mover a SCRIPT_NAME.
     """
     def __init__(self, app):
         self.app = app
 
     def __call__(self, environ, start_response):
-        # Passenger puede poner '/stvaldivia' en SCRIPT_NAME y dejar PATH_INFO vacío o con la subruta.
-        # Flask con APPLICATION_ROOT='/stvaldivia' espera que PATH_INFO contenga el prefijo.
+        # DEBUG: Escribir environment a un archivo para diagnóstico
+        try:
+            with open('request_debug.txt', 'a') as f:
+                f.write(f"\n--- Request ---\n")
+                f.write(f"SCRIPT_NAME: {environ.get('SCRIPT_NAME')}\n")
+                f.write(f"PATH_INFO: {environ.get('PATH_INFO')}\n")
+                f.write(f"REQUEST_URI: {environ.get('REQUEST_URI')}\n")
+        except:
+            pass
+            
         script_name = environ.get('SCRIPT_NAME', '')
         
-        # Si SCRIPT_NAME tiene valor y PATH_INFO no lo incluye, lo prefijamos
-        # Asumimos que la app quiere manejar todo el path
+        # LOGICA ORIGINAL: restaurar script_name en path_info
         if script_name and script_name != '/':
             environ['PATH_INFO'] = script_name + environ.get('PATH_INFO', '')
-            # Limpiamos SCRIPT_NAME para que Flask no intente hacer routing relativo a él
-            # OJO: Flask usa SCRIPT_NAME para generar URLs. Si lo borramos, url_for generará rutas sin prefijo?
-            # Si APPLICATION_ROOT está set, Flask lo usará de todas formas.
             environ['SCRIPT_NAME'] = ''
             
         return self.app(environ, start_response)
